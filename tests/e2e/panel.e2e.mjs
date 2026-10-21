@@ -7,17 +7,19 @@
  *   E2E_INTRUDER_SESSION JSON de cookies de un usuario sin tienda
  *   E2E_CHROME_PATH      ejecutable de Chromium (opcional)
  *
- * Cubre: onboarding (tienda + primer producto), render del panel, ocultar/mostrar con
- * persistencia tras recarga, aislamiento entre inquilinos, headers de seguridad,
- * redirección a /login sin sesión y CSP/nonce en una respuesta de subdominio.
+ * Cubre: onboarding (tienda + primer producto), publicación del catálogo, render del
+ * panel, ocultar/mostrar con persistencia tras recarga, aislamiento entre inquilinos,
+ * headers de seguridad, redirección a /login sin sesión, CSP/nonce en una respuesta de
+ * subdominio y catálogo público (404 real, card, ficha y enlace wa.me).
  */
 
 import { readFileSync } from "node:fs";
 import { chromium } from "playwright-core";
 
-const APP = process.env.E2E_APP_URL ?? "http://localhost:3000";
 // Sin E2E_CHROME_PATH se usa el Chromium instalado por `playwright-core install chromium`.
 const CHROME = process.env.E2E_CHROME_PATH || undefined;
+
+const APP = process.env.E2E_APP_URL ?? "http://localhost:3000";
 const slug = `e2e-${Date.now()}`;
 const PRODUCT = `Producto E2E ${slug}`;
 
@@ -34,7 +36,6 @@ function loadCookies(envVar) {
 }
 
 const browser = await chromium.launch({ executablePath: CHROME, headless: true });
-// (CHROME indefinido = ejecutable por defecto de Playwright)
 
 try {
   // ---------------------------------------------------------------
@@ -53,6 +54,8 @@ try {
   await page.goto(`${APP}/onboarding`);
   await page.locator("#name").fill("Tienda E2E");
   await page.locator("#slug").fill(slug);
+  // WhatsApp es parte del onboarding (plan §8.1) y habilita el CTA de la ficha.
+  await page.locator("#whatsapp").fill("+504 1234 5678");
   await page.getByRole("button", { name: "Continuar" }).click();
 
   await page.locator("#productName").waitFor({ timeout: 15000 });
@@ -66,9 +69,51 @@ try {
   check("sin violaciones CSP durante onboarding", cspViolations.length === 0, cspViolations[0]?.slice(0, 120));
 
   // ---------------------------------------------------------------
-  // 2. Panel: el producto aparece renderizado desde el servidor
+  // 2. La tienda nace oculta: el catálogo público no la sirve
   // ---------------------------------------------------------------
-  await page.getByRole("button", { name: "Ir al panel" }).click().catch(() => {});
+  const anon = await browser.newContext();
+  const anonPage = await anon.newPage();
+  const draftResponse = await anonPage.goto(`${APP}/s/${slug}`);
+  check(
+    "tienda en borrador responde 404 en el catálogo público",
+    draftResponse?.status() === 404,
+    `HTTP ${draftResponse?.status()}`,
+  );
+
+  // ---------------------------------------------------------------
+  // 3. Publicar desde la UI: el vendedor deja su catálogo visible
+  // ---------------------------------------------------------------
+  await page.getByRole("button", { name: "Publicar y ver mi catálogo" }).click();
+  const publishedBanner = await page
+    .getByText("Tu catálogo está publicado.")
+    .waitFor({ timeout: 15000 })
+    .then(() => true, () => false);
+  check("publicar deja el catálogo publicado", publishedBanner);
+  check("el link del catálogo se muestra al vendedor", (await page.getByText(`/s/${slug}`).count()) >= 1);
+
+  await page.getByRole("button", { name: "Ver mi catálogo" }).click();
+  await page.waitForURL(new RegExp(`/s/${slug}$`), { timeout: 15000 }).catch(() => {});
+  await page.waitForLoadState("networkidle");
+
+  // El Proxy cachea el estado de publicación: puede tardar un momento en
+  // reflejar la publicación, por eso se reintenta la carga.
+  let catalogShowsProduct = false;
+  for (let attempt = 0; attempt < 15; attempt++) {
+    if ((await page.getByText(PRODUCT).count()) > 0) {
+      catalogShowsProduct = true;
+      break;
+    }
+    await page.reload();
+    await page.waitForLoadState("networkidle");
+    await page.waitForTimeout(1000);
+  }
+  check("publicar lleva al catálogo público", new URL(page.url()).pathname === `/s/${slug}`, page.url());
+  check("el catálogo publicado muestra el producto", catalogShowsProduct);
+  check("el catálogo publicado muestra el precio en lempiras", (await page.getByText(/450[.,]50/).count()) >= 1);
+
+  // ---------------------------------------------------------------
+  // 4. Panel: el producto aparece renderizado desde el servidor
+  // ---------------------------------------------------------------
   await page.goto(`${APP}/products`);
   const row = page.locator("tr", { hasText: PRODUCT });
   await row.waitFor({ timeout: 15000 });
@@ -82,7 +127,7 @@ try {
   );
 
   // ---------------------------------------------------------------
-  // 3. Ocultar y restablecer; el cambio persiste tras recargar
+  // 5. Ocultar y restablecer; el cambio persiste tras recargar
   // ---------------------------------------------------------------
   await row.getByRole("button", { name: "Ocultar" }).click();
   await row.getByText("Oculto").waitFor({ timeout: 15000 }).catch(() => {});
@@ -97,7 +142,7 @@ try {
   check("mostrar persiste tras recargar", shownAfterReload === 0);
 
   // ---------------------------------------------------------------
-  // 4. Aislamiento: un usuario sin tienda no ve productos del owner
+  // 6. Aislamiento: un usuario sin tienda no ve productos del owner
   // ---------------------------------------------------------------
   const intruder = await browser.newContext();
   await intruder.addCookies(loadCookies("E2E_INTRUDER_SESSION"));
@@ -108,9 +153,8 @@ try {
   check("intruso no ve el producto del owner", leaked === 0);
 
   // ---------------------------------------------------------------
-  // 5. Sin sesión: /products redirige a /login y no muestra datos
+  // 7. Sin sesión: /products redirige a /login y no muestra datos
   // ---------------------------------------------------------------
-  const anon = await browser.newContext();
   const ap = await anon.newPage();
   await ap.goto(`${APP}/products`);
   await ap.waitForLoadState("networkidle");
@@ -119,13 +163,46 @@ try {
   check("sin sesión /products redirige a /login", new URL(ap.url()).pathname === "/login", ap.url());
 
   // ---------------------------------------------------------------
-  // 6. Subdominio de tienda: el rewrite conserva la URL y la CSP con nonce se aplica
+  // 8. Catálogo público como anónimo: card, ficha y enlace de WhatsApp
+  // ---------------------------------------------------------------
+  const catalog = await anon.newPage();
+  await catalog.goto(`${APP}/s/${slug}`);
+  await catalog.waitForLoadState("networkidle");
+  const card = catalog.locator("a").filter({ hasText: PRODUCT }).first();
+  check("catálogo público muestra el producto sin sesión", (await card.count()) === 1);
+  check("catálogo público muestra el precio en lempiras", (await catalog.getByText(/450[.,]50/).count()) >= 1);
+
+  // La ficha: se llega tocando la card, como haría el comprador por WhatsApp.
+  await card.click();
+  const onProduct = await catalog
+    .waitForURL(/\/s\/.+\/.+/, { timeout: 15000 })
+    .then(() => true, () => false);
+  await catalog.waitForLoadState("networkidle");
+  check("la ficha del producto abre", onProduct, catalog.url());
+  const waHref = await catalog
+    .locator("a[data-wa-label='Pedir por WhatsApp']")
+    .first()
+    .getAttribute("href", { timeout: 10000 })
+    .catch(() => null);
+  const waText = waHref ? decodeURIComponent(waHref.split("text=")[1] ?? "") : "";
+  check("el botón de WhatsApp apunta a wa.me", Boolean(waHref?.startsWith("https://wa.me/")), waHref?.slice(0, 60));
+  check(
+    "el mensaje pre-armado menciona la tienda y el producto",
+    waText.includes("Tienda E2E") && waText.includes(PRODUCT),
+    waText.slice(0, 80),
+  );
+
+  const missing = await anon.newPage();
+  const missingResponse = await missing.goto(`${APP}/s/no-existe-${Date.now()}`);
+  check("tienda inexistente responde 404", missingResponse?.status() === 404, `HTTP ${missingResponse?.status()}`);
+
+  // ---------------------------------------------------------------
+  // 9. Subdominio de tienda: el rewrite conserva la URL y la CSP con nonce se aplica
   //    en el navegador (Chromium resuelve *.localhost a loopback sin configurar DNS).
-  //    Hoy /s/[store] no tiene página de catálogo: se valida CSP e hidratación de la
-  //    respuesta reescrita; las aserciones de contenido llegan con la tarea 4.x.
+  //    Se usa el subdominio real de la tienda publicada.
   // ---------------------------------------------------------------
   const appPort = new URL(APP).port || "80";
-  const tenantUrl = `http://tienda-e2e.app.localhost:${appPort}/`;
+  const tenantUrl = `http://${slug}.app.localhost:${appPort}/`;
   const sub = await anon.newPage();
   const subCsp = [];
   sub.on("console", (m) => {
@@ -143,7 +220,8 @@ try {
     scriptNonces.length > 0 && scriptNonces.every((n) => n === subNonce),
     `${scriptNonces.length} script(s)`,
   );
-  check("subdominio no redirige (URL del navegador intacta)", new URL(sub.url()).hostname === "tienda-e2e.app.localhost");
+  check("subdominio no redirige (URL del navegador intacta)", new URL(sub.url()).hostname === `${slug}.app.localhost`);
+  check("el subdominio muestra el catálogo de la tienda", (await sub.getByText(PRODUCT).count()) >= 1);
   check("sin violaciones CSP en subdominio", subCsp.length === 0, subCsp[0]?.slice(0, 120));
 
   await owner.close();

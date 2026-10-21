@@ -5,6 +5,12 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
+  images: {
+    // La optimización la hace ImageKit, no Vercel: el original nunca pasa por
+    // el optimizador de Next y no se cobra Compute (plan §6.2).
+    loader: "custom",
+    loaderFile: "./src/lib/imagekit-loader.ts",
+  },
   turbopack: {
     rules: {
       "*.css": {

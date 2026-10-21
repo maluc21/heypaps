@@ -13,6 +13,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { cached } from '@/lib/cache'
 
 const RESERVED_SUBDOMAINS = new Set([
   'www',
@@ -61,6 +62,44 @@ function buildCsp(nonce: string): string {
   return directives.join('; ')
 }
 
+/**
+ * ¿La tienda existe y está publicada?
+ *
+ * La RPC pública devuelve null si la tienda no existe, está en borrador o fue
+ * suspendida: es la única superficie de lectura pública (plan §5.4).
+ *
+ * Se comprueba aquí, en el Proxy, y no en la página: con Partial Prerender el
+ * shell HTML se envía antes de que la página resuelva, así que un notFound()
+ * dentro de la página quedaría con status 200 (docs de Next: "Status codes").
+ * En el Proxy el 404 es real.
+ *
+ * La ventana de caché es de 5 s a propósito: el Proxy y las Server Functions
+ * corren en bundles separados y no comparten memoria, así que la invalidación
+ * desde la acción de publicar no llega hasta aquí. Con 5 s el vendedor no ve
+ * "no disponible" tras publicar.
+ */
+async function isStorePublished(slug: string): Promise<boolean> {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  if (!url || !key) return true
+
+  return cached(`store-published:${slug}`, 5, async () => {
+    try {
+      const res = await fetch(
+        `${url}/rest/v1/rpc/public_store_published?p_store_slug=${encodeURIComponent(slug)}`,
+        {
+          headers: { apikey: key, Authorization: `Bearer ${key}` },
+        },
+      )
+      if (!res.ok) return true
+      return (await res.json()) === true
+    } catch {
+      // Un fallo de red no debe tumbar el catálogo público.
+      return true
+    }
+  })
+}
+
 export async function proxy(request: NextRequest) {
   const nonce = generateNonce()
   const csp = buildCsp(nonce)
@@ -99,6 +138,7 @@ export async function proxy(request: NextRequest) {
   const parts = hostname.split('.')
 
   let response = NextResponse.next({ request: { headers: requestHeaders } })
+  let storeSlug: string | null = null
 
   // Subdominio de tienda: sub.dominio.tld (al menos 3 partes)
   if (parts.length >= 3) {
@@ -106,8 +146,31 @@ export async function proxy(request: NextRequest) {
     if (!RESERVED_SUBDOMAINS.has(subdomain)) {
       const url = request.nextUrl.clone()
       url.pathname = `/s/${subdomain}${url.pathname}`
+      storeSlug = subdomain
       response = NextResponse.rewrite(url, { request: { headers: requestHeaders } })
     }
+  }
+
+  // Catálogo público por ruta interna: /s/{slug} (útil en desarrollo y pruebas)
+  if (!storeSlug) {
+    const match = request.nextUrl.pathname.match(/^\/s\/([^/]+)/)
+    if (match) storeSlug = decodeURIComponent(match[1])
+  }
+
+  // Tienda inexistente, en borrador o suspendida: 404 real antes de renderizar.
+  if (storeSlug && !(await isStorePublished(storeSlug))) {
+    const notFound = new NextResponse(
+      `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="robots" content="noindex"><title>Catálogo no disponible</title></head><body style="font-family:system-ui;padding:2rem;text-align:center"><h1>Catálogo no disponible</h1><p>Esta tienda no existe o no está publicada.</p></body></html>`,
+      {
+        status: 404,
+        headers: { 'content-type': 'text/html; charset=utf-8' },
+      },
+    )
+    notFound.headers.set('X-Robots-Tag', 'noindex')
+    for (const c of cookieWrites) {
+      notFound.cookies.set({ name: c.name, value: c.value, ...(c.options ?? {}) })
+    }
+    return notFound
   }
 
   for (const c of cookieWrites) {

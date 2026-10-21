@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
-import { createStore, createFirstProduct } from "@/lib/actions/store";
+import { createStore, createFirstProduct, publishStore } from "@/lib/actions/store";
 import { normalizeSlug, RESERVED_SLUGS, formatMoney } from "@/lib/utils";
 import { parseAmountToCents } from "@/lib/money";
 import { toast } from "sonner";
@@ -14,10 +14,25 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 type Step = "tienda" | "producto" | "listo";
 
+/** El origin no cambia durante la vida de la página: sin suscripciones. */
+function subscribeToNothing(): () => void {
+  return () => {};
+}
+
 export default function OnboardingPage() {
   const router = useRouter();
   const [step, setStep] = useState<Step>("tienda");
   const [storeId, setStoreId] = useState("");
+  const [storeSlug, setStoreSlug] = useState("");
+  const [publishing, setPublishing] = useState(false);
+  const [published, setPublished] = useState(false);
+  // El origin solo existe en el navegador. useSyncExternalStore da "" en el
+  // servidor y el origin real tras hidratar, sin desajustar la hidratación.
+  const origin = useSyncExternalStore(
+    subscribeToNothing,
+    () => window.location.origin,
+    () => "",
+  );
 
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
@@ -40,7 +55,31 @@ export default function OnboardingPage() {
     }
     if (result.storeId) {
       setStoreId(result.storeId);
+      setStoreSlug(result.slug ?? slug);
       setStep("producto");
+    }
+  };
+
+  const handlePublish = async () => {
+    setPublishing(true);
+    const result = await publishStore(storeId);
+    setPublishing(false);
+    if (result.error) {
+      toast.error(result.error);
+      return;
+    }
+    setPublished(true);
+    toast.success("¡Catálogo publicado!");
+  };
+
+  const catalogUrl = origin ? `${origin}/s/${storeSlug}` : `/s/${storeSlug}`;
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(catalogUrl);
+      toast.success("Link copiado");
+    } catch {
+      toast.error("No se pudo copiar el link");
     }
   };
 
@@ -154,10 +193,69 @@ export default function OnboardingPage() {
           )}
         </CardContent>
         {step === "listo" && (
-          <CardFooter>
-            <Button onClick={() => router.replace("/panel")} className="w-full">
-              Ir al panel
-            </Button>
+          <CardFooter className="space-y-2">
+            {published ? (
+              <>
+                <p className="text-center text-sm text-muted-foreground">
+                  Tu catálogo está publicado. Este es tu link:
+                </p>
+                <p className="break-all rounded-lg border border-border bg-muted px-3 py-2 text-center text-xs">
+                  {catalogUrl}
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleCopyLink}
+                  className="w-full"
+                >
+                  Copiar link
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => router.push(`/s/${storeSlug}`)}
+                  className="w-full"
+                >
+                  Ver mi catálogo
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => router.replace("/panel")}
+                  className="w-full"
+                >
+                  Ir al panel
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  onClick={handlePublish}
+                  disabled={publishing}
+                  className="w-full"
+                >
+                  {publishing ? "Publicando…" : "Publicar y ver mi catálogo"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleCopyLink}
+                  className="w-full"
+                >
+                  Copiar link
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => router.replace("/panel")}
+                  className="w-full"
+                >
+                  Ir al panel
+                </Button>
+                <p className="pt-2 text-center text-xs text-muted-foreground">
+                  Tu catálogo sigue oculto hasta que lo publiques.
+                </p>
+              </>
+            )}
           </CardFooter>
         )}
       </Card>
