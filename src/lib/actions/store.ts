@@ -14,7 +14,7 @@ function normalizeE164(raw: string): string {
   return digits ? `+${digits}` : "";
 }
 
-export type StoreResult = { error?: string; storeId?: string; slug?: string };
+export type StoreResult = { error?: string; storeId?: string; slug?: string; productId?: string };
 
 export async function createStore(formData: FormData): Promise<StoreResult> {
   const slug = String(formData.get("slug") ?? "").trim();
@@ -79,7 +79,9 @@ export async function publishStore(storeId: string): Promise<{ error?: string }>
   return {};
 }
 
-export async function createFirstProduct(formData: FormData): Promise<{ error?: string }> {
+export async function createFirstProduct(
+  formData: FormData,
+): Promise<{ error?: string; productId?: string; slug?: string }> {
   const storeId = String(formData.get("store_id") ?? "");
   const name = String(formData.get("name") ?? "").trim();
   // El precio llega en unidades monetarias (ej. "450.50"); la conversión a centavos ocurre aquí.
@@ -90,7 +92,7 @@ export async function createFirstProduct(formData: FormData): Promise<{ error?: 
   }
 
   const supabase = await createServerClient();
-  const { error } = await supabase.rpc("create_product_with_variant", {
+  const { data, error } = await supabase.rpc("create_product_with_variant", {
     p_store_id: storeId,
     p_slug: `${name.toLowerCase().replace(/\s+/g, "-")}-1`,
     p_name: name,
@@ -113,7 +115,10 @@ export async function createFirstProduct(formData: FormData): Promise<{ error?: 
     return { error: error.message ?? "No se pudo crear el producto." };
   }
 
-  return {};
+  // La RPC devuelve { id, slug }: el slug real puede llevar sufijo si ya habia
+  // un producto con ese nombre.
+  const created = data as { id?: string; slug?: string } | null;
+  return { productId: created?.id, slug: created?.slug };
 }
 
 // ============================================================

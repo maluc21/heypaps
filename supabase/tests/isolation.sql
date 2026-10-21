@@ -199,7 +199,7 @@ end $$;
 
 do $$
 declare
-  v_new uuid;
+  v_new jsonb;
   denied boolean;
 begin
   -- Owner de A puede crear producto vía RPC
@@ -210,7 +210,9 @@ begin
     '[]'::jsonb, '{}'::text[], 0, '{}'::jsonb, null,
     1500, 'none', 0, null, null
   );
-  if v_new is null then raise exception '1.4 FAIL: owner no pudo crear producto vía RPC'; end if;
+  if v_new is null or (v_new->>'id') is null then
+    raise exception '1.4 FAIL: owner no pudo crear producto vía RPC';
+  end if;
 
   -- Owner de B no puede crear producto en A
   perform public.test_set_user('22222222-2222-2222-2222-222222222222'::uuid);

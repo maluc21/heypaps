@@ -535,6 +535,71 @@ try {
     (await untagged.getByText(PRODUCT).count()) === 0,
   );
 
+  // ---------------------------------------------------------------
+  // 16. Alta de producto desde el panel y filtros de la lista
+  // ---------------------------------------------------------------
+  await page.goto(`${APP}/products/nuevo`);
+  await page.locator("#new-name").waitFor({ timeout: 15000 });
+  await page.locator("#new-name").fill("Producto Nuevo E2E");
+  await page.locator("#new-price").fill("325");
+  await page.locator("#new-stock").fill("4");
+  await page.getByRole("button", { name: "Crear producto" }).click();
+  await page.waitForURL(/\/products\/.+/, { timeout: 15000 }).catch(() => {});
+  await page.waitForLoadState("networkidle");
+  check("crear producto lleva a su ficha", /\/products\/.+/.test(new URL(page.url()).pathname), page.url());
+  check(
+    "el producto creado aparece en la ficha",
+    (await page.locator("#name").inputValue()) === "Producto Nuevo E2E",
+  );
+
+  // El precio del alta es el de la variante creada.
+  check(
+    "la variante del producto nuevo tiene el precio indicado",
+    (await page.getByText(/325[.,]00/).count()) >= 1,
+  );
+
+  // Un segundo producto con el mismo nombre no choca: el slug lleva sufijo.
+  await page.goto(`${APP}/products/nuevo`);
+  await page.locator("#new-name").fill("Producto Nuevo E2E");
+  await page.locator("#new-price").fill("325");
+  await page.locator("#new-stock").fill("4");
+  await page.getByRole("button", { name: "Crear producto" }).click();
+  await page.waitForURL(/\/products\/.+/, { timeout: 15000 }).catch(() => {});
+  await page.waitForLoadState("networkidle");
+  check(
+    "un nombre repetido genera un slug con sufijo",
+    /producto-nuevo-e2e-2/.test(new URL(page.url()).pathname),
+    new URL(page.url()).pathname,
+  );
+
+  // Filtros de la lista del panel.
+  await page.goto(`${APP}/products`);
+  await page.locator("#product-search").waitFor({ timeout: 15000 });
+  const totalRows = await page.locator("tbody tr").count();
+  check("la lista muestra los productos", totalRows >= 2, `${totalRows} filas`);
+
+  await page.locator("#product-search").fill("Producto Nuevo E2E");
+  await page.waitForTimeout(500);
+  const filteredRows = await page.locator("tbody tr").count();
+  check("el buscador filtra por nombre", filteredRows === 2, `${filteredRows} filas`);
+
+  await page.locator("#product-search").fill("no-existe-este-producto");
+  await page.waitForTimeout(500);
+  check(
+    "un buscador sin resultados avisa",
+    (await page.getByText("Ningún producto coincide con el filtro.").count()) === 1,
+  );
+  await page.locator("#product-search").fill("");
+  await page.waitForTimeout(500);
+
+  // Filtro por estado: los productos nuevos son visibles.
+  await page.locator('select[aria-label="Filtrar por estado"]').selectOption("hidden");
+  await page.waitForTimeout(500);
+  const hiddenRows = await page.locator("tbody tr").count();
+  check("el filtro de estado oculta los visibles", hiddenRows === 0, `${hiddenRows} filas`);
+  await page.locator('select[aria-label="Filtrar por estado"]').selectOption("all");
+  await page.waitForTimeout(500);
+
   await owner.close();
   await intruder.close();
   await anon.close();
