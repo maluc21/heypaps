@@ -1,0 +1,126 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Variables públicas que Next incrusta en el bundle en tiempo de build.
+  NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+  NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT: ${{ secrets.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT }}
+  NEXT_PUBLIC_APP_URL: http://localhost:3000
+  IMAGEKIT_PUBLIC_KEY: ${{ secrets.IMAGEKIT_PUBLIC_KEY }}
+
+jobs:
+  static:
+    name: Tipos, lint, unitarios y build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      # La versión de pnpm se toma del campo packageManager de package.json.
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Tipos
+        run: pnpm exec tsc --noEmit
+
+      - name: Lint
+        run: pnpm run lint
+
+      - name: Pruebas unitarias
+        run: pnpm exec vitest run
+
+      - name: Build de producción
+        run: pnpm run build
+
+  e2e:
+    name: Aislamiento SQL y E2E (Supabase de staging)
+    needs: static
+    # Solo ramas del propio repo: los PRs de forks no reciben secretos.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: staging
+    # Un solo run a la vez contra el mismo proyecto remoto: los tests escriben y limpian datos.
+    concurrency:
+      group: supabase-staging
+      cancel-in-progress: false
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_STAGING_PROJECT_REF }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      E2E_APP_URL: http://localhost:3000
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.117.0
+
+      - name: Limpieza previa de datos E2E
+        run: supabase db query --project-ref "$SUPABASE_PROJECT_REF" -f tests/e2e/cleanup-e2e.sql
+
+      - name: Pruebas de aislamiento SQL
+        run: supabase db query --project-ref "$SUPABASE_PROJECT_REF" -f supabase/tests/isolation.sql
+
+      - name: Instalar Chromium de Playwright
+        run: pnpm exec playwright-core install --with-deps chromium
+
+      - name: Build de producción (con variables de staging)
+        run: pnpm run build
+
+      - name: Arrancar servidor
+        run: |
+          pnpm start > "$RUNNER_TEMP/server.log" 2>&1 &
+          for i in $(seq 1 60); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3000/ || true)
+            if [ "$code" != "000" ]; then echo "servidor listo (HTTP $code)"; exit 0; fi
+            sleep 1
+          done
+          echo "el servidor no respondió"; cat "$RUNNER_TEMP/server.log"; exit 1
+
+      - name: Crear sesiones de prueba (owner e intruso)
+        run: |
+          node tests/e2e/session-bootstrap.mjs e2e-owner@test.test "$RUNNER_TEMP/owner.json"
+          node tests/e2e/session-bootstrap.mjs e2e-intruder@test.test "$RUNNER_TEMP/intruder.json"
+
+      - name: E2E del panel y del subdominio
+        env:
+          E2E_OWNER_SESSION: ${{ runner.temp }}/owner.json
+          E2E_INTRUDER_SESSION: ${{ runner.temp }}/intruder.json
+        run: node tests/e2e/panel.e2e.mjs
+
+      - name: Limpieza final de datos E2E
+        if: always()
+        run: supabase db query --project-ref "$SUPABASE_PROJECT_REF" -f tests/e2e/cleanup-e2e.sql
+
+      - name: Log del servidor
+        if: failure()
+        run: cat "$RUNNER_TEMP/server.log" || true

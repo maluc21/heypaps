@@ -1,0 +1,129 @@
+/**
+ * Proxy (middleware) — tenancy por subdominio (plan §9), sesión y cabeceras de seguridad.
+ *
+ * - Genera un nonce aleatorio POR PETICIÓN y lo usa en la CSP. Sin 'unsafe-inline'
+ *   para scripts: solo ejecutan scripts con el nonce correcto. Requiere render dinámico
+ *   (ver layout raíz con connection()).
+ * - Lee el Host. Si es un subdominio de tienda (no reservado) reescribe
+ *   internamente a /s/{storeSlug}{path}; la URL del navegador no cambia.
+ * - Refresca la sesión de Supabase Auth y conserva las cookies refrescadas también
+ *   cuando la respuesta es una reescritura.
+ */
+
+import { createServerClient } from '@supabase/ssr'
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+
+const RESERVED_SUBDOMAINS = new Set([
+  'www',
+  'app',
+  'super',
+  'admin',
+  'api',
+  'assets',
+  'cdn',
+  'mail',
+  'staging',
+])
+
+const IS_DEV = process.env.NODE_ENV === 'development'
+
+function generateNonce(): string {
+  // 16 bytes aleatorios criptográficos, en base64
+  const bytes = new Uint8Array(16)
+  crypto.getRandomValues(bytes)
+  let binary = ''
+  for (const b of bytes) binary += String.fromCharCode(b)
+  return btoa(binary)
+}
+
+function buildCsp(nonce: string): string {
+  const directives = [
+    "default-src 'self'",
+    // strict-dynamic: los chunks cargados por un script con nonce también ejecutan.
+    // unsafe-eval solo en desarrollo (React reconstruye stacks de error).
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${IS_DEV ? " 'unsafe-eval'" : ''}`,
+    // Estilos sin nonce: sonner@2 inserta su <style> con document.createElement y no admite nonce.
+    // Decisión documentada: la protección XSS depende de script-src (nonce estricto); una
+    // inyección de CSS no ejecuta JavaScript.
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: blob: https://ik.imagekit.io",
+    "font-src 'self' data:",
+    `connect-src 'self' https://*.supabase.co https://api.imagekit.io${IS_DEV ? ' ws://localhost:* http://localhost:*' : ''}`,
+    "frame-src 'none'",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'none'",
+  ]
+  // upgrade-insecure-requests rompería http://localhost en desarrollo.
+  if (!IS_DEV) directives.push('upgrade-insecure-requests')
+  return directives.join('; ')
+}
+
+export async function proxy(request: NextRequest) {
+  const nonce = generateNonce()
+  const csp = buildCsp(nonce)
+
+  // Cabeceras de petición: el render lee x-nonce y la CSP para aplicar el nonce a sus scripts.
+  const requestHeaders = new Headers(request.headers)
+  requestHeaders.set('x-nonce', nonce)
+  requestHeaders.set('Content-Security-Policy', csp)
+
+  // Cookies de sesión que Supabase quiere escribir; se aplican a la respuesta final.
+  const cookieWrites: Array<{ name: string; value: string; options?: Record<string, unknown> }> = []
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return request.cookies.get(name)?.value
+        },
+        set(name: string, value: string, options: unknown) {
+          cookieWrites.push({ name, value, options: options as Record<string, unknown> })
+        },
+        remove(name: string, options: unknown) {
+          cookieWrites.push({ name, value: '', options: options as Record<string, unknown> })
+        },
+      },
+    }
+  )
+
+  // Refrescar sesión (magic link / Google / cookie)
+  await supabase.auth.getUser()
+
+  const host = request.headers.get('host') || ''
+  const hostname = host.split(':')[0]
+  const parts = hostname.split('.')
+
+  let response = NextResponse.next({ request: { headers: requestHeaders } })
+
+  // Subdominio de tienda: sub.dominio.tld (al menos 3 partes)
+  if (parts.length >= 3) {
+    const subdomain = parts[0]
+    if (!RESERVED_SUBDOMAINS.has(subdomain)) {
+      const url = request.nextUrl.clone()
+      url.pathname = `/s/${subdomain}${url.pathname}`
+      response = NextResponse.rewrite(url, { request: { headers: requestHeaders } })
+    }
+  }
+
+  for (const c of cookieWrites) {
+    response.cookies.set({ name: c.name, value: c.value, ...(c.options ?? {}) })
+  }
+
+  // Cabeceras de seguridad base (plan §6.4)
+  response.headers.set('Content-Security-Policy', csp)
+  response.headers.set('X-Content-Type-Options', 'nosniff')
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
+  response.headers.set('X-Frame-Options', 'DENY')
+  response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
+
+  return response
+}
+
+export const config = {
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\..*).*)'],
+}
