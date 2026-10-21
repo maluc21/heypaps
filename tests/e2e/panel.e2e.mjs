@@ -765,6 +765,27 @@ try {
     `HTTP ${intruderResponse?.status()}`,
   );
 
+  // ---------------------------------------------------------------
+  // 19. La tipografía del tema se aplica (una autorreferencia en el
+  //     @theme la deja sin resolver y el navegador usa su serif por defecto)
+  // ---------------------------------------------------------------
+  const landing = await anon.newPage();
+  await landing.goto(`${APP}/`);
+  await landing.waitForLoadState("networkidle");
+  const fontFamily = await landing.evaluate(
+    () => getComputedStyle(document.body).fontFamily,
+  );
+  check(
+    "el body usa la fuente del tema, no la serif por defecto",
+    fontFamily.includes("Geist"),
+    fontFamily,
+  );
+  const headingFont = await landing.evaluate(() => {
+    const h1 = document.querySelector("h1");
+    return h1 ? getComputedStyle(h1).fontFamily : "";
+  });
+  check("el título hereda la fuente del tema", headingFont.includes("Geist"), headingFont);
+
   await owner.close();
   await intruder.close();
   await anon.close();
