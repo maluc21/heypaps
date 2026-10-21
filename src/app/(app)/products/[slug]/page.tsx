@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { createServerClient } from "@/lib/supabase/server";
 import { ProductEditorForm } from "@/components/product-editor-form";
+import { VariantManager, type EditableVariant } from "@/components/variant-manager";
 import { getPlanLimits } from "@/lib/cache";
 
 export const instant = false;
@@ -18,16 +19,9 @@ type Product = {
   version: number;
   images: string[];
   category_id: string | null;
-  variants: Array<{
-    id: string;
-    attributes: Record<string, unknown>;
-    price_cents: number;
-    final_price_cents: number;
-    stock: number | null;
-    active: boolean;
-    position: number;
-  }>;
+  variants: EditableVariant[];
 };
+
 
 export default async function ProductEditorPage({
   params,
@@ -51,7 +45,7 @@ export default async function ProductEditorPage({
   // El límite de imágenes por producto depende del plan de la tienda.
   const { data: store } = await supabase
     .from("stores")
-    .select("plan_code")
+    .select("plan_code, currency")
     .eq("id", product.store_id)
     .maybeSingle();
 
@@ -72,10 +66,20 @@ export default async function ProductEditorPage({
   });
 
   return (
-    <ProductEditorForm
-      product={product}
-      maxImages={planLimits.max_images_per_product}
-      categories={categories ?? []}
-    />
+    <>
+      <ProductEditorForm
+        product={product}
+        maxImages={planLimits.max_images_per_product}
+        categories={categories ?? []}
+      />
+      <div className="p-4 max-w-xl pb-24">
+        <VariantManager
+          productId={product.id}
+          productVersion={product.version}
+          currency={store?.currency ?? "HNL"}
+          variants={product.variants}
+        />
+      </div>
+    </>
   );
 }

@@ -379,6 +379,91 @@ try {
     (await unfiltered.getByText(PRODUCT).count()) === 0,
   );
 
+  // ---------------------------------------------------------------
+  // 14. Variantes: crear, validar duplicados, descuento, borrar y la regla
+  //     de la última variante activa. Las reglas viven en la base; aquí se
+  //     comprueba que la UI las muestra.
+  // ---------------------------------------------------------------
+  await page.goto(`${APP}/products/${productSlug}`);
+  await page.getByText("Variantes").first().waitFor({ timeout: 15000 });
+
+  const saveVariantForm = async ({ attr, value, price, stock, discountType, discountValue, madeToOrder }) => {
+    await page.getByRole("button", { name: "Nueva variante" }).click();
+    await page.getByLabel("Nombre del atributo 1").fill("Talle");
+    await page.getByLabel("Valor del atributo 1").fill(attr);
+    await page.locator("#variant-price").fill(price);
+    if (discountType) {
+      await page.locator("#variant-discount-type").selectOption(discountType);
+      await page.locator("#variant-discount-value").fill(discountValue);
+    }
+    if (madeToOrder) {
+      await page.locator("#variant-made-to-order").click();
+    } else if (stock !== undefined) {
+      await page.locator("#variant-stock").fill(stock);
+    }
+    await page.getByRole("button", { name: "Guardar variante" }).click();
+    await page.waitForTimeout(2000);
+  };
+
+  await saveVariantForm({ attr: "M", price: "500", stock: "3" });
+  check("crear variante M con stock aparece en la lista", (await page.getByText("Talle M").count()) >= 1);
+  check("la variante muestra su stock", (await page.getByText("3 en stock").count()) >= 1);
+
+  await saveVariantForm({ attr: "L", price: "600", discountType: "percent", discountValue: "10", madeToOrder: true });
+  check("el descuento porcentual calcula el precio final (540.00)", (await page.getByText(/540[.,]00/).count()) >= 1);
+  check("sin stock fijo la variante queda por encargo", (await page.getByText("Por encargo").count()) >= 1);
+
+  // Duplicado: misma combinación que M. La base lo rechaza con mensaje claro.
+  await page.getByRole("button", { name: "Nueva variante" }).click();
+  await page.getByLabel("Nombre del atributo 1").fill("Talle");
+  await page.getByLabel("Valor del atributo 1").fill("M");
+  await page.locator("#variant-price").fill("550");
+  // Con stock explícito, la validación llega a la regla de duplicados.
+  await page.locator("#variant-stock").fill("5");
+  await page.getByRole("button", { name: "Guardar variante" }).click();
+  const duplicateShown = await page
+    .getByText("ya existe una variante con esos atributos")
+    .first()
+    .waitFor({ timeout: 10000 })
+    .then(() => true, () => false);
+  check("una combinación repetida se rechaza", duplicateShown);
+  await page.getByRole("button", { name: "Cancelar" }).click();
+
+  // Ficha pública: las variantes activas aparecen como opciones.
+  const variantPage = await anon.newPage();
+  await variantPage.goto(`${APP}/s/${slug}/${productSlug}`);
+  await variantPage.waitForLoadState("networkidle");
+  check(
+    "la ficha pública ofrece la talla M",
+    (await variantPage.getByRole("button", { name: "M", exact: true }).count()) >= 1,
+  );
+  check(
+    "la ficha pública ofrece la talla L",
+    (await variantPage.getByRole("button", { name: "L", exact: true }).count()) >= 1,
+  );
+
+  // Borrar L: confirmación del navegador y la variante desaparece.
+  page.once("dialog", (d) => d.accept());
+  await page.getByRole("button", { name: "Eliminar Talle L" }).click();
+  await page.waitForTimeout(2000);
+  check("borrar una variante la quita de la lista", (await page.getByText("Talle L").count()) === 0);
+
+  // Regla: con una sola variante activa no se puede ocultar.
+  // Ocultamos M (quedan la base "Única" y M), luego la base no puede ocultarse
+  // sola: su interruptor queda deshabilitado.
+  await page.getByRole("button", { name: "Editar Talle M" }).click();
+  await page.locator("#variant-active").click();
+  await page.getByRole("button", { name: "Guardar variante" }).click();
+  await page.waitForTimeout(2000);
+  check("ocultar una variante con otra activa funciona", (await page.getByText("Oculta").count()) >= 1);
+
+  await page.getByRole("button", { name: "Editar Única" }).click();
+  check(
+    "la última variante activa no se puede ocultar",
+    await page.locator("#variant-active").isDisabled(),
+  );
+  await page.getByRole("button", { name: "Cancelar" }).click();
+
   await owner.close();
   await intruder.close();
   await anon.close();

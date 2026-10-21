@@ -1,7 +1,7 @@
 'use server'
 
-import { updateTag } from "next/cache";
 import { createServerClient } from "@/lib/supabase/server";
+import { invalidateProductCatalog } from "@/lib/catalog-cache";
 
 export type ProductResult = { error?: string; ok?: boolean };
 
@@ -47,23 +47,7 @@ export async function updateProduct(
 
   // El catálogo público se cachea por tag: sin invalidarlo, una foto nueva o
   // un producto recién mostrado no aparecerían en la tienda (plan §6.1).
-  const { data: product } = await supabase
-    .from("products")
-    .select("slug, store_id")
-    .eq("id", productId)
-    .maybeSingle();
-
-  if (product?.store_id) {
-    const { data: store } = await supabase
-      .from("stores")
-      .select("slug")
-      .eq("id", product.store_id)
-      .maybeSingle();
-    if (store?.slug) {
-      updateTag(`catalog:${store.slug}`);
-      updateTag(`product:${store.slug}:${product.slug}`);
-    }
-  }
+  await invalidateProductCatalog(supabase, productId);
 
   return { ok: true };
 }
