@@ -50,7 +50,8 @@ function buildCsp(nonce: string): string {
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob: https://ik.imagekit.io",
     "font-src 'self' data:",
-    `connect-src 'self' https://*.supabase.co https://api.imagekit.io${IS_DEV ? ' ws://localhost:* http://localhost:*' : ''}`,
+    // upload.imagekit.io: el navegador sube las fotos directo al DAM, sin pasar por Vercel.
+    `connect-src 'self' https://*.supabase.co https://api.imagekit.io https://upload.imagekit.io${IS_DEV ? ' ws://localhost:* http://localhost:*' : ''}`,
     "frame-src 'none'",
     "object-src 'none'",
     "base-uri 'self'",

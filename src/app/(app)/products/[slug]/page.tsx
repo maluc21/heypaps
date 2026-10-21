@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { createServerClient } from "@/lib/supabase/server";
 import { ProductEditorForm } from "@/components/product-editor-form";
+import { getPlanLimits } from "@/lib/cache";
 
 export const instant = false;
 
@@ -15,6 +16,7 @@ type Product = {
   featured: boolean;
   position: number;
   version: number;
+  images: string[];
   variants: Array<{
     id: string;
     attributes: Record<string, unknown>;
@@ -43,5 +45,29 @@ export default async function ProductEditorPage({
     notFound();
   }
 
-  return <ProductEditorForm product={data as Product} />;
+  const product = data as Product;
+
+  // El límite de imágenes por producto depende del plan de la tienda.
+  const { data: store } = await supabase
+    .from("stores")
+    .select("plan_code")
+    .eq("id", product.store_id)
+    .maybeSingle();
+
+  const planCode = store?.plan_code ?? "free";
+  const planLimits = await getPlanLimits(planCode, async () => {
+    const { data: limits } = await supabase
+      .from("plan_limits")
+      .select("*")
+      .eq("plan_code", planCode)
+      .maybeSingle();
+    return limits;
+  });
+
+  return (
+    <ProductEditorForm
+      product={product}
+      maxImages={planLimits.max_images_per_product}
+    />
+  );
 }

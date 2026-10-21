@@ -14,6 +14,8 @@
  */
 
 import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
 import { chromium } from "playwright-core";
 
 // Sin E2E_CHROME_PATH se usa el Chromium instalado por `playwright-core install chromium`.
@@ -22,6 +24,7 @@ const CHROME = process.env.E2E_CHROME_PATH || undefined;
 const APP = process.env.E2E_APP_URL ?? "http://localhost:3000";
 const slug = `e2e-${Date.now()}`;
 const PRODUCT = `Producto E2E ${slug}`;
+const FIXTURES = join(dirname(fileURLToPath(import.meta.url)), "fixtures");
 
 const results = [];
 function check(name, ok, detail = "") {
@@ -186,6 +189,7 @@ try {
     .then(() => true, () => false);
   await catalog.waitForLoadState("networkidle");
   check("la ficha del producto abre", onProduct, catalog.url());
+  const productPageUrl = catalog.url();
   const waHref = await catalog
     .locator("a[data-wa-label='Pedir por WhatsApp']")
     .first()
@@ -230,6 +234,80 @@ try {
   check("subdominio no redirige (URL del navegador intacta)", new URL(sub.url()).hostname === `${slug}.app.localhost`);
   check("el subdominio muestra el catálogo de la tienda", (await sub.getByText(PRODUCT).count()) >= 1);
   check("sin violaciones CSP en subdominio", subCsp.length === 0, subCsp[0]?.slice(0, 120));
+
+  // ---------------------------------------------------------------
+  // 10. Subida de imagen (solo con clave privada de ImageKit)
+  //     El flujo comprime en el navegador, sube directo a ImageKit y
+  //     confirma con el peso real. Sin IMAGEKIT_PRIVATE_KEY se omite.
+  // ---------------------------------------------------------------
+  if (process.env.IMAGEKIT_PRIVATE_KEY) {
+    const productSlug = new URL(productPageUrl).pathname.split("/").pop();
+    await page.goto(`${APP}/products/${productSlug}`);
+    await page.locator("#product-images").waitFor({ timeout: 15000 });
+
+    const sample = readFileSync(join(FIXTURES, "sample.png"));
+    const commitResponse = page.waitForResponse(
+      (r) => r.url().includes("/api/upload-commit") && r.request().method() === "POST",
+      { timeout: 30000 },
+    );
+    await page.locator("#product-images").setInputFiles({
+      name: "foto-producto.png",
+      mimeType: "image/png",
+      buffer: sample,
+    });
+
+    const thumbnail = page.locator('li img[src*="tr=w-"]');
+    const uploaded = await thumbnail
+      .first()
+      .waitFor({ timeout: 30000 })
+      .then(() => true, () => false);
+    check("la imagen se sube y se ve la miniatura", uploaded);
+
+    const commit = await commitResponse.then((r) => r.json()).catch(() => null);
+    check("el commit registra el peso real del archivo", (commit?.size ?? 0) > 0, `${commit?.size} bytes`);
+
+    await page.getByRole("button", { name: "Guardar cambios" }).click();
+    await page.waitForLoadState("networkidle");
+    await page.reload();
+    const persisted = await page.locator('li img[src*="tr=w-"]').count();
+    check("la imagen persiste tras recargar", persisted >= 1, `${persisted} miniatura(s)`);
+
+    // La cuenta de bytes de la tienda sube con el peso real del archivo.
+    const catalogImage = await anon.newPage();
+    await catalogImage.goto(`${APP}/s/${slug}`);
+    await catalogImage.waitForLoadState("networkidle");
+    const publicImage = await catalogImage.locator('img[src*="tr=w-"]').count();
+    check("el catálogo público muestra la imagen", publicImage >= 1, `${publicImage} imagen(es)`);
+
+    // ---- Borrado (tarea 3.4): DAM, caché y cuota ----
+    const thumbSrc = await page.locator('li img[src*="tr=w-"]').first().getAttribute("src");
+    const fileId = thumbSrc.split("?")[0].split("/").pop();
+    const damUrl = `https://api.imagekit.io/v1/files/${fileId}/details`;
+    const auth = `Basic ${Buffer.from(`${process.env.IMAGEKIT_PRIVATE_KEY}:`).toString("base64")}`;
+    const inDam = await fetch(damUrl, { headers: { Accept: "application/json", Authorization: auth } });
+    check("el archivo existe en el DAM", inDam.status === 200, `HTTP ${inDam.status}`);
+
+    const deleteResponse = page.waitForResponse(
+      (r) => r.url().includes("/api/upload-delete") && r.request().method() === "POST",
+      { timeout: 30000 },
+    );
+    await page.locator("li button", { hasText: "Quitar" }).first().click();
+    const deleted = await deleteResponse.then((r) => r.json()).catch(() => null);
+    await page.waitForTimeout(1500);
+
+    const afterDelete = await page.locator("li img").count();
+    check("la imagen se quita del producto", afterDelete === 0, `${afterDelete} miniatura(s)`);
+    check(
+      "el borrado devuelve los bytes liberados",
+      deleted?.ok === true && deleted?.freedBytes === commit?.size,
+      `${deleted?.freedBytes} vs ${commit?.size}`,
+    );
+
+    const goneFromDam = await fetch(damUrl, { headers: { Accept: "application/json", Authorization: auth } });
+    check("el archivo se borra del DAM", goneFromDam.status === 404, `HTTP ${goneFromDam.status}`);
+  } else {
+    console.log("INFO  subida de imagen omitida: falta IMAGEKIT_PRIVATE_KEY");
+  }
 
   await owner.close();
   await intruder.close();

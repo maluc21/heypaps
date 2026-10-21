@@ -1,5 +1,6 @@
 'use server'
 
+import { updateTag } from "next/cache";
 import { createServerClient } from "@/lib/supabase/server";
 
 export type ProductResult = { error?: string; ok?: boolean };
@@ -14,7 +15,9 @@ export async function updateProduct(
     paused?: boolean;
     featured?: boolean;
     position?: number;
-  }
+    /** Array completo de fileIds. `[]` quita todas; undefined conserva. */
+    images?: string[];
+  },
 ): Promise<ProductResult> {
   // null = conservar el valor actual (semántica parcial de update_product, migración 0005).
   // Nunca enviar valores por defecto: sobrescribirían imágenes, banderas y posición.
@@ -26,7 +29,7 @@ export async function updateProduct(
     p_category_id: null,
     p_tag_id: null,
     p_attributes: null,
-    p_images: null,
+    p_images: updates.images ?? null,
     p_position: updates.position ?? null,
     p_active: updates.active ?? null,
     p_paused: updates.paused ?? null,
@@ -40,6 +43,26 @@ export async function updateProduct(
       return { error: "CONFLICT" };
     }
     return { error: error.message ?? "No se pudo actualizar el producto." };
+  }
+
+  // El catálogo público se cachea por tag: sin invalidarlo, una foto nueva o
+  // un producto recién mostrado no aparecerían en la tienda (plan §6.1).
+  const { data: product } = await supabase
+    .from("products")
+    .select("slug, store_id")
+    .eq("id", productId)
+    .maybeSingle();
+
+  if (product?.store_id) {
+    const { data: store } = await supabase
+      .from("stores")
+      .select("slug")
+      .eq("id", product.store_id)
+      .maybeSingle();
+    if (store?.slug) {
+      updateTag(`catalog:${store.slug}`);
+      updateTag(`product:${store.slug}:${product.slug}`);
+    }
   }
 
   return { ok: true };

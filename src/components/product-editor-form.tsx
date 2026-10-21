@@ -13,6 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { ProductImageManager } from "@/components/product-image-manager";
 
 type Product = {
   id: string;
@@ -25,6 +26,7 @@ type Product = {
   featured: boolean;
   position: number;
   version: number;
+  images: string[];
   variants: Array<{
     id: string;
     attributes: Record<string, unknown>;
@@ -36,14 +38,18 @@ type Product = {
   }>;
 };
 
-type ProductEditorFormProps = { product: Product };
+type ProductEditorFormProps = {
+  product: Product;
+  maxImages: number;
+};
 
-export function ProductEditorForm({ product }: ProductEditorFormProps) {
+export function ProductEditorForm({ product, maxImages }: ProductEditorFormProps) {
   const router = useRouter();
   const [name, setName] = useState(product.name);
   const [description, setDescription] = useState(product.description ?? "");
   const [active, setActive] = useState(product.active);
   const [paused, setPaused] = useState(product.paused);
+  const [images, setImages] = useState<string[]>(product.images ?? []);
   const [saving, setSaving] = useState(false);
 
   const save = async () => {
@@ -53,6 +59,7 @@ export function ProductEditorForm({ product }: ProductEditorFormProps) {
       description,
       active,
       paused,
+      images,
     });
     if (res.error === "CONFLICT") {
       toast.error("El producto cambió en otra pestaña. Recarga.");
@@ -93,6 +100,13 @@ export function ProductEditorForm({ product }: ProductEditorFormProps) {
             <Label htmlFor="description">Descripción</Label>
             <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} />
           </div>
+          <ProductImageManager
+            storeId={product.store_id}
+            productId={product.id}
+            images={images}
+            maxImages={maxImages}
+            onChange={setImages}
+          />
           <div className="flex items-center gap-2">
             <Switch id="active" checked={active} onCheckedChange={setActive} />
             <Label htmlFor="active">Visible en el catálogo</Label>
