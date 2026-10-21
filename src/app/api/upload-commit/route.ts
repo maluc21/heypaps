@@ -11,7 +11,7 @@
 
 import { NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
-import { getFileDetails, getPrivateKey } from "@/lib/imagekit-admin";
+import { getFileDetails, getPrivateKey, deleteFile } from "@/lib/imagekit-admin";
 import { imageKitStorePrefix } from "@/lib/imagekit";
 
 export async function POST(request: Request) {
@@ -68,8 +68,15 @@ export async function POST(request: Request) {
   }
 
   // El archivo debe estar en la carpeta de la tienda.
+  //
+  // La firma de ImageKit ata el token y el expiry, pero NO la carpeta: un
+  // cliente puede cambiar el campo `folder` del formulario y subir el archivo
+  // a la carpeta de otra tienda. Por eso se comprueba la ruta real del DAM y,
+  // si no es de esta tienda, el archivo se borra: si se quedara, consumiría el
+  // DAM global como basura sin contabilizar en ninguna cuota.
   const path = details.filePath ?? "";
   if (!path.startsWith(imageKitStorePrefix(storeId))) {
+    await deleteFile(fileId, privateKey).catch(() => undefined);
     return NextResponse.json(
       { error: "El archivo no pertenece a esta tienda." },
       { status: 403 },

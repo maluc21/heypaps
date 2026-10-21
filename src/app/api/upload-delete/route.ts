@@ -8,6 +8,7 @@
 
 import { NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
+import { getAdminClient } from "@/lib/supabase/admin";
 import {
   deleteFile,
   getFileDetails,
@@ -103,13 +104,22 @@ export async function POST(request: Request) {
     }
   }
 
-  // La cuota se descuenta con el peso real del archivo.
+  // La cuota se descuenta con el peso real del archivo. La resta la hace el
+  // servidor con su propia clave: un dueño no puede inventarse un delta
+  // negativo para vaciar su contador y saltarse el limite de su plan.
   const size = Number(details?.size ?? 0);
   if (size > 0) {
-    await supabase.rpc("record_storage_usage", {
+    const admin = getAdminClient();
+    const { error: releaseError } = await admin.rpc("release_storage_usage", {
       p_store_id: storeId,
       p_delta_bytes: -size,
     });
+    if (releaseError) {
+      return NextResponse.json(
+        { error: releaseError.message ?? "No se pudo liberar el espacio de la imagen." },
+        { status: 409 },
+      );
+    }
   }
 
   return NextResponse.json({ ok: true, fileId, freedBytes: size });

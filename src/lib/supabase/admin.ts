@@ -2,8 +2,13 @@
  * Supabase cliente administrativo (service_role).
  *
  * ATENCIÓN: el plan fundacional (§5.2) establece que service_role NO se usa en la
- * aplicación. Este cliente existe únicamente para scripts de semillado/tooling fuera
- * del runtime de la app. No importar este módulo en Server Actions ni en componentes.
+ * aplicación para acceder a datos de negocio. Este cliente existe para:
+ *   - scripts de semillado y tooling fuera del runtime de la app;
+ *   - una única operación técnica: liberar bytes de la cuota cuando se borra una
+ *     imagen (el peso real lo lee el servidor del DAM; la RPC que lo descuenta
+ *     solo admite llamadas de service_role, ver migración 0021).
+ *
+ * No usarlo para leer ni escribir datos de negocio de un inquilino.
  */
 
 import { createClient } from '@supabase/supabase-js'
