@@ -600,6 +600,77 @@ try {
   await page.locator('select[aria-label="Filtrar por estado"]').selectOption("all");
   await page.waitForTimeout(500);
 
+  // ---------------------------------------------------------------
+  // 17. SEO: sitemap, robots, canonical, imagen OG y copiar link
+  // ---------------------------------------------------------------
+  const sitemapResponse = await anon.request.get(`${APP}/sitemap.xml`);
+  const sitemapBody = await sitemapResponse.text();
+  check("el sitemap responde 200", sitemapResponse.status() === 200, `HTTP ${sitemapResponse.status()}`);
+  check(
+    "el sitemap incluye la tienda publicada",
+    sitemapBody.includes(`/s/${slug}</loc>`),
+  );
+  check(
+    "el sitemap incluye el producto",
+    sitemapBody.includes(`/s/${slug}/producto-e2e-`),
+  );
+
+  const robotsResponse = await anon.request.get(`${APP}/robots.txt`);
+  const robotsBody = await robotsResponse.text();
+  check("robots.txt responde 200", robotsResponse.status() === 200, `HTTP ${robotsResponse.status()}`);
+  check("robots.txt apunta al sitemap", robotsBody.includes("Sitemap:"));
+  check("robots.txt excluye el panel", robotsBody.includes("/panel"));
+
+  // Canonical y Open Graph en el HTML del catálogo.
+  const catalogHtml = await (await anon.request.get(`${APP}/s/${slug}`)).text();
+  check("la página declara canonical", catalogHtml.includes(`rel="canonical"`));
+  check(
+    "el canonical apunta a la ruta de la tienda",
+    catalogHtml.includes(`href="http://localhost:3000/s/${slug}"`),
+  );
+  check("la página declara imagen OG", catalogHtml.includes("og:image"));
+  check("la página declara og:title", catalogHtml.includes("og:title"));
+
+  // La imagen OG se genera y es un PNG.
+  const ogResponse = await anon.request.get(`${APP}/s/${slug}/opengraph-image`);
+  check(
+    "la imagen OG del catálogo responde 200",
+    ogResponse.status() === 200,
+    `HTTP ${ogResponse.status()}`,
+  );
+  check(
+    "la imagen OG es un PNG",
+    (ogResponse.headers()["content-type"] ?? "").includes("image/png"),
+    ogResponse.headers()["content-type"],
+  );
+
+  const productOg = await anon.request.get(`${APP}/s/${slug}/${productSlug}/opengraph-image`);
+  check(
+    "la imagen OG del producto responde 200",
+    productOg.status() === 200,
+    `HTTP ${productOg.status()}`,
+  );
+
+  // El canonical de un subdominio usa el subdominio, no la ruta interna.
+  // Se lee con una página: el contexto de API de Playwright no resuelve
+  // *.localhost (solo lo hace el navegador).
+  const subPage = await anon.newPage();
+  const subHtml = await (
+    await subPage.goto(`http://${slug}.app.localhost:${new URL(APP).port || "80"}/`)
+  ).text();
+  const subCanonical = subHtml.match(/<link rel="canonical" href="([^"]+)"/)?.[1] ?? "";
+  check(
+    "con subdominio el canonical usa el subdominio",
+    subCanonical.startsWith(`https://${slug}.app.localhost`),
+    subCanonical,
+  );
+
+  // Copiar link en la ficha.
+  const copyPage = await anon.newPage();
+  await copyPage.goto(`${APP}/s/${slug}/${productSlug}`);
+  await copyPage.waitForLoadState("networkidle");
+  check("la ficha tiene botón de copiar link", (await copyPage.locator("[data-copy-link]").count()) === 1);
+
   await owner.close();
   await intruder.close();
   await anon.close();

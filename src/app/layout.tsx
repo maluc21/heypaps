@@ -3,6 +3,7 @@ import { connection } from "next/server";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
+import { getEnv } from "@/lib/env";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
@@ -10,6 +11,9 @@ const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"]
 export const metadata: Metadata = {
   title: "Catálogo SaaS",
   description: "Catálogos digitales para microemprendedores",
+  // Base por defecto para resolver URLs absolutas de OG. Las páginas del
+  // catálogo público lo sobrescriben con su canonical por subdominio.
+  metadataBase: new URL(getEnv().NEXT_PUBLIC_APP_URL),
 };
 
 export const instant = false;

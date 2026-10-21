@@ -11,6 +11,7 @@
 
 import { cacheLife, cacheTag } from "next/cache";
 import { createPublicClient } from "@/lib/supabase/public";
+import { formatMoney } from "@/lib/utils";
 
 export type PublicStore = {
   id: string;
@@ -154,4 +155,68 @@ export async function getPublicProduct(
   }
   if (!data) return null;
   return data as PublicProductPage;
+}
+
+export type OgProduct = {
+  storeName: string;
+  productName: string;
+  price: string | null;
+  currency: string;
+  imageUrl: string | null;
+  tagName: string | null;
+  tagColor: string | null;
+};
+
+/**
+ * Datos para la imagen OG de un producto.
+ *
+ * Se cachea con el tag del producto: la imagen OG se regenera cuando cambia
+ * el producto, y no en cada preview de WhatsApp (plan §6.3).
+ */
+export async function getOgProduct(
+  storeSlug: string,
+  productSlug: string,
+  appUrl: string,
+): Promise<OgProduct | null> {
+  "use cache";
+  cacheTag(`og:product:${storeSlug}:${productSlug}`);
+  cacheLife("max");
+
+  const data = await getPublicProduct(storeSlug, productSlug);
+  if (!data?.product || !data.store) return null;
+
+  const product = data.product;
+  const priceFrom = product.price_from;
+
+  return {
+    storeName: data.store.name,
+    productName: product.name,
+    price: priceFrom === null ? null : formatMoney(priceFrom, data.store.currency),
+    currency: data.store.currency,
+    imageUrl: product.images[0]
+      ? `${appUrl.replace(/\/+$/, "")}/${product.images[0]}`
+      : null,
+    tagName: null,
+    tagColor: null,
+  };
+}
+
+/** Datos para la imagen OG del catalogo de una tienda. */
+export async function getOgStore(
+  storeSlug: string,
+  appUrl: string,
+): Promise<{ storeName: string; imageUrl: string | null } | null> {
+  "use cache";
+  cacheTag(`og:store:${storeSlug}`);
+  cacheLife("max");
+
+  const data = await getCatalog(storeSlug, 1, 0, null);
+  if (!data?.store) return null;
+
+  return {
+    storeName: data.store.name,
+    imageUrl: data.store.logo
+      ? `${appUrl.replace(/\/+$/, "")}/${data.store.logo}`
+      : null,
+  };
 }

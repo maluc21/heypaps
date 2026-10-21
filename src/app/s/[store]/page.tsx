@@ -3,10 +3,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
+import { headers } from "next/headers";
 import { CatalogGrid } from "@/components/public/catalog-grid";
 import { WhatsAppButton } from "@/components/public/whatsapp-button";
 import { getCatalog } from "@/lib/catalog";
 import { buildCatalogMessage } from "@/lib/whatsapp";
+import { publicUrl } from "@/lib/public-url";
+import { getEnv } from "@/lib/env";
 
 const PAGE_SIZE = 24;
 
@@ -19,13 +22,26 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { store } = await params;
   const data = await getCatalog(store, 1, 0, null);
   if (!data?.store) return { title: "Catálogo no disponible" };
+
+  // Canonical por subdominio: si la tienda se sirve desde {tienda}.dominio.com
+  // esa es la URL canonica; si no, la ruta /s/{slug} (plan §4.5).
+  const host = (await headers()).get("host");
+  const canonical = publicUrl({
+    host,
+    appUrl: getEnv().NEXT_PUBLIC_APP_URL,
+    storeSlug: store,
+  });
+
   return {
     title: data.store.name,
     description: `Catálogo de ${data.store.name}`,
+    metadataBase: new URL(canonical),
+    alternates: { canonical },
     openGraph: {
       title: data.store.name,
       description: `Catálogo de ${data.store.name}`,
       type: "website",
+      url: canonical,
     },
   };
 }
