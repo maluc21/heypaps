@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { formatMoney } from "@/lib/utils";
 import { updateProduct } from "@/lib/actions/product";
+import { setProductCategory } from "@/lib/actions/category";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +28,7 @@ type Product = {
   position: number;
   version: number;
   images: string[];
+  category_id: string | null;
   variants: Array<{
     id: string;
     attributes: Record<string, unknown>;
@@ -38,18 +40,29 @@ type Product = {
   }>;
 };
 
+type CategoryOption = {
+  id: string;
+  name: string;
+};
+
 type ProductEditorFormProps = {
   product: Product;
   maxImages: number;
+  categories: CategoryOption[];
 };
 
-export function ProductEditorForm({ product, maxImages }: ProductEditorFormProps) {
+export function ProductEditorForm({
+  product,
+  maxImages,
+  categories,
+}: ProductEditorFormProps) {
   const router = useRouter();
   const [name, setName] = useState(product.name);
   const [description, setDescription] = useState(product.description ?? "");
   const [active, setActive] = useState(product.active);
   const [paused, setPaused] = useState(product.paused);
   const [images, setImages] = useState<string[]>(product.images ?? []);
+  const [categoryId, setCategoryId] = useState<string>(product.category_id ?? "");
   const [saving, setSaving] = useState(false);
 
   const save = async () => {
@@ -69,6 +82,19 @@ export function ProductEditorForm({ product, maxImages }: ProductEditorFormProps
     if (res.error) { toast.error(res.error); setSaving(false); return; }
     toast.success("Producto guardado.");
     setSaving(false);
+    router.refresh();
+  };
+
+  // La categoría se cambia por su propia RPC: update_product trata null como
+  // "conservar", así que no puede quitar la categoría de un producto.
+  const changeCategory = async (nextId: string) => {
+    const res = await setProductCategory(product.id, nextId || null);
+    if (res.error) {
+      toast.error(res.error);
+      return;
+    }
+    setCategoryId(nextId);
+    toast.success("Categoría actualizada.");
     router.refresh();
   };
 
@@ -99,6 +125,22 @@ export function ProductEditorForm({ product, maxImages }: ProductEditorFormProps
           <div className="space-y-2">
             <Label htmlFor="description">Descripción</Label>
             <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="category">Categoría</Label>
+            <select
+              id="category"
+              value={categoryId}
+              onChange={(e) => void changeCategory(e.target.value)}
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+            >
+              <option value="">Sin categoría</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
           </div>
           <ProductImageManager
             storeId={product.store_id}

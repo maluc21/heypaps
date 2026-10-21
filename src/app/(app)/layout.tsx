@@ -8,6 +8,13 @@ export const metadata = {
   description: "Panel de tu catálogo digital",
 };
 
+const NAV_ITEMS = [
+  { href: "/panel", label: "Panel", icon: "🏠" },
+  { href: "/products", label: "Productos", icon: "📦" },
+  { href: "/categorias", label: "Categorías", icon: "🏷️" },
+  { href: "/ajustes", label: "Ajustes", icon: "⚙️" },
+];
+
 export default async function PanelLayout({
   children,
 }: {
@@ -29,34 +36,18 @@ export default async function PanelLayout({
         className="fixed bottom-0 left-0 right-0 z-50 border-t border-muted bg-background/90 backdrop-blur-md px-4 pt-2 pb-[env(safe-area-inset-bottom,0px)]"
       >
         <div className="flex justify-around">
-          <a
-            href="/panel"
-            className="flex flex-col items-center gap-1 text-xs text-primary"
-          >
-            <span className="relative">🏠</span>
-            <span>Panel</span>
-          </a>
-          <Link
-            href="/products"
-            className="flex flex-col items-center gap-1 text-xs text-muted-foreground"
-          >
-            <span className="relative">📦</span>
-            <span>Productos</span>
-          </Link>
-          <a
-            href="/categorias"
-            className="flex flex-col items-center gap-1 text-xs text-muted-foreground"
-          >
-            <span className="relative">🏷️</span>
-            <span>Categorías</span>
-          </a>
-          <a
-            href="/ajustes"
-            className="flex flex-col items-center gap-1 text-xs text-muted-foreground"
-          >
-            <span className="relative">⚙️</span>
-            <span>Ajustes</span>
-          </a>
+          {NAV_ITEMS.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="flex flex-col items-center gap-1 text-xs text-muted-foreground"
+            >
+              <span className="relative" aria-hidden="true">
+                {item.icon}
+              </span>
+              <span>{item.label}</span>
+            </Link>
+          ))}
         </div>
       </nav>
     </div>

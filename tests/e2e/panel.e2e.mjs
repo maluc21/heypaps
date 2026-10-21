@@ -190,6 +190,7 @@ try {
   await catalog.waitForLoadState("networkidle");
   check("la ficha del producto abre", onProduct, catalog.url());
   const productPageUrl = catalog.url();
+  const productSlug = new URL(productPageUrl).pathname.split("/").pop();
   const waHref = await catalog
     .locator("a[data-wa-label='Pedir por WhatsApp']")
     .first()
@@ -241,7 +242,6 @@ try {
   //     confirma con el peso real. Sin IMAGEKIT_PRIVATE_KEY se omite.
   // ---------------------------------------------------------------
   if (process.env.IMAGEKIT_PRIVATE_KEY) {
-    const productSlug = new URL(productPageUrl).pathname.split("/").pop();
     await page.goto(`${APP}/products/${productSlug}`);
     await page.locator("#product-images").waitFor({ timeout: 15000 });
 
@@ -308,6 +308,76 @@ try {
   } else {
     console.log("INFO  subida de imagen omitida: falta IMAGEKIT_PRIVATE_KEY");
   }
+
+  // ---------------------------------------------------------------
+  // 11. Panel: resumen real de la tienda
+  // ---------------------------------------------------------------
+  await page.goto(`${APP}/panel`);
+  await page.waitForLoadState("networkidle");
+  check("el panel muestra el resumen de la tienda", (await page.getByText("Tu catálogo").count()) >= 1);
+  check("el panel muestra el enlace público", (await page.getByText(`/s/${slug}`).count()) >= 1);
+
+  // ---------------------------------------------------------------
+  // 12. Ajustes: datos de la tienda, plan y enlace público
+  // ---------------------------------------------------------------
+  await page.goto(`${APP}/ajustes`);
+  await page.locator("#store-name").waitFor({ timeout: 15000 });
+  check("ajustes muestra el plan y el uso", (await page.getByText("Tu plan").count()) >= 1);
+
+  await page.locator("#store-name").fill("Tienda E2E Ajustada");
+  await page.getByRole("button", { name: "Guardar cambios" }).click();
+  await page.waitForTimeout(2000);
+  await page.reload();
+  await page.locator("#store-name").waitFor({ timeout: 15000 });
+  check(
+    "el nombre de la tienda se guarda",
+    (await page.locator("#store-name").inputValue()) === "Tienda E2E Ajustada",
+  );
+
+  // ---------------------------------------------------------------
+  // 13. Categorías: crear, asignar al producto y quitar
+  //     Quitar la categoría es el caso que update_product no resolvía.
+  // ---------------------------------------------------------------
+  await page.goto(`${APP}/categorias`);
+  await page.locator("#new-category").waitFor({ timeout: 15000 });
+  await page.locator("#new-category").fill("Zapatos E2E");
+  await page.getByRole("button", { name: "Crear" }).click();
+  await page.waitForTimeout(2500);
+  check("la categoría se crea", (await page.getByText("/zapatos-e2e").count()) >= 1);
+
+  await page.goto(`${APP}/products/${productSlug}`);
+  await page.locator("#category").waitFor({ timeout: 15000 });
+  const categoryOptions = await page.locator("#category option").allTextContents();
+  check(
+    "el editor lista la categoría nueva",
+    categoryOptions.some((o) => o.includes("Zapatos E2E")),
+    categoryOptions.join(" | "),
+  );
+
+  // Asignada: el producto aparece al filtrar por esa categoría.
+  await page.locator("#category").selectOption({ label: "Zapatos E2E" });
+  await page.waitForTimeout(2500);
+
+  const filtered = await anon.newPage();
+  await filtered.goto(`${APP}/s/${slug}?c=zapatos-e2e`);
+  await filtered.waitForLoadState("networkidle");
+  check(
+    "el catálogo filtra por la categoría asignada",
+    (await filtered.getByText(PRODUCT).count()) >= 1,
+  );
+
+  // Quitarla: el producto deja de aparecer en el filtro. Es el caso que
+  // update_product no resolvía (null = conservar, no = quitar).
+  await page.locator("#category").selectOption("");
+  await page.waitForTimeout(2500);
+
+  const unfiltered = await anon.newPage();
+  await unfiltered.goto(`${APP}/s/${slug}?c=zapatos-e2e`);
+  await unfiltered.waitForLoadState("networkidle");
+  check(
+    "quitar la categoría saca el producto del filtro",
+    (await unfiltered.getByText(PRODUCT).count()) === 0,
+  );
 
   await owner.close();
   await intruder.close();

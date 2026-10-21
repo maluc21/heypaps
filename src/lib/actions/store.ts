@@ -115,3 +115,131 @@ export async function createFirstProduct(formData: FormData): Promise<{ error?: 
 
   return {};
 }
+
+// ============================================================
+// Ajustes de la tienda (plan §2.6, §2.7 y §2.8)
+// ============================================================
+
+export type StoreSettings = {
+  name: string;
+  description?: string | null;
+  whatsapp?: string | null;
+  currency?: string;
+  secondaryCurrency?: string | null;
+  fxRate?: number | null;
+};
+
+/** Datos visibles de la tienda para el panel. */
+export async function updateStoreSettings(
+  storeId: string,
+  settings: StoreSettings,
+): Promise<{ error?: string }> {
+  if (!UUID_RE.test(storeId)) {
+    return { error: "Tienda inválida." };
+  }
+
+  const supabase = await createServerClient();
+  const { error } = await supabase.rpc("update_store", {
+    p_store_id: storeId,
+    p_name: settings.name,
+    p_description: settings.description ?? null,
+    p_whatsapp_e164:
+      settings.whatsapp === undefined || settings.whatsapp === null
+        ? null
+        : normalizeE164(settings.whatsapp),
+    p_currency: settings.currency ?? "HNL",
+    p_secondary_currency: settings.secondaryCurrency ?? null,
+    p_fx_rate: settings.fxRate ?? null,
+  });
+
+  if (error) {
+    return { error: error.message ?? "No se pudieron guardar los ajustes." };
+  }
+
+  await invalidateStoreCatalog(supabase, storeId);
+  return {};
+}
+
+/** Logo de la tienda. `null` lo quita. */
+export async function setStoreLogo(
+  storeId: string,
+  fileId: string | null,
+): Promise<{ error?: string }> {
+  if (!UUID_RE.test(storeId)) {
+    return { error: "Tienda inválida." };
+  }
+
+  const supabase = await createServerClient();
+  const { error } = await supabase.rpc("set_store_logo", {
+    p_store_id: storeId,
+    p_file_id: fileId,
+  });
+
+  if (error) {
+    return { error: error.message ?? "No se pudo cambiar el logo." };
+  }
+
+  await invalidateStoreCatalog(supabase, storeId);
+  return {};
+}
+
+/** Despublica la tienda: deja de estar visible en el catálogo público. */
+export async function unpublishStore(storeId: string): Promise<{ error?: string }> {
+  if (!UUID_RE.test(storeId)) {
+    return { error: "Tienda inválida." };
+  }
+
+  const supabase = await createServerClient();
+  const { error } = await supabase.rpc("unpublish_store", { p_store_id: storeId });
+
+  if (error) {
+    return { error: error.message ?? "No se pudo despublicar la tienda." };
+  }
+
+  await invalidateStoreCatalog(supabase, storeId);
+  return {};
+}
+
+/**
+ * Cambia el link público. Los enlaces ya compartidos dejan de funcionar:
+ * la UI advierte de esto antes de llamar.
+ */
+export async function regenerateStoreSlug(
+  storeId: string,
+  newSlug: string,
+): Promise<{ error?: string; slug?: string }> {
+  if (!UUID_RE.test(storeId)) {
+    return { error: "Tienda inválida." };
+  }
+
+  const supabase = await createServerClient();
+  const { data, error } = await supabase.rpc("regenerate_store_slug", {
+    p_store_id: storeId,
+    p_new_slug: newSlug,
+  });
+
+  if (error) {
+    return { error: error.message ?? "No se pudo cambiar el link." };
+  }
+
+  // El tag de la tienda vieja deja de servir y el nuevo empieza.
+  await invalidateStoreCatalog(supabase, storeId);
+  updateTag(`catalog:${String(data)}`);
+
+  return { slug: String(data) };
+}
+
+/** Invalida la caché del catálogo público de una tienda. */
+async function invalidateStoreCatalog(
+  supabase: Awaited<ReturnType<typeof createServerClient>>,
+  storeId: string,
+): Promise<void> {
+  const { data: store } = await supabase
+    .from("stores")
+    .select("slug")
+    .eq("id", storeId)
+    .maybeSingle();
+  if (store?.slug) {
+    updateTag(`catalog:${store.slug}`);
+  }
+}

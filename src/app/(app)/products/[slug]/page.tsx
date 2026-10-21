@@ -17,6 +17,7 @@ type Product = {
   position: number;
   version: number;
   images: string[];
+  category_id: string | null;
   variants: Array<{
     id: string;
     attributes: Record<string, unknown>;
@@ -54,6 +55,12 @@ export default async function ProductEditorPage({
     .eq("id", product.store_id)
     .maybeSingle();
 
+  const { data: categories } = await supabase
+    .from("categories")
+    .select("id, name")
+    .eq("store_id", product.store_id)
+    .order("position", { ascending: true });
+
   const planCode = store?.plan_code ?? "free";
   const planLimits = await getPlanLimits(planCode, async () => {
     const { data: limits } = await supabase
@@ -68,6 +75,7 @@ export default async function ProductEditorPage({
     <ProductEditorForm
       product={product}
       maxImages={planLimits.max_images_per_product}
+      categories={categories ?? []}
     />
   );
 }

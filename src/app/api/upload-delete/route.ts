@@ -36,17 +36,18 @@ export async function POST(request: Request) {
 
   const body = (await request.json().catch(() => null)) as {
     storeId?: string;
-    productId?: string;
+    productId?: string | null;
     fileId?: string;
   } | null;
 
   const storeId = body?.storeId ?? "";
-  const productId = body?.productId ?? "";
+  // productId es opcional: el logo de la tienda no cuelga de un producto.
+  const productId = body?.productId ?? null;
   const fileId = body?.fileId ?? "";
 
-  if (!storeId || !productId || !fileId) {
+  if (!storeId || !fileId) {
     return NextResponse.json(
-      { error: "Faltan storeId, productId o fileId." },
+      { error: "Faltan storeId o fileId." },
       { status: 400 },
     );
   }
@@ -87,17 +88,19 @@ export async function POST(request: Request) {
     );
   }
 
-  const { error: removeError } = await supabase.rpc("remove_product_image", {
-    p_store_id: storeId,
-    p_product_id: productId,
-    p_file_id: fileId,
-  });
+  if (productId) {
+    const { error: removeError } = await supabase.rpc("remove_product_image", {
+      p_store_id: storeId,
+      p_product_id: productId,
+      p_file_id: fileId,
+    });
 
-  if (removeError) {
-    return NextResponse.json(
-      { error: removeError.message ?? "No se pudo quitar la imagen del producto." },
-      { status: 409 },
-    );
+    if (removeError) {
+      return NextResponse.json(
+        { error: removeError.message ?? "No se pudo quitar la imagen del producto." },
+        { status: 409 },
+      );
+    }
   }
 
   // La cuota se descuenta con el peso real del archivo.
