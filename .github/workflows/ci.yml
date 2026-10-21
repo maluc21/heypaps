@@ -84,11 +84,14 @@ jobs:
         with:
           version: 2.117.0
 
+      - name: Vincular CLI con el proyecto de staging
+        run: supabase link --project-ref "$SUPABASE_PROJECT_REF"
+
       - name: Limpieza previa de datos E2E
-        run: supabase db query --project-ref "$SUPABASE_PROJECT_REF" -f tests/e2e/cleanup-e2e.sql
+        run: supabase db query --linked -f tests/e2e/cleanup-e2e.sql
 
       - name: Pruebas de aislamiento SQL
-        run: supabase db query --project-ref "$SUPABASE_PROJECT_REF" -f supabase/tests/isolation.sql
+        run: supabase db query --linked -f supabase/tests/isolation.sql
 
       - name: Instalar Chromium de Playwright
         run: pnpm exec playwright-core install --with-deps chromium
@@ -119,7 +122,7 @@ jobs:
 
       - name: Limpieza final de datos E2E
         if: always()
-        run: supabase db query --project-ref "$SUPABASE_PROJECT_REF" -f tests/e2e/cleanup-e2e.sql
+        run: supabase db query --linked -f tests/e2e/cleanup-e2e.sql
 
       - name: Log del servidor
         if: failure()
