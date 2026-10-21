@@ -13,9 +13,11 @@
  * subdominio y catálogo público (404 real, card, ficha y enlace wa.me).
  */
 
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync, rmSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
+import { tmpdir } from "node:os";
+import { execFileSync } from "node:child_process";
 import { chromium } from "playwright-core";
 
 // Sin E2E_CHROME_PATH se usa el Chromium instalado por `playwright-core install chromium`.
@@ -36,6 +38,29 @@ function loadCookies(envVar) {
   const file = process.env[envVar];
   if (!file) throw new Error(`falta ${envVar}`);
   return JSON.parse(readFileSync(file, "utf8")).map((c) => ({ ...c, url: APP }));
+}
+
+/**
+ * Siembra un superadmin con la CLI de Supabase (operación de una sola vez,
+ * igual que harías a mano). La función de la base solo acepta llamadas del
+ * propietario de la base: un rol de aplicación no puede auto-promoverse.
+ */
+function seedSuperadmin(email) {
+  const file = join(tmpdir(), `seed-superadmin-${Date.now()}.sql`);
+  writeFileSync(
+    file,
+    `select public.platform_seed_superadmin(id) from auth.users where email = '${email}';`,
+  );
+  try {
+    execFileSync("supabase", ["db", "query", "--linked", "-f", file], {
+      stdio: "pipe",
+      shell: process.platform === "win32",
+    });
+  } catch (err) {
+    console.error("No se pudo sembrar el superadmin:", String(err.stderr ?? err).slice(0, 300));
+  } finally {
+    rmSync(file, { force: true });
+  }
 }
 
 const browser = await chromium.launch({ executablePath: CHROME, headless: true });
@@ -670,6 +695,75 @@ try {
   await copyPage.goto(`${APP}/s/${slug}/${productSlug}`);
   await copyPage.waitForLoadState("networkidle");
   check("la ficha tiene botón de copiar link", (await copyPage.locator("[data-copy-link]").count()) === 1);
+
+  // ---------------------------------------------------------------
+  // 18. Superadmin: listado, suspensión que corta el catálogo y bloqueo
+  //     para quien no tiene el rol de plataforma.
+  // ---------------------------------------------------------------
+  seedSuperadmin("e2e-owner@test.test");
+
+  await page.goto(`${APP}/super`);
+  await page.waitForLoadState("networkidle");
+  check("el superadmin ve el panel de operación", (await page.getByText("Superadmin").count()) >= 1);
+  check(
+    "el listado incluye la tienda del owner",
+    (await page.getByText(`/${slug}`).count()) >= 1,
+  );
+  check(
+    "el listado muestra el uso de almacenamiento",
+    (await page.getByText(/KB|MB/).count()) >= 1,
+  );
+
+  // Suspender la tienda: su catálogo público deja de servirse.
+  await page.getByRole("button", { name: "Suspender" }).first().click();
+  await page.waitForTimeout(2500);
+  check(
+    "el estado de la tienda pasa a suspendida",
+    (await page.getByText("Suspendido").count()) >= 1,
+  );
+
+  const suspendedCatalog = await anon.newPage();
+  const suspendedResponse = await suspendedCatalog.goto(`${APP}/s/${slug}`);
+  check(
+    "una tienda suspendida no sirve su catálogo",
+    suspendedResponse?.status() === 404,
+    `HTTP ${suspendedResponse?.status()}`,
+  );
+
+  // Reactivar: el catálogo vuelve a servirse. El Proxy cachea el estado de
+  // publicación unos segundos, así que se reintenta la carga.
+  await page.getByRole("button", { name: "Reactivar" }).first().click();
+  await page.waitForTimeout(2500);
+  const reactivated = await anon.newPage();
+  let reactivatedStatus = 0;
+  for (let attempt = 0; attempt < 10; attempt++) {
+    const res = await reactivated.goto(`${APP}/s/${slug}`);
+    reactivatedStatus = res?.status() ?? 0;
+    if (reactivatedStatus === 200) break;
+    await reactivated.waitForTimeout(1000);
+  }
+  check(
+    "reactivar la tienda devuelve su catálogo",
+    reactivatedStatus === 200,
+    `HTTP ${reactivatedStatus}`,
+  );
+
+  // Auditoría: el panel registra los movimientos del superadmin.
+  await page.getByRole("button", { name: "Auditoría" }).first().click();
+  await page.waitForTimeout(1500);
+  check(
+    "la auditoría registra los cambios del superadmin",
+    (await page.getByText("admin.store_status").count()) >= 1,
+  );
+
+  // Un usuario sin rol de plataforma no ve el panel.
+  const intruderSuper = await intruder.newPage();
+  const intruderResponse = await intruderSuper.goto(`${APP}/super`);
+  check(
+    "un usuario sin rol de plataforma recibe 404",
+    intruderResponse?.status() === 404,
+    `HTTP ${intruderResponse?.status()}`,
+  );
 
   await owner.close();
   await intruder.close();

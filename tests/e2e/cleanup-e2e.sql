@@ -25,6 +25,9 @@ delete from public.tags where store_id in (select id from _e2e_stores);
 delete from public.store_storage where store_id in (select id from _e2e_stores);
 delete from public.store_members where store_id in (select id from _e2e_stores)
   or user_id in (select id from _e2e_users);
+-- platform_members tiene ON DELETE CASCADE, pero con session_replication_role =
+-- replica los triggers de FK no se disparan: hay que borrar la fila a mano.
+delete from public.platform_members where user_id in (select id from _e2e_users);
 delete from public.stores where id in (select id from _e2e_stores);
 delete from public.profiles where id in (select id from _e2e_users);
 delete from auth.refresh_tokens where session_id in (

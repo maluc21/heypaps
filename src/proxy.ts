@@ -101,6 +101,22 @@ async function isStorePublished(slug: string): Promise<boolean> {
   })
 }
 
+/**
+ * Respuesta 404 real para quien no tiene acceso al panel de plataforma.
+ * Se construye en el Proxy para que el status no dependa del prerender.
+ */
+function platformForbidden(message: string): NextResponse {
+  const res = new NextResponse(
+    `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="robots" content="noindex"><title>No encontrado</title></head><body style="font-family:system-ui;padding:2rem;text-align:center"><h1>No encontrado</h1><p>${message}</p></body></html>`,
+    {
+      status: 404,
+      headers: { 'content-type': 'text/html; charset=utf-8' },
+    },
+  )
+  res.headers.set('X-Robots-Tag', 'noindex')
+  return res
+}
+
 export async function proxy(request: NextRequest) {
   const nonce = generateNonce()
   const csp = buildCsp(nonce)
@@ -132,7 +148,7 @@ export async function proxy(request: NextRequest) {
   )
 
   // Refrescar sesión (magic link / Google / cookie)
-  await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser()
 
   const host = request.headers.get('host') || ''
   const hostname = host.split(':')[0]
@@ -140,15 +156,41 @@ export async function proxy(request: NextRequest) {
 
   let response = NextResponse.next({ request: { headers: requestHeaders } })
   let storeSlug: string | null = null
+  let effectivePath = request.nextUrl.pathname
 
   // Subdominio de tienda: sub.dominio.tld (al menos 3 partes)
   if (parts.length >= 3) {
     const subdomain = parts[0]
-    if (!RESERVED_SUBDOMAINS.has(subdomain)) {
+    if (subdomain === 'super') {
+      // super.dominio.tld sirve el panel de superadmin.
+      const url = request.nextUrl.clone()
+      url.pathname = `/super${url.pathname === '/' ? '' : url.pathname}`
+      effectivePath = url.pathname
+      response = NextResponse.rewrite(url, { request: { headers: requestHeaders } })
+    } else if (!RESERVED_SUBDOMAINS.has(subdomain)) {
       const url = request.nextUrl.clone()
       url.pathname = `/s/${subdomain}${url.pathname}`
       storeSlug = subdomain
+      effectivePath = url.pathname
       response = NextResponse.rewrite(url, { request: { headers: requestHeaders } })
+    }
+  }
+
+  // Guard del superadmin: el rol se comprueba aquí y no en la página. Con
+  // Partial Prerender, un notFound() en el layout llegaría con status 200;
+  // en el Proxy el 404 es real (docs de Next: "Status codes").
+  if (effectivePath === '/super' || effectivePath.startsWith('/super/')) {
+    if (!user) {
+      return platformForbidden('Necesitas iniciar sesión para entrar al panel.')
+    }
+    const { data: member } = await supabase
+      .from('platform_members')
+      .select('role')
+      .eq('user_id', user.id)
+      .maybeSingle()
+
+    if (!member) {
+      return platformForbidden('No tienes acceso al panel de plataforma.')
     }
   }
 
