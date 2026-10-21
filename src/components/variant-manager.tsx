@@ -21,7 +21,10 @@ import { deleteVariant, saveVariant, type VariantInput } from "@/lib/actions/var
 import { formatMoney } from "@/lib/utils";
 import {
   MAX_ATTRIBUTES,
+  attributesFromPairs,
+  hidesSinglePresentation,
   pairsFromAttributes,
+  stockToStorage,
   variantLabel,
   type AttributePair,
   type DiscountType,
@@ -105,7 +108,18 @@ export function VariantManager({ productId, productVersion, currency, variants }
       handleError(res.error);
       return;
     }
-    toast.success(input.variantId ? "Variante actualizada." : "Variante creada.");
+    const attributes = attributesFromPairs(input.attributes);
+    const hidSingle = hidesSinglePresentation(
+      attributes,
+      input.active,
+      variants,
+      input.variantId,
+    );
+    if (hidSingle) {
+      toast.success("Variante creada. La presentación única se ocultó porque ahora hay tallas o colores.");
+    } else {
+      toast.success(input.variantId ? "Variante actualizada." : "Variante creada.");
+    }
     afterChange();
   };
 
@@ -224,6 +238,15 @@ function VariantForm({
   onSave: (input: VariantInput) => void;
 }) {
   const [form, setForm] = useState<VariantInput>(initial);
+
+  // Stock: se valida mientras se escribe, antes de enviar. La misma regla de
+  // src/lib/variants.ts que aplica el servidor.
+  let stockError: string | null = null;
+  try {
+    stockToStorage(form.stock, form.madeToOrder);
+  } catch (err) {
+    stockError = (err as Error).message;
+  }
 
   const setPair = (index: number, patch: Partial<AttributePair>) => {
     setForm((current) => ({
@@ -357,13 +380,22 @@ function VariantForm({
           <Label htmlFor="variant-made-to-order">Por encargo (sin límite de stock)</Label>
         </div>
         {form.madeToOrder ? null : (
-          <Input
-            id="variant-stock"
-            inputMode="numeric"
-            placeholder="Unidades disponibles"
-            value={form.stock}
-            onChange={(e) => setForm({ ...form, stock: e.target.value })}
-          />
+          <>
+            <Input
+              id="variant-stock"
+              inputMode="numeric"
+              placeholder="Unidades disponibles"
+              aria-invalid={stockError !== null}
+              aria-describedby={stockError ? "variant-stock-error" : undefined}
+              value={form.stock}
+              onChange={(e) => setForm({ ...form, stock: e.target.value })}
+            />
+            {stockError ? (
+              <p id="variant-stock-error" className="text-xs text-destructive" role="alert">
+                {stockError}
+              </p>
+            ) : null}
+          </>
         )}
       </div>
 
@@ -381,7 +413,7 @@ function VariantForm({
         <Button type="button" variant="outline" className="flex-1" onClick={onCancel} disabled={busy}>
           Cancelar
         </Button>
-        <Button type="submit" className="flex-1" disabled={busy}>
+        <Button type="submit" className="flex-1" disabled={busy || stockError !== null}>
           {busy ? "Guardando…" : "Guardar variante"}
         </Button>
       </div>

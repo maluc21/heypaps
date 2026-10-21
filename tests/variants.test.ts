@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   attributesFromPairs,
   discountValueToStorage,
+  hidesSinglePresentation,
   pairsFromAttributes,
   stockToStorage,
   variantLabel,
@@ -97,11 +98,45 @@ describe("stockToStorage", () => {
     expect(stockToStorage("12", false)).toBe(12);
   });
 
-  it("rechaza vacío, negativo, decimal o texto", () => {
-    expect(() => stockToStorage("", false)).toThrow(/entero/);
+  it("sin stock ni 'por encargo' pide indicar una de las dos", () => {
+    expect(() => stockToStorage("", false)).toThrow(/Indica el stock/);
+    expect(() => stockToStorage("   ", false)).toThrow(/Indica el stock/);
+  });
+
+  it("rechaza negativo, decimal o texto", () => {
     expect(() => stockToStorage("-1", false)).toThrow(/entero/);
     expect(() => stockToStorage("1.5", false)).toThrow(/entero/);
     expect(() => stockToStorage("abc", false)).toThrow(/entero/);
+  });
+});
+
+describe("hidesSinglePresentation", () => {
+  const single = { id: "base", attributes: {}, active: true };
+  const talleM = { id: "m", attributes: { Talle: "M" }, active: true };
+
+  it("una talla activa oculta la presentación única activa", () => {
+    expect(hidesSinglePresentation({ Talle: "M" }, true, [single], null)).toBe(true);
+  });
+
+  it("no oculta nada si la presentación única ya está oculta", () => {
+    const hidden = { ...single, active: false };
+    expect(hidesSinglePresentation({ Talle: "M" }, true, [hidden], null)).toBe(false);
+  });
+
+  it("una variante sin atributos no oculta nada", () => {
+    expect(hidesSinglePresentation({}, true, [single], null)).toBe(false);
+  });
+
+  it("guardarla inactiva no oculta nada", () => {
+    expect(hidesSinglePresentation({ Talle: "M" }, false, [single], null)).toBe(false);
+  });
+
+  it("editar la propia presentación única no cuenta como oculta a sí misma", () => {
+    expect(hidesSinglePresentation({ Talle: "M" }, true, [single], "base")).toBe(false);
+  });
+
+  it("sin presentación única activa no oculta nada", () => {
+    expect(hidesSinglePresentation({ Talle: "L" }, true, [talleM], null)).toBe(false);
   });
 });
 

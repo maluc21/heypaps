@@ -78,15 +78,39 @@ export function discountValueToStorage(
   return cents;
 }
 
-/** Stock del formulario: vacío = por encargo (null), si no un entero >= 0. */
+/**
+ * Stock del formulario. `madeToOrder` guarda null (sin límite). Sin stock y
+ * sin "por encargo" no se guarda: un campo vacío no debe significar agotado
+ * ni ilimitado por accidente.
+ */
 export function stockToStorage(input: string, madeToOrder: boolean): number | null {
   if (madeToOrder) return null;
   const trimmed = input.trim();
+  if (trimmed === "") {
+    throw new Error("Indica el stock o marca la variante como por encargo.");
+  }
   const value = Number(trimmed);
-  if (trimmed === "" || !Number.isInteger(value) || value < 0) {
+  if (!Number.isInteger(value) || value < 0) {
     throw new Error("El stock debe ser un número entero mayor o igual a cero.");
   }
   return value;
+}
+
+/**
+ * ¿Guardar esta variante activa va a ocultar la presentación única?
+ * Lo hace la base: si una variante con atributos queda activa, la variante sin
+ * atributos (la presentación única) se oculta en la misma operación.
+ */
+export function hidesSinglePresentation(
+  attributes: Record<string, unknown>,
+  active: boolean,
+  variants: Array<{ id: string; attributes: Record<string, unknown>; active: boolean }>,
+  editingId: string | null,
+): boolean {
+  if (!active || Object.keys(attributes).length === 0) return false;
+  return variants.some(
+    (v) => v.active && Object.keys(v.attributes).length === 0 && v.id !== editingId,
+  );
 }
 
 /** Etiqueta corta de la variante: "Talle M / Color Negro" o "Única" sin atributos. */

@@ -387,7 +387,7 @@ try {
   await page.goto(`${APP}/products/${productSlug}`);
   await page.getByText("Variantes").first().waitFor({ timeout: 15000 });
 
-  const saveVariantForm = async ({ attr, value, price, stock, discountType, discountValue, madeToOrder }) => {
+  const saveVariantForm = async ({ attr, price, stock, discountType, discountValue, madeToOrder }) => {
     await page.getByRole("button", { name: "Nueva variante" }).click();
     await page.getByLabel("Nombre del atributo 1").fill("Talle");
     await page.getByLabel("Valor del atributo 1").fill(attr);
@@ -405,9 +405,30 @@ try {
     await page.waitForTimeout(2000);
   };
 
+  // Stock vacío sin "por encargo": el error sale en el formulario, antes de enviar.
+  await page.getByRole("button", { name: "Nueva variante" }).click();
+  await page.getByLabel("Nombre del atributo 1").fill("Talle");
+  await page.getByLabel("Valor del atributo 1").fill("XS");
+  await page.locator("#variant-price").fill("400");
+  const stockHint = await page
+    .getByText("Indica el stock o marca la variante como por encargo.")
+    .waitFor({ timeout: 5000 })
+    .then(() => true, () => false);
+  check("sin stock el formulario avisa antes de enviar", stockHint);
+  check(
+    "el botón guardar queda deshabilitado sin stock",
+    await page.getByRole("button", { name: "Guardar variante" }).isDisabled(),
+  );
+  await page.getByRole("button", { name: "Cancelar" }).click();
+
+  // La presentación única activa (la del onboarding) se oculta sola al crear una talla.
   await saveVariantForm({ attr: "M", price: "500", stock: "3" });
   check("crear variante M con stock aparece en la lista", (await page.getByText("Talle M").count()) >= 1);
   check("la variante muestra su stock", (await page.getByText("3 en stock").count()) >= 1);
+  check(
+    "la presentación única se oculta al crear una talla",
+    (await page.getByText("Oculta").count()) >= 1,
+  );
 
   await saveVariantForm({ attr: "L", price: "600", discountType: "percent", discountValue: "10", madeToOrder: true });
   check("el descuento porcentual calcula el precio final (540.00)", (await page.getByText(/540[.,]00/).count()) >= 1);
@@ -448,20 +469,24 @@ try {
   await page.waitForTimeout(2000);
   check("borrar una variante la quita de la lista", (await page.getByText("Talle L").count()) === 0);
 
-  // Regla: con una sola variante activa no se puede ocultar.
-  // Ocultamos M (quedan la base "Única" y M), luego la base no puede ocultarse
-  // sola: su interruptor queda deshabilitado.
+  // Regla: M es la única activa, así que su interruptor queda deshabilitado.
   await page.getByRole("button", { name: "Editar Talle M" }).click();
-  await page.locator("#variant-active").click();
-  await page.getByRole("button", { name: "Guardar variante" }).click();
-  await page.waitForTimeout(2000);
-  check("ocultar una variante con otra activa funciona", (await page.getByText("Oculta").count()) >= 1);
-
-  await page.getByRole("button", { name: "Editar Única" }).click();
   check(
     "la última variante activa no se puede ocultar",
     await page.locator("#variant-active").isDisabled(),
   );
+  await page.getByRole("button", { name: "Cancelar" }).click();
+
+  // Regla: no se puede volver a una presentación única mientras haya tallas activas.
+  await page.getByRole("button", { name: "Editar Única" }).click();
+  await page.locator("#variant-active").click();
+  await page.getByRole("button", { name: "Guardar variante" }).click();
+  const mixRejected = await page
+    .getByText("tiene tallas o colores activos")
+    .first()
+    .waitFor({ timeout: 10000 })
+    .then(() => true, () => false);
+  check("no se puede volver a presentación única con tallas activas", mixRejected);
   await page.getByRole("button", { name: "Cancelar" }).click();
 
   await owner.close();
