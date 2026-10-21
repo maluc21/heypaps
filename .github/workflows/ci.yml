@@ -87,6 +87,9 @@ jobs:
       - name: Vincular CLI con el proyecto de staging
         run: supabase link --project-ref "$SUPABASE_PROJECT_REF"
 
+      - name: Aplicar migraciones
+        run: supabase db push --linked --yes
+
       - name: Limpieza previa de datos E2E
         run: supabase db query --linked -f tests/e2e/cleanup-e2e.sql
 
@@ -109,20 +112,10 @@ jobs:
           done
           echo "el servidor no respondió"; cat "$RUNNER_TEMP/server.log"; exit 1
 
-      - name: Crear sesiones de prueba (owner e intruso)
-        run: |
-          node tests/e2e/session-bootstrap.mjs e2e-owner@test.test "$RUNNER_TEMP/owner.json"
-          node tests/e2e/session-bootstrap.mjs e2e-intruder@test.test "$RUNNER_TEMP/intruder.json"
-
-      - name: E2E del panel y del subdominio
+      - name: E2E del panel, del catálogo público y del subdominio
         env:
-          E2E_OWNER_SESSION: ${{ runner.temp }}/owner.json
-          E2E_INTRUDER_SESSION: ${{ runner.temp }}/intruder.json
-        run: node tests/e2e/panel.e2e.mjs
-
-      - name: Limpieza final de datos E2E
-        if: always()
-        run: supabase db query --linked -f tests/e2e/cleanup-e2e.sql
+          E2E_APP_URL: http://localhost:3000
+        run: node --env-file-if-exists=.env.local tests/e2e/run-e2e.mjs
 
       - name: Log del servidor
         if: failure()

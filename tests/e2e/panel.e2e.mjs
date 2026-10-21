@@ -91,6 +91,13 @@ try {
   check("publicar deja el catálogo publicado", publishedBanner);
   check("el link del catálogo se muestra al vendedor", (await page.getByText(`/s/${slug}`).count()) >= 1);
 
+  // El toast no debe tapar los botones del pie.
+  await page
+    .locator("[data-sonner-toast]")
+    .first()
+    .waitFor({ state: "detached", timeout: 10000 })
+    .catch(() => {});
+
   await page.getByRole("button", { name: "Ver mi catálogo" }).click();
   await page.waitForURL(new RegExp(`/s/${slug}$`), { timeout: 15000 }).catch(() => {});
   await page.waitForLoadState("networkidle");
