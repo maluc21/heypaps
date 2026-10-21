@@ -1,7 +1,7 @@
 'use server'
 
-import { updateTag } from "next/cache";
 import { createServerClient } from "@/lib/supabase/server";
+import { invalidateProductCatalog, invalidateStoreCatalog } from "@/lib/catalog-cache";
 import { normalizeSlug } from "@/lib/utils";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -25,6 +25,7 @@ export async function createCategory(
   });
 
   if (error) return { error: error.message ?? "No se pudo crear la categoría." };
+  await invalidateStoreCatalog(supabase, storeId);
   return { id: String(data) };
 }
 
@@ -45,7 +46,10 @@ export async function updateCategory(
   });
 
   if (error) return { error: error.message ?? "No se pudo guardar la categoría." };
-  await invalidateCatalog(supabase);
+  const storeId = await storeIdOfCategory(supabase, categoryId);
+  if (storeId) {
+    await invalidateStoreCatalog(supabase, storeId);
+  }
   return {};
 }
 
@@ -54,10 +58,15 @@ export async function deleteCategory(categoryId: string): Promise<{ error?: stri
   if (!UUID_RE.test(categoryId)) return { error: "Categoría inválida." };
 
   const supabase = await createServerClient();
+  // El storeId se resuelve antes de borrar: después la categoría ya no existe.
+  const storeId = await storeIdOfCategory(supabase, categoryId);
+
   const { error } = await supabase.rpc("delete_category", { p_category_id: categoryId });
 
   if (error) return { error: error.message ?? "No se pudo eliminar la categoría." };
-  await invalidateCatalog(supabase);
+  if (storeId) {
+    await invalidateStoreCatalog(supabase, storeId);
+  }
   return {};
 }
 
@@ -79,33 +88,19 @@ export async function setProductCategory(
   });
 
   if (error) return { error: error.message ?? "No se pudo cambiar la categoría." };
-  await invalidateCatalog(supabase);
+  await invalidateProductCatalog(supabase, productId);
   return {};
 }
 
-/** Invalida la caché del catálogo público de la tienda del usuario. */
-async function invalidateCatalog(
+/** Tienda a la que pertenece una categoría. */
+async function storeIdOfCategory(
   supabase: Awaited<ReturnType<typeof createServerClient>>,
-): Promise<void> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return;
-
-  const { data: membership } = await supabase
-    .from("store_members")
+  categoryId: string,
+): Promise<string | null> {
+  const { data } = await supabase
+    .from("categories")
     .select("store_id")
-    .eq("user_id", user.id)
-    .limit(1)
+    .eq("id", categoryId)
     .maybeSingle();
-  if (!membership) return;
-
-  const { data: store } = await supabase
-    .from("stores")
-    .select("slug")
-    .eq("id", membership.store_id)
-    .maybeSingle();
-  if (store?.slug) {
-    updateTag(`catalog:${store.slug}`);
-  }
+  return data?.store_id ?? null;
 }

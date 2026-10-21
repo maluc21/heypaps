@@ -68,7 +68,16 @@ export function ProductCard({ storeSlug, product, currency }: Props) {
 
       <div className="flex flex-1 flex-col gap-1 p-3">
         {product.tag ? (
-          <span className="text-xs font-medium text-muted-foreground">{product.tag}</span>
+          <span
+            className="w-fit rounded-full px-2 py-0.5 text-xs font-medium"
+            style={
+              product.tag_color
+                ? { color: product.tag_color, backgroundColor: `${product.tag_color}1a` }
+                : undefined
+            }
+          >
+            {product.tag}
+          </span>
         ) : null}
         <h3 className="line-clamp-2 text-sm font-medium leading-snug">{product.name}</h3>
         {product.price_from !== null ? (

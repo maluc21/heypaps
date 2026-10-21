@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { connection } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
 import { ProductEditorForm } from "@/components/product-editor-form";
 import { VariantManager, type EditableVariant } from "@/components/variant-manager";
@@ -19,6 +20,7 @@ type Product = {
   version: number;
   images: string[];
   category_id: string | null;
+  tag_id: string | null;
   variants: EditableVariant[];
 };
 
@@ -28,6 +30,10 @@ export default async function ProductEditorPage({
 }: {
   params: Promise<{ slug: string }>;
 }) {
+  // Render dinámico por petición: la página lee la versión del producto para el
+  // control de concurrencia y getPlanLimits usa Date.now(), que Next no
+  // permite durante el prerender.
+  await connection();
   const { slug } = await params;
   const supabase = await createServerClient();
   const { data, error } = await supabase
@@ -55,6 +61,12 @@ export default async function ProductEditorPage({
     .eq("store_id", product.store_id)
     .order("position", { ascending: true });
 
+  const { data: tags } = await supabase
+    .from("tags")
+    .select("id, name, color")
+    .eq("store_id", product.store_id)
+    .order("position", { ascending: true });
+
   const planCode = store?.plan_code ?? "free";
   const planLimits = await getPlanLimits(planCode, async () => {
     const { data: limits } = await supabase
@@ -71,6 +83,7 @@ export default async function ProductEditorPage({
         product={product}
         maxImages={planLimits.max_images_per_product}
         categories={categories ?? []}
+        tags={tags ?? []}
       />
       <div className="p-4 max-w-xl pb-24">
         <VariantManager

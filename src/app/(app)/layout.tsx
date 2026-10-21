@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { href: "/panel", label: "Panel", icon: "🏠" },
   { href: "/products", label: "Productos", icon: "📦" },
   { href: "/categorias", label: "Categorías", icon: "🏷️" },
+  { href: "/etiquetas", label: "Etiquetas", icon: "🔖" },
   { href: "/ajustes", label: "Ajustes", icon: "⚙️" },
 ];
 

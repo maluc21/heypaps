@@ -12,7 +12,7 @@ const PAGE_SIZE = 24;
 
 type PageProps = {
   params: Promise<{ store: string }>;
-  searchParams: Promise<{ c?: string; pagina?: string }>;
+  searchParams: Promise<{ c?: string; e?: string; pagina?: string }>;
 };
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -35,16 +35,16 @@ export default async function PublicCatalogPage({ params, searchParams }: PagePr
   // y notFound() no cambiaría el status. Un catálogo indexable necesita 404 real.
   await connection();
   const { store: storeSlug } = await params;
-  const { c, pagina } = await searchParams;
+  const { c, e, pagina } = await searchParams;
 
   const page = Math.max(1, Number.parseInt(pagina ?? "1", 10) || 1);
   const offset = (page - 1) * PAGE_SIZE;
 
-  const data = await getCatalog(storeSlug, PAGE_SIZE, offset, c ?? null);
+  const data = await getCatalog(storeSlug, PAGE_SIZE, offset, c ?? null, e ?? null);
   // Tienda inexistente, en borrador o suspendida: mismo 404 en todos los casos.
   if (!data?.store) notFound();
 
-  const { store, categories, products, pagination } = data;
+  const { store, categories, tags, products, pagination } = data;
   const totalPages = Math.max(1, Math.ceil(pagination.total / PAGE_SIZE));
 
   const catalogUrl = `/s/${storeSlug}`;
@@ -78,37 +78,67 @@ export default async function PublicCatalogPage({ params, searchParams }: PagePr
       </header>
 
       <main className="flex-1 space-y-4 pt-4">
-        {categories.length > 0 ? (
-          <nav aria-label="Categorías" className="-mx-4 overflow-x-auto px-4">
-            <ul className="flex w-max gap-2 pb-1">
-              <li>
-                <Link
-                  href={`/s/${storeSlug}`}
-                  className={`block rounded-full border px-3 py-1.5 text-sm ${
-                    !c
-                      ? "border-foreground bg-foreground text-background"
-                      : "border-border"
-                  }`}
-                >
-                  Todos
-                </Link>
-              </li>
-              {categories.map((category) => (
-                <li key={category.slug}>
-                  <Link
-                    href={`/s/${storeSlug}?c=${category.slug}`}
-                    className={`block rounded-full border px-3 py-1.5 text-sm ${
-                      c === category.slug
-                        ? "border-foreground bg-foreground text-background"
-                        : "border-border"
-                    }`}
-                  >
-                    {category.name}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </nav>
+        {categories.length > 0 || tags.length > 0 ? (
+          <div className="space-y-2">
+            {categories.length > 0 ? (
+              <nav aria-label="Categorías" className="-mx-4 overflow-x-auto px-4">
+                <ul className="flex w-max gap-2 pb-1">
+                  <li>
+                    <Link
+                      href={`/s/${storeSlug}${e ? `?e=${e}` : ""}`}
+                      className={`block rounded-full border px-3 py-1.5 text-sm ${
+                        !c
+                          ? "border-foreground bg-foreground text-background"
+                          : "border-border"
+                      }`}
+                    >
+                      Todos
+                    </Link>
+                  </li>
+                  {categories.map((category) => (
+                    <li key={category.slug}>
+                      <Link
+                        href={`/s/${storeSlug}?c=${category.slug}${e ? `&e=${e}` : ""}`}
+                        className={`block rounded-full border px-3 py-1.5 text-sm ${
+                          c === category.slug
+                            ? "border-foreground bg-foreground text-background"
+                            : "border-border"
+                        }`}
+                      >
+                        {category.name}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+            ) : null}
+
+            {tags.length > 0 ? (
+              <nav aria-label="Etiquetas" className="-mx-4 overflow-x-auto px-4">
+                <ul className="flex w-max gap-2 pb-1">
+                  {tags.map((tag) => (
+                    <li key={tag.id}>
+                      <Link
+                        href={`/s/${storeSlug}?e=${tag.slug}${c ? `&c=${c}` : ""}`}
+                        className={`block rounded-full border px-3 py-1.5 text-sm ${
+                          e === tag.slug
+                            ? "border-foreground bg-foreground text-background"
+                            : "border-border"
+                        }`}
+                        style={
+                          tag.color && e !== tag.slug
+                            ? { color: tag.color, borderColor: tag.color }
+                            : undefined
+                        }
+                      >
+                        {tag.name}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+            ) : null}
+          </div>
         ) : null}
 
         <CatalogGrid
@@ -121,7 +151,7 @@ export default async function PublicCatalogPage({ params, searchParams }: PagePr
           <nav aria-label="Paginación" className="flex items-center justify-center gap-3 pt-2">
             {page > 1 ? (
               <Link
-                href={`/s/${storeSlug}?pagina=${page - 1}${c ? `&c=${c}` : ""}`}
+                href={`/s/${storeSlug}?pagina=${page - 1}${c ? `&c=${c}` : ""}${e ? `&e=${e}` : ""}`}
                 className="rounded-lg border border-border px-3 py-2 text-sm"
               >
                 Anterior
@@ -132,7 +162,7 @@ export default async function PublicCatalogPage({ params, searchParams }: PagePr
             </span>
             {pagination.has_more ? (
               <Link
-                href={`/s/${storeSlug}?pagina=${page + 1}${c ? `&c=${c}` : ""}`}
+                href={`/s/${storeSlug}?pagina=${page + 1}${c ? `&c=${c}` : ""}${e ? `&e=${e}` : ""}`}
                 className="rounded-lg border border-border px-3 py-2 text-sm"
               >
                 Siguiente

@@ -157,11 +157,11 @@ begin
     null; -- denegado por permisos: correcto
   end;
 
-  if (public.public_catalog('tienda-a')->'store'->>'name') is distinct from 'Tienda A' then
+  if (public.public_catalog('tienda-a', 50, 0, null, null)->'store'->>'name') is distinct from 'Tienda A' then
     raise exception '1.2 FAIL: public_catalog no devuelve la tienda publicada A';
   end if;
 
-  if public.public_catalog('tienda-c') is not null then
+  if public.public_catalog('tienda-c', 50, 0, null, null) is not null then
     raise exception '1.2 FAIL: public_catalog expone tienda en borrador';
   end if;
 
@@ -394,7 +394,7 @@ begin
   perform public.test_set_user(null);
 
   -- Límite respetado y total correcto
-  v_page := public.public_catalog('tienda-a', 1, 0, null);
+  v_page := public.public_catalog('tienda-a', 1, 0, null, null);
   if (v_page->'pagination'->>'limit')::int <> 1 then
     raise exception '1.7 FAIL: limit no respetado';
   end if;
@@ -410,19 +410,19 @@ begin
   end if;
 
   -- Offset: la segunda página no repite el primer producto
-  v_next := public.public_catalog('tienda-a', 1, 1, null);
+  v_next := public.public_catalog('tienda-a', 1, 1, null, null);
   if (v_next->'products'->0->>'id') = (v_page->'products'->0->>'id') then
     raise exception '1.7 FAIL: offset no desplaza la página';
   end if;
 
   -- Límite acotado a 100
-  v_page := public.public_catalog('tienda-a', 9999, 0, null);
+  v_page := public.public_catalog('tienda-a', 9999, 0, null, null);
   if (v_page->'pagination'->>'limit')::int <> 100 then
     raise exception '1.7 FAIL: limit no se acota a 100';
   end if;
 
   -- Filtro por categoría inexistente: vacío
-  v_page := public.public_catalog('tienda-a', 50, 0, 'categoria-inexistente');
+  v_page := public.public_catalog('tienda-a', 50, 0, 'categoria-inexistente', null);
   if (v_page->'pagination'->>'total')::int <> 0 then
     raise exception '1.7 FAIL: filtro por categoría inexistente devuelve productos';
   end if;
@@ -467,8 +467,19 @@ begin
   if has_function_privilege('anon', 'public.bulk_update_products(uuid[],text,jsonb)', 'EXECUTE') then
     raise exception '1.8 FAIL: anon puede ejecutar bulk_update_products';
   end if;
-  if not has_function_privilege('anon', 'public.public_catalog(text,int,int,text)', 'EXECUTE') then
+  if not has_function_privilege('anon', 'public.public_catalog(text,int,int,text,text)', 'EXECUTE') then
     raise exception '1.8 FAIL: anon no puede ejecutar public_catalog';
+  end if;
+
+  -- La firma anterior (sin filtro por etiqueta) no debe seguir existiendo:
+  -- dejaría dos funciones con el mismo nombre y superficie extra.
+  if exists (
+    select 1 from pg_proc p
+    join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public' and p.proname = 'public_catalog'
+      and p.pronargs = 4
+  ) then
+    raise exception '1.8 FAIL: sigue existiendo la firma antigua de public_catalog';
   end if;
 end $$;
 

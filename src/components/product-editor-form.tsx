@@ -6,6 +6,7 @@ import Link from "next/link";
 import { formatMoney } from "@/lib/utils";
 import { updateProduct } from "@/lib/actions/product";
 import { setProductCategory } from "@/lib/actions/category";
+import { setProductTag } from "@/lib/actions/tag";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,6 +30,7 @@ type Product = {
   version: number;
   images: string[];
   category_id: string | null;
+  tag_id: string | null;
   variants: Array<{
     id: string;
     attributes: Record<string, unknown>;
@@ -45,16 +47,24 @@ type CategoryOption = {
   name: string;
 };
 
+type TagOption = {
+  id: string;
+  name: string;
+  color: string | null;
+};
+
 type ProductEditorFormProps = {
   product: Product;
   maxImages: number;
   categories: CategoryOption[];
+  tags: TagOption[];
 };
 
 export function ProductEditorForm({
   product,
   maxImages,
   categories,
+  tags,
 }: ProductEditorFormProps) {
   const router = useRouter();
   const [name, setName] = useState(product.name);
@@ -63,6 +73,7 @@ export function ProductEditorForm({
   const [paused, setPaused] = useState(product.paused);
   const [images, setImages] = useState<string[]>(product.images ?? []);
   const [categoryId, setCategoryId] = useState<string>(product.category_id ?? "");
+  const [tagId, setTagId] = useState<string>(product.tag_id ?? "");
   const [saving, setSaving] = useState(false);
 
   const save = async () => {
@@ -85,8 +96,8 @@ export function ProductEditorForm({
     router.refresh();
   };
 
-  // La categoría se cambia por su propia RPC: update_product trata null como
-  // "conservar", así que no puede quitar la categoría de un producto.
+  // La categoría y la etiqueta se cambian por su propia RPC: update_product
+  // trata null como "conservar", así que no puede quitarlas.
   const changeCategory = async (nextId: string) => {
     const res = await setProductCategory(product.id, nextId || null);
     if (res.error) {
@@ -95,6 +106,17 @@ export function ProductEditorForm({
     }
     setCategoryId(nextId);
     toast.success("Categoría actualizada.");
+    router.refresh();
+  };
+
+  const changeTag = async (nextId: string) => {
+    const res = await setProductTag(product.id, nextId || null);
+    if (res.error) {
+      toast.error(res.error);
+      return;
+    }
+    setTagId(nextId);
+    toast.success("Etiqueta actualizada.");
     router.refresh();
   };
 
@@ -138,6 +160,22 @@ export function ProductEditorForm({
               {categories.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="tag">Etiqueta</Label>
+            <select
+              id="tag"
+              value={tagId}
+              onChange={(e) => void changeTag(e.target.value)}
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+            >
+              <option value="">Sin etiqueta</option>
+              {tags.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
                 </option>
               ))}
             </select>

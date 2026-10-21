@@ -30,6 +30,8 @@ export type PublicTag = {
   id: string;
   name: string;
   color: string | null;
+  /** Identificador derivado del nombre, para el filtro por URL. */
+  slug: string;
 };
 
 export type PublicProductCard = {
@@ -109,6 +111,7 @@ export async function getCatalog(
   limit: number,
   offset: number,
   category: string | null,
+  tag: string | null = null,
 ): Promise<CatalogData | null> {
   "use cache";
   cacheTag(`catalog:${slug}`);
@@ -120,6 +123,7 @@ export async function getCatalog(
     p_limit: limit,
     p_offset: offset,
     p_category_slug: category,
+    p_tag_slug: tag,
   });
 
   if (error) {

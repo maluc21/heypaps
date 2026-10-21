@@ -489,6 +489,52 @@ try {
   check("no se puede volver a presentación única con tallas activas", mixRejected);
   await page.getByRole("button", { name: "Cancelar" }).click();
 
+  // ---------------------------------------------------------------
+  // 15. Etiquetas: crear, asignar a un producto, chip con color y filtro
+  // ---------------------------------------------------------------
+  await page.goto(`${APP}/etiquetas`);
+  await page.locator("#new-tag").waitFor({ timeout: 15000 });
+  await page.locator("#new-tag").fill("Oferta E2E");
+  await page.getByRole("button", { name: "Crear etiqueta" }).click();
+  await page.waitForTimeout(2000);
+  check("la etiqueta se crea", (await page.getByText("Oferta E2E").count()) >= 1);
+
+  await page.goto(`${APP}/products/${productSlug}`);
+  await page.locator("#tag").waitFor({ timeout: 15000 });
+  const tagOptions = await page.locator("#tag option").allTextContents();
+  check(
+    "el editor lista la etiqueta nueva",
+    tagOptions.some((o) => o.includes("Oferta E2E")),
+    tagOptions.join(" | "),
+  );
+
+  await page.locator("#tag").selectOption({ label: "Oferta E2E" });
+  await page.waitForTimeout(2500);
+
+  const tagged = await anon.newPage();
+  await tagged.goto(`${APP}/s/${slug}`);
+  await tagged.waitForLoadState("networkidle");
+  check("el catálogo público muestra la etiqueta del producto", (await tagged.getByText("Oferta E2E").count()) >= 1);
+
+  // Filtro por etiqueta: el chip aparece y el producto sigue visible.
+  await tagged.goto(`${APP}/s/${slug}?e=oferta-e2e`);
+  await tagged.waitForLoadState("networkidle");
+  check(
+    "el filtro por etiqueta muestra el producto etiquetado",
+    (await tagged.getByText(PRODUCT).count()) >= 1,
+  );
+
+  // Quitar la etiqueta la saca del filtro.
+  await page.locator("#tag").selectOption("");
+  await page.waitForTimeout(2500);
+  const untagged = await anon.newPage();
+  await untagged.goto(`${APP}/s/${slug}?e=oferta-e2e`);
+  await untagged.waitForLoadState("networkidle");
+  check(
+    "quitar la etiqueta saca el producto del filtro",
+    (await untagged.getByText(PRODUCT).count()) === 0,
+  );
+
   await owner.close();
   await intruder.close();
   await anon.close();

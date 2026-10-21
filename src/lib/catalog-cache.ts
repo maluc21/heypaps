@@ -29,3 +29,23 @@ export async function invalidateProductCatalog(
   updateTag(`catalog:${store.slug}`);
   updateTag(`product:${store.slug}:${product.slug}`);
 }
+
+/**
+ * Invalida la caché del catálogo público de una tienda.
+ *
+ * Lo usan los cambios que no viven en un producto: categorías, etiquetas y
+ * ajustes de la tienda.
+ */
+export async function invalidateStoreCatalog(
+  supabase: SupabaseClient,
+  storeId: string,
+): Promise<void> {
+  const { data: store } = await supabase
+    .from("stores")
+    .select("slug")
+    .eq("id", storeId)
+    .maybeSingle();
+  if (store?.slug) {
+    updateTag(`catalog:${store.slug}`);
+  }
+}
