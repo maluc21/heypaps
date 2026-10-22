@@ -46,6 +46,30 @@ async function getConReintentos(request, url, intentos = 3) {
   }
   throw ultimoError;
 }
+
+/** Consulta la categoría guardada de un producto (diagnóstico). */
+async function consultarProducto(slug) {
+  const { writeFileSync, rmSync } = await import("node:fs");
+  const { tmpdir } = await import("node:os");
+  const { join } = await import("node:path");
+  const archivo = join(tmpdir(), `kata-producto-${Date.now()}.sql`);
+  writeFileSync(
+    archivo,
+    `select p.category_id, c.slug as categoria from public.products p left join public.categories c on c.id = p.category_id where p.slug = '${slug}';`,
+  );
+  try {
+    const salida = execFileSync("supabase", ["db", "query", "--linked", "-f", archivo], {
+      encoding: "utf8",
+      shell: process.platform === "win32",
+    });
+    const fila = /│\s*([0-9a-f-]{36}|null)\s*│\s*([^│]*)│/.exec(salida);
+    return { categoria: fila ? fila[1].trim() : null, slug: fila ? fila[2].trim() : null };
+  } catch {
+    return { categoria: null, slug: null };
+  } finally {
+    rmSync(archivo, { force: true });
+  }
+}
 function check(name, ok, detail = "") {
   results.push({ name, ok, detail });
   console.log(`${ok ? "PASS" : "FAIL"}  ${name}${detail ? `  (${detail})` : ""}`);
@@ -225,6 +249,10 @@ try {
   check("catálogo público muestra el precio en lempiras", (await catalog.getByText(/450[.,]50/).count()) >= 1);
 
   // La ficha: se llega tocando la card, como haría el comprador por WhatsApp.
+  // El slug se toma del href y no de la URL tras el click: si el click falla,
+  // el resto de la batería no debe depender de él.
+  const hrefFicha = await catalog.locator("a").filter({ hasText: PRODUCT }).first().getAttribute("href");
+  const productSlug = hrefFicha.split("/").pop();
   await card.click();
   const onProduct = await catalog
     .waitForURL(/\/s\/.+\/.+/, { timeout: 15000 })
@@ -232,7 +260,6 @@ try {
   await catalog.waitForLoadState("networkidle");
   check("la ficha del producto abre", onProduct, catalog.url());
   const productPageUrl = catalog.url();
-  const productSlug = new URL(productPageUrl).pathname.split("/").pop();
   const waHref = await catalog
     .locator("a[data-wa-label='Pedir por WhatsApp']")
     .first()
@@ -418,6 +445,18 @@ try {
   // Asignada: el producto aparece al filtrar por esa categoría.
   await page.locator("#category").selectOption({ label: "Zapatos E2E" });
   await page.waitForTimeout(2500);
+  const valorCategoria = await page.locator("#category").inputValue();
+  check(
+    "el editor guarda la categoría del producto",
+    valorCategoria !== "",
+    `valor del selector: ${valorCategoria}`,
+  );
+  const categoriaEnBase = await consultarProducto(productSlug);
+  check(
+    "la categoría del producto está guardada en la base",
+    categoriaEnBase.categoria !== null,
+    JSON.stringify(categoriaEnBase),
+  );
 
   const filtered = await anon.newPage();
   await filtered.goto(`${APP}/s/${slug}?c=zapatos-e2e`);
