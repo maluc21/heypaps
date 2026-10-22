@@ -40,9 +40,11 @@ type Props = {
   storeSlug: string;
   product: PublicProductCard;
   currency: string;
+  /** La primera imagen de la pagina es el LCP: se carga con prioridad. */
+  priority?: boolean;
 };
 
-export function ProductCard({ storeSlug, product, currency }: Props) {
+export function ProductCard({ storeSlug, product, currency, priority = false }: Props) {
   const href = `/s/${storeSlug}/${product.slug}`;
   const image = product.images[0];
 
@@ -58,6 +60,7 @@ export function ProductCard({ storeSlug, product, currency }: Props) {
             alt={product.name}
             fill
             sizes="(max-width: 640px) 50vw, 25vw"
+            priority={priority}
             className="object-cover transition-transform group-hover:scale-[1.03]"
           />
         ) : (

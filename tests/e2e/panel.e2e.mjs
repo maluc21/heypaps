@@ -29,6 +29,23 @@ const PRODUCT = `Producto E2E ${slug}`;
 const FIXTURES = join(dirname(fileURLToPath(import.meta.url)), "fixtures");
 
 const results = [];
+
+/**
+ * Petición GET con reintentos: con ~80 comprobaciones encadenadas, un reset
+ * de conexión del servidor no debe tumbar la batería si no es un fallo real.
+ */
+async function getConReintentos(request, url, intentos = 3) {
+  let ultimoError = null;
+  for (let i = 0; i < intentos; i++) {
+    try {
+      return await request.get(url);
+    } catch (err) {
+      ultimoError = err;
+      await new Promise((r) => setTimeout(r, 300 * (i + 1)));
+    }
+  }
+  throw ultimoError;
+}
 function check(name, ok, detail = "") {
   results.push({ name, ok, detail });
   console.log(`${ok ? "PASS" : "FAIL"}  ${name}${detail ? `  (${detail})` : ""}`);
@@ -155,7 +172,7 @@ try {
   check("panel de productos muestra el producto creado", await row.count() === 1);
   check("precio persiste en lempiras (450.50)", await row.getByText(/450[.,]50/).count() >= 1);
 
-  const headers = (await page.request.get(`${APP}/products`)).headers();
+  const headers = (await getConReintentos(page.request, `${APP}/products`)).headers();
   check(
     "cabeceras de seguridad presentes en /products",
     Boolean(headers["content-security-policy"]) && headers["x-frame-options"] === "DENY",
@@ -305,31 +322,50 @@ try {
     check("el catálogo público muestra la imagen", publicImage >= 1, `${publicImage} imagen(es)`);
 
     // ---- Borrado (tarea 3.4): DAM, caché y cuota ----
+    // El commit devuelve el fileId (opaco) y la ruta en el DAM. Para preguntar
+    // a la API por el archivo hace falta el fileId: la API no acepta la ruta.
     const thumbSrc = await page.locator('li img[src*="tr=w-"]').first().getAttribute("src");
-    const fileId = thumbSrc.split("?")[0].split("/").pop();
-    const damUrl = `https://api.imagekit.io/v1/files/${fileId}/details`;
+    const endpointPath = new URL(process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT).pathname;
+    const filePath = new URL(thumbSrc).pathname.slice(endpointPath.length) || "/";
     const auth = `Basic ${Buffer.from(`${process.env.IMAGEKIT_PRIVATE_KEY}:`).toString("base64")}`;
-    const inDam = await fetch(damUrl, { headers: { Accept: "application/json", Authorization: auth } });
-    check("el archivo existe en el DAM", inDam.status === 200, `HTTP ${inDam.status}`);
+    const dam = async (id) => {
+      const res = await fetch(
+        `https://api.imagekit.io/v1/files/${encodeURIComponent(id)}/details`,
+        { headers: { Accept: "application/json", Authorization: auth } },
+      );
+      return { status: res.status, body: res.ok ? await res.json() : null };
+    };
+    const antes = await dam(commit.fileId);
+    check(
+      "el archivo está en el DAM",
+      antes.status === 200 && antes.body?.filePath === filePath,
+      `HTTP ${antes.status} ${antes.body?.filePath ?? ""}`,
+    );
 
     const deleteResponse = page.waitForResponse(
       (r) => r.url().includes("/api/upload-delete") && r.request().method() === "POST",
       { timeout: 30000 },
     );
     await page.locator("li button", { hasText: "Quitar" }).first().click();
-    const deleted = await deleteResponse.then((r) => r.json()).catch(() => null);
+    const deleted = await deleteResponse
+      .then(async (r) => ({ status: r.status(), body: await r.json().catch(() => ({})) }))
+      .catch(() => null);
     await page.waitForTimeout(1500);
 
     const afterDelete = await page.locator("li img").count();
     check("la imagen se quita del producto", afterDelete === 0, `${afterDelete} miniatura(s)`);
     check(
       "el borrado devuelve los bytes liberados",
-      deleted?.ok === true && deleted?.freedBytes === commit?.size,
-      `${deleted?.freedBytes} vs ${commit?.size}`,
+      deleted?.status === 200 && deleted?.body?.freedBytes === commit?.size,
+      `HTTP ${deleted?.status} ${JSON.stringify(deleted?.body)} vs ${commit?.size}`,
     );
 
-    const goneFromDam = await fetch(damUrl, { headers: { Accept: "application/json", Authorization: auth } });
-    check("el archivo se borra del DAM", goneFromDam.status === 404, `HTTP ${goneFromDam.status}`);
+    const despues = await dam(commit.fileId);
+    check(
+      "el archivo se borra del DAM",
+      despues.status === 404,
+      `HTTP ${despues.status}`,
+    );
   } else {
     console.log("INFO  subida de imagen omitida: falta IMAGEKIT_PRIVATE_KEY");
   }
@@ -628,7 +664,7 @@ try {
   // ---------------------------------------------------------------
   // 17. SEO: sitemap, robots, canonical, imagen OG y copiar link
   // ---------------------------------------------------------------
-  const sitemapResponse = await anon.request.get(`${APP}/sitemap.xml`);
+  const sitemapResponse = await getConReintentos(anon.request, `${APP}/sitemap.xml`);
   const sitemapBody = await sitemapResponse.text();
   check("el sitemap responde 200", sitemapResponse.status() === 200, `HTTP ${sitemapResponse.status()}`);
   check(
@@ -640,14 +676,14 @@ try {
     sitemapBody.includes(`/s/${slug}/producto-e2e-`),
   );
 
-  const robotsResponse = await anon.request.get(`${APP}/robots.txt`);
+  const robotsResponse = await getConReintentos(anon.request, `${APP}/robots.txt`);
   const robotsBody = await robotsResponse.text();
   check("robots.txt responde 200", robotsResponse.status() === 200, `HTTP ${robotsResponse.status()}`);
   check("robots.txt apunta al sitemap", robotsBody.includes("Sitemap:"));
   check("robots.txt excluye el panel", robotsBody.includes("/panel"));
 
   // Canonical y Open Graph en el HTML del catálogo.
-  const catalogHtml = await (await anon.request.get(`${APP}/s/${slug}`)).text();
+  const catalogHtml = await (await getConReintentos(anon.request, `${APP}/s/${slug}`)).text();
   check("la página declara canonical", catalogHtml.includes(`rel="canonical"`));
   check(
     "el canonical apunta a la ruta de la tienda",
@@ -657,7 +693,7 @@ try {
   check("la página declara og:title", catalogHtml.includes("og:title"));
 
   // La imagen OG se genera y es un PNG.
-  const ogResponse = await anon.request.get(`${APP}/s/${slug}/opengraph-image`);
+  const ogResponse = await getConReintentos(anon.request, `${APP}/s/${slug}/opengraph-image`);
   check(
     "la imagen OG del catálogo responde 200",
     ogResponse.status() === 200,
@@ -669,7 +705,7 @@ try {
     ogResponse.headers()["content-type"],
   );
 
-  const productOg = await anon.request.get(`${APP}/s/${slug}/${productSlug}/opengraph-image`);
+  const productOg = await getConReintentos(anon.request, `${APP}/s/${slug}/${productSlug}/opengraph-image`);
   check(
     "la imagen OG del producto responde 200",
     productOg.status() === 200,

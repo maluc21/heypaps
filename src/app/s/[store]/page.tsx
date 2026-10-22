@@ -11,7 +11,14 @@ import { buildCatalogMessage } from "@/lib/whatsapp";
 import { publicUrl } from "@/lib/public-url";
 import { getEnv } from "@/lib/env";
 
-const PAGE_SIZE = 24;
+/**
+ * Productos por pagina.
+ *
+ * Doce es lo que entra en la pantalla de un movil sin desplazar: menos HTML,
+ * menos nodos y menos imagenes en vuelo. Con mas productos, la paginacion
+ * sigue abajo.
+ */
+const PAGE_SIZE = 12;
 
 type PageProps = {
   params: Promise<{ store: string }>;

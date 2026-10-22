@@ -5,10 +5,12 @@
  *
  * Copia la URL que el comprador ve: si la tienda se sirve desde un
  * subdominio, esa es la que se comparte.
+ *
+ * Sin sonner: el aviso va en el propio boton. El catálogo público es la ruta
+ * mas visitada y cada KB de JavaScript se paga en cada visita.
  */
 
 import { useState } from "react";
-import { toast } from "sonner";
 
 export function CopyLinkButton() {
   const [copied, setCopied] = useState(false);
@@ -19,7 +21,7 @@ export function CopyLinkButton() {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      toast.error("No se pudo copiar el link.");
+      setCopied(false);
     }
   };
 

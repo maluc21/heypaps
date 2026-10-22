@@ -12,7 +12,8 @@ import { compressImageFile, isAcceptedType, isTooLarge, toKb } from "@/lib/image
 import { IMAGEKIT_UPLOAD_ENDPOINT } from "@/lib/imagekit";
 
 export type UploadedImage = {
-  fileId: string;
+  /** Ruta del archivo en el DAM: es lo que forma la URL publica. */
+  filePath: string;
   size: number;
 };
 
@@ -76,9 +77,12 @@ export async function uploadImage(file: File, storeId: string): Promise<Uploaded
     const data = await commitRes.json().catch(() => null);
     throw new Error(data?.error ?? `No se pudo contabilizar ${file.name}.`);
   }
-  const committed = (await commitRes.json()) as { size?: number };
+  const committed = (await commitRes.json()) as { filePath?: string; size?: number };
 
-  return { fileId: uploaded.fileId, size: committed.size ?? compressed.blob.size };
+  return {
+    filePath: committed.filePath ?? "",
+    size: committed.size ?? compressed.blob.size,
+  };
 }
 
 /** Pide al servidor una firma de subida de un solo uso. */
@@ -101,13 +105,13 @@ async function requestUploadAuth(storeId: string): Promise<AuthResponse> {
  */
 export async function deleteUploadedImage(
   storeId: string,
-  fileId: string,
+  filePath: string,
   productId?: string | null,
 ): Promise<{ freedBytes: number }> {
   const res = await fetch("/api/upload-delete", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ storeId, productId: productId ?? null, fileId }),
+    body: JSON.stringify({ storeId, productId: productId ?? null, filePath }),
   });
   if (!res.ok) {
     const data = await res.json().catch(() => null);

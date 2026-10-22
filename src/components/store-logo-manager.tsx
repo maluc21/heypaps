@@ -34,13 +34,13 @@ export function StoreLogoManager({ storeId, logo, storeName, onChange }: Props) 
 
     setBusy(true);
     try {
-      // El logo anterior se borra del DAM para no dejar archivos huérfanos
-      // seguemusercontent contando en la cuota.
+      // El logo anterior se borra del DAM para no dejar archivos huerfanos
+      // siguenusercontent contando en la cuota.
       if (logo) {
         await deleteUploadedImage(storeId, logo).catch(() => undefined);
       }
       const uploaded = await uploadImage(file, storeId);
-      onChange(uploaded.fileId);
+      onChange(uploaded.filePath);
       toast.success("Logo actualizado.");
     } catch (err) {
       toast.error(String((err as Error)?.message ?? "No se pudo subir el logo."));

@@ -57,12 +57,13 @@ export function CatalogGrid({ storeSlug, products, currency }: Props) {
         </p>
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-          {filtered.map((product) => (
+          {filtered.map((product, index) => (
             <ProductCard
               key={product.id}
               storeSlug={storeSlug}
               product={product}
               currency={currency}
+              priority={index === 0}
             />
           ))}
         </div>

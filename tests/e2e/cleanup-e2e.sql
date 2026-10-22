@@ -10,9 +10,11 @@ set local session_replication_role = replica;
 -- Incluye también los fixtures exactos del suite supabase/tests/isolation.sql
 -- (tienda-a/b/c y user-a/b@test.test), que dejan datos en el proyecto.
 create temp table _e2e_stores as select id from public.stores
-  where slug like 'e2e-%' or slug like 'diag%' or slug in ('tienda-a', 'tienda-b', 'tienda-c');
+  where slug like 'e2e-%' or slug like 'diag%' or slug like 'perf-tienda-%'
+     or slug in ('tienda-a', 'tienda-b', 'tienda-c');
 create temp table _e2e_users as select id from auth.users
   where email like 'e2e-%@test.test' or email like 'diag%@test.test'
+     or email like 'perf-%@test.test'
      or email in ('user-a@test.test', 'user-b@test.test');
 
 delete from public.audit_log where store_id in (select id from _e2e_stores)
@@ -29,6 +31,9 @@ delete from public.store_members where store_id in (select id from _e2e_stores)
 -- replica los triggers de FK no se disparan: hay que borrar la fila a mano.
 delete from public.platform_members where user_id in (select id from _e2e_users);
 delete from public.stores where id in (select id from _e2e_stores);
+-- Archivos cuyo DAM ya no existe: el registro se queda si la tienda se borro
+-- con la sesion_replication_role de arriba.
+delete from public.store_files where store_id not in (select id from public.stores);
 delete from public.profiles where id in (select id from _e2e_users);
 delete from auth.refresh_tokens where session_id in (
   select s.id from auth.sessions s where s.user_id in (select id from _e2e_users));

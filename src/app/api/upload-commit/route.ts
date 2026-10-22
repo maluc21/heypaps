@@ -91,11 +91,13 @@ export async function POST(request: Request) {
     );
   }
 
-  // La RPC valida la cuota del plan y suma el delta; si el límite se excede
-  // lanza y el archivo queda sin contabilizar.
-  const { data: bytesUsed, error } = await supabase.rpc("record_storage_usage", {
+  // El registro guarda el fileId (para borrarlo del DAM) y la ruta (la que
+  // forma la URL publica), y suma el peso real a la cuota validando el plan.
+  const { data: filePath, error } = await supabase.rpc("register_store_file", {
     p_store_id: storeId,
-    p_delta_bytes: size,
+    p_file_id: fileId,
+    p_file_path: path,
+    p_bytes: size,
   });
 
   if (error) {
@@ -105,5 +107,17 @@ export async function POST(request: Request) {
     );
   }
 
-  return NextResponse.json({ ok: true, fileId, size, bytesUsed });
+  const { data: storage } = await supabase
+    .from("store_storage")
+    .select("bytes_used")
+    .eq("store_id", storeId)
+    .maybeSingle();
+
+  return NextResponse.json({
+    ok: true,
+    fileId,
+    filePath: filePath ?? path,
+    size,
+    bytesUsed: Number(storage?.bytes_used ?? 0),
+  });
 }

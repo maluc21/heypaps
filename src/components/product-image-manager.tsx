@@ -51,7 +51,7 @@ export function ProductImageManager({
       for (const file of list) {
         setProgress(`Subiendo ${file.name}…`);
         const result = await uploadImage(file, storeId);
-        uploaded.push(result.fileId);
+        uploaded.push(result.filePath);
       }
 
       if (uploaded.length > 0) {
@@ -67,11 +67,11 @@ export function ProductImageManager({
     }
   };
 
-  const handleRemove = async (fileId: string) => {
+  const handleRemove = async (filePath: string) => {
     setBusy(true);
     try {
-      await deleteUploadedImage(storeId, fileId, productId);
-      onChange(images.filter((id) => id !== fileId));
+      await deleteUploadedImage(storeId, filePath, productId);
+      onChange(images.filter((id) => id !== filePath));
       toast.success("Imagen borrada.");
     } catch (err) {
       toast.error(String((err as Error)?.message ?? "No se pudo borrar la imagen."));
@@ -91,13 +91,13 @@ export function ProductImageManager({
 
       {images.length > 0 ? (
         <ul className="grid grid-cols-3 gap-2">
-          {images.map((fileId) => (
+          {images.map((filePath) => (
             <li
-              key={fileId}
+              key={filePath}
               className="relative aspect-square overflow-hidden rounded-lg border border-border"
             >
               <Image
-                src={fileId}
+                src={filePath}
                 alt=""
                 fill
                 sizes="120px"
@@ -108,7 +108,7 @@ export function ProductImageManager({
                 variant="destructive"
                 size="sm"
                 disabled={busy}
-                onClick={() => handleRemove(fileId)}
+                onClick={() => handleRemove(filePath)}
                 className="absolute right-1 top-1 h-7 px-2 text-xs"
               >
                 Quitar

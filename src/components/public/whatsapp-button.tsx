@@ -5,10 +5,14 @@
  *
  * Registra el evento `wa_click` (KPI central de venta, plan §4.3) antes de
  * abrir el chat. El registro es best-effort: si falla, el enlace igual abre.
+ *
+ * El evento se pide con un fetch a la API REST en lugar del cliente de
+ * Supabase: importar el SDK entero en el bundle del catálogo público añade
+ * más de 100 KB de JavaScript a la ruta más visitada, y aquí solo hace falta
+ * una llamada POST.
  */
 
-import { useCallback, useState, type ReactNode } from "react";
-import { createPublicClient } from "@/lib/supabase/public";
+import { useCallback, useState } from "react";
 
 type Props = {
   phone: string;
@@ -17,7 +21,6 @@ type Props = {
   productId?: string | null;
   className?: string;
   label?: string;
-  children?: ReactNode;
 };
 
 export function WhatsAppButton({
@@ -27,7 +30,6 @@ export function WhatsAppButton({
   productId = null,
   className,
   label = "Pedir por WhatsApp",
-  children,
 }: Props) {
   const [sending, setSending] = useState(false);
 
@@ -35,20 +37,29 @@ export function WhatsAppButton({
 
   const onClick = useCallback(() => {
     setSending(true);
-    // Best-effort: si el registro falla, el enlace de WhatsApp abre igual.
-    void (async () => {
-      try {
-        await createPublicClient().rpc("record_event", {
-          p_store_id: storeId,
-          p_product_id: productId,
-          p_kind: "wa_click",
-        });
-      } catch {
-        // sin registro, el enlace sigue funcionando
-      } finally {
-        setSending(false);
-      }
-    })();
+
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (!url || !key) {
+      setSending(false);
+      return;
+    }
+
+    void fetch(`${url}/rest/v1/rpc/record_event`, {
+      method: "POST",
+      headers: {
+        apikey: key,
+        Authorization: `Bearer ${key}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        p_store_id: storeId,
+        p_product_id: productId,
+        p_kind: "wa_click",
+      }),
+    })
+      .catch(() => undefined)
+      .finally(() => setSending(false));
   }, [storeId, productId]);
 
   return (
@@ -61,7 +72,7 @@ export function WhatsAppButton({
       aria-busy={sending}
       className={className}
     >
-      {children ?? label}
+      {label}
     </a>
   );
 }

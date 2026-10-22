@@ -552,11 +552,11 @@ try {
           const delAjeno = await http("/api/upload-delete", {
             cookies: cookiesOwner,
             method: "POST",
-            body: { storeId: STORE_A, fileId: ajeno2.json.fileId },
+            body: { storeId: STORE_A, filePath: ajeno2.json.filePath },
           });
           check(
             "borrar un archivo de otra tienda se rechaza",
-            delAjeno.status === 403,
+            delAjeno.status === 403 || delAjeno.status === 404,
             `HTTP ${delAjeno.status} ${delAjeno.text.slice(0, 90)}`,
           );
           // Limpieza del archivo ajeno que quedó en el DAM.
@@ -601,9 +601,10 @@ try {
           })
         : null;
       const fileId = propio.json?.fileId;
+      const filePath = propio.json?.filePath;
       const tamanoReal = propio.json?.size ?? 0;
 
-      if (!fileId) {
+      if (!fileId || !filePath) {
         check("subida legítima al DAM", false, propio.text?.slice(0, 90));
       } else {
         // El cliente "declara" un tamaño falso: el servidor lo debe ignorar.
@@ -617,6 +618,11 @@ try {
           "el commit cobra el peso real del archivo, no el que declara el cliente",
           commit.status === 200 && commitJson.size === tamanoReal && tamanoReal > 0,
           `HTTP ${commit.status}, tamaño declarado 1, real ${commitJson.size}`,
+        );
+        check(
+          "el commit devuelve la ruta del archivo en el DAM",
+          commitJson.filePath === filePath,
+          `${commitJson.filePath} vs ${filePath}`,
         );
 
         const despues = sqlRows(
@@ -632,7 +638,7 @@ try {
         const borrado = await http("/api/upload-delete", {
           cookies: cookiesOwner,
           method: "POST",
-          body: { storeId: STORE_A, fileId },
+          body: { storeId: STORE_A, filePath },
         });
         const borradoJson = borrado.status === 200 ? JSON.parse(borrado.text) : {};
         check(

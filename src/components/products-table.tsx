@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { createBrowserClient } from "@/lib/supabase/client";
+import { useRouter } from "next/navigation";
 import { formatMoney } from "@/lib/utils";
 import { bulkUpdateProducts, updateProduct } from "@/lib/actions/product";
 import { toast } from "sonner";
@@ -56,31 +56,23 @@ export function ProductsTable({
   tags,
   currency,
 }: ProductsTableProps) {
-  const [products, setProducts] = useState<Product[]>(initialProducts);
+  const router = useRouter();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [query, setQuery] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [tagId, setTagId] = useState("");
   const [status, setStatus] = useState<StatusFilter>("all");
 
-  const fetchProducts = async (): Promise<Product[] | null> => {
-    const supabase = createBrowserClient();
-    const { data, error } = await supabase
-      .from("products")
-      .select("*, variants(*)")
-      .order("position", { ascending: true });
-    if (error) {
-      toast.error("No se pudieron cargar los productos.");
-      return null;
-    }
-    return (data ?? []) as Product[];
-  };
-
+  /**
+   * Recarga la lista desde el servidor.
+   *
+   * Antes consultaba la base con el cliente de Supabase en el navegador: eso
+   * metia el SDK entero en el bundle de esta pagina (miles de KB de mas).
+   * router.refresh() vuelve a pedir los datos al Server Component, que ya los
+   * carga con la sesion del usuario.
+   */
   const reload = async () => {
-    const data = await fetchProducts();
-    if (data != null) {
-      setProducts(data);
-    }
+    router.refresh();
   };
 
   const statusOf = (p: Product): string => {
@@ -103,7 +95,7 @@ export function ProductsTable({
   // productos en el free) es instantaneo.
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return products.filter((p) => {
+    return initialProducts.filter((p) => {
       if (q) {
         const haystack = `${p.name} ${p.description ?? ""} ${p.slug}`.toLowerCase();
         if (!haystack.includes(q)) return false;
@@ -115,7 +107,7 @@ export function ProductsTable({
       if (status === "paused" && !p.paused) return false;
       return true;
     });
-  }, [products, query, categoryId, tagId, status]);
+  }, [initialProducts, query, categoryId, tagId, status]);
 
   const hasFilters =
     query.trim() !== "" || categoryId !== "" || tagId !== "" || status !== "all";
@@ -189,7 +181,7 @@ export function ProductsTable({
         </div>
       </div>
 
-      {products.length === 0 ? (
+      {initialProducts.length === 0 ? (
         <div className="rounded-xl border bg-card p-8 text-center text-muted-foreground">
           No hay productos todavía. Crea tu primero para publicar tu catálogo.
         </div>
@@ -246,7 +238,7 @@ export function ProductsTable({
               </select>
             </div>
             <p className="text-xs text-muted-foreground">
-              {filtered.length} de {products.length} producto(s)
+              {filtered.length} de {initialProducts.length} producto(s)
               {hasFilters ? " con los filtros aplicados" : ""}.
             </p>
           </div>

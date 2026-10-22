@@ -84,7 +84,7 @@ async function isStorePublished(slug: string): Promise<boolean> {
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   if (!url || !key) return true
 
-  return cached(`store-published:${slug}`, 5, async () => {
+  return cached(`store-published:${slug}`, 2, async () => {
     try {
       const res = await fetch(
         `${url}/rest/v1/rpc/public_store_published?p_store_slug=${encodeURIComponent(slug)}`,
@@ -153,7 +153,7 @@ async function isProductPublished(storeSlug: string, productSlug: string): Promi
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   if (!url || !key) return true
 
-  return cached(`product-published:${storeSlug}:${productSlug}`, 5, async () => {
+  return cached(`product-published:${storeSlug}:${productSlug}`, 2, async () => {
     try {
       const res = await fetch(
         `${url}/rest/v1/rpc/public_product_published?p_store_slug=${encodeURIComponent(
@@ -256,7 +256,7 @@ export async function proxy(request: NextRequest) {
   }
 
   // Tienda inexistente, en borrador o suspendida: 404 real antes de renderizar.
-  if (storeSlug && !(await isStorePublished(storeSlug))) {
+  if (storeSlug !== null && !(await isStorePublished(storeSlug))) {
     return notFoundResponse(
       'Catálogo no disponible',
       'Esta tienda no existe o no está publicada.',
