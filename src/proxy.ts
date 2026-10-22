@@ -117,6 +117,61 @@ function platformForbidden(message: string): NextResponse {
   return res
 }
 
+/**
+ * Respuesta 404 real del catálogo público. Sin esto, con Partial Prerender, una
+ * tienda o un producto inexistente se servirian con status 200 y una pagina
+ * vacia (soft 404), que un crawler indexaria como pagina valida.
+ */
+function notFoundResponse(
+  title: string,
+  message: string,
+  cookieWrites: Array<{ name: string; value: string; options?: Record<string, unknown> }>,
+): NextResponse {
+  const res = new NextResponse(
+    `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="robots" content="noindex"><title>${title}</title></head><body style="font-family:system-ui;padding:2rem;text-align:center"><h1>${title}</h1><p>${message}</p></body></html>`,
+    {
+      status: 404,
+      headers: { 'content-type': 'text/html; charset=utf-8' },
+    },
+  )
+  res.headers.set('X-Robots-Tag', 'noindex')
+  for (const c of cookieWrites) {
+    res.cookies.set({ name: c.name, value: c.value, ...(c.options ?? {}) })
+  }
+  return res
+}
+
+/**
+ * ¿Existe la ficha de un producto y es visible?
+ *
+ * Igual que la tienda, la comprobacion va en el Proxy: con Partial Prerender
+ * un notFound() en la pagina llegaria con status 200 (soft 404) y un crawler
+ * lo indexaria como una pagina valida.
+ */
+async function isProductPublished(storeSlug: string, productSlug: string): Promise<boolean> {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  if (!url || !key) return true
+
+  return cached(`product-published:${storeSlug}:${productSlug}`, 5, async () => {
+    try {
+      const res = await fetch(
+        `${url}/rest/v1/rpc/public_product_published?p_store_slug=${encodeURIComponent(
+          storeSlug,
+        )}&p_product_slug=${encodeURIComponent(productSlug)}`,
+        {
+          headers: { apikey: key, Authorization: `Bearer ${key}` },
+        },
+      )
+      if (!res.ok) return true
+      return (await res.json()) === true
+    } catch {
+      // Un fallo de red no debe tumbar el catalogo publico.
+      return true
+    }
+  })
+}
+
 export async function proxy(request: NextRequest) {
   const nonce = generateNonce()
   const csp = buildCsp(nonce)
@@ -202,18 +257,28 @@ export async function proxy(request: NextRequest) {
 
   // Tienda inexistente, en borrador o suspendida: 404 real antes de renderizar.
   if (storeSlug && !(await isStorePublished(storeSlug))) {
-    const notFound = new NextResponse(
-      `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="robots" content="noindex"><title>Catálogo no disponible</title></head><body style="font-family:system-ui;padding:2rem;text-align:center"><h1>Catálogo no disponible</h1><p>Esta tienda no existe o no está publicada.</p></body></html>`,
-      {
-        status: 404,
-        headers: { 'content-type': 'text/html; charset=utf-8' },
-      },
+    return notFoundResponse(
+      'Catálogo no disponible',
+      'Esta tienda no existe o no está publicada.',
+      cookieWrites,
     )
-    notFound.headers.set('X-Robots-Tag', 'noindex')
-    for (const c of cookieWrites) {
-      notFound.cookies.set({ name: c.name, value: c.value, ...(c.options ?? {}) })
+  }
+
+  // Ficha de producto: /s/{tienda}/{producto}. Un producto que no existe o
+  // esta oculto devuelve 404 real, no un 200 con la pagina vacia.
+  // Las rutas de metadatos de Next (opengraph-image, twitter-image) no son
+  // productos: el proxy no debe interceptarlas.
+  const productMatch = effectivePath.match(/^\/s\/([^/]+)\/([^/]+)/)
+  const productSlug = productMatch?.[2]
+  if (productMatch && productSlug && !/^(opengraph|twitter)-image/.test(productSlug)) {
+    const [, productStore, product] = productMatch
+    if (!(await isProductPublished(productStore, product))) {
+      return notFoundResponse(
+        'Producto no disponible',
+        'Este producto no existe o ya no está disponible.',
+        cookieWrites,
+      )
     }
-    return notFound
   }
 
   for (const c of cookieWrites) {

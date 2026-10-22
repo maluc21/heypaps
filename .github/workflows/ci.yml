@@ -97,6 +97,9 @@ jobs:
       - name: Pruebas de aislamiento SQL
         run: supabase db query --linked -f supabase/tests/isolation.sql
 
+      - name: Pruebas de seguridad SQL
+        run: supabase db query --linked -f supabase/tests/security.sql
+
       - name: Instalar Chromium de Playwright
         run: pnpm exec playwright-core install --with-deps chromium
 
@@ -117,6 +120,11 @@ jobs:
         env:
           E2E_APP_URL: http://localhost:3000
         run: node --env-file-if-exists=.env.local tests/e2e/run-e2e.mjs
+
+      - name: E2E de seguridad
+        env:
+          E2E_APP_URL: http://localhost:3000
+        run: node --env-file-if-exists=.env.local tests/e2e/run-security.mjs
 
       - name: Log del servidor
         if: failure()
