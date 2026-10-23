@@ -119,10 +119,7 @@ export default function OnboardingPage() {
                   id="name"
                   name="name"
                   value={name}
-                  onChange={(e) => {
-                    setName(e.target.value);
-                    if (!slug) setSlug(slugFromName());
-                  }}
+                  onChange={(e) => setName(e.target.value)}
                   required
                 />
               </div>
@@ -137,7 +134,7 @@ export default function OnboardingPage() {
                   required
                 />
                 <p className="text-xs font-bold text-muted-foreground mt-1">
-                  heypaps.com/{slug || slugFromName()}
+                  {slug ? `heypaps.com/${slug}` : ""}
                 </p>
                 {RESERVED_SLUGS.has(slug) && (
                   <p className="text-xs text-destructive">Este enlace está reservado.</p>
