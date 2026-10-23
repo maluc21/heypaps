@@ -1,0 +1,25 @@
+export async function updateProduct(
+  productId: string,
+  expectedVersion: number,
+  updates: {
+    name?: string;
+    description?: string;
+    active?: boolean;
+    paused?: boolean;
+    featured?: boolean;
+    position?: number;
+    /** Array completo de fileIds. `[]` quita todas; undefined conserva. */
+    images?: string[];
+  },
+): Promise<ProductResult> {
+  // null = conservar el valor actual (semántica parcial de update_product, migración 0005).
+  // Nunca enviar valores por defecto: sobrescribirían imágenes, banderas y posición.
+  const supabase = await createServerClient();
+  const { error } = await supabase.rpc("update_product", {
+    p_product_id: productId,
+    p_name: updates.name ?? null,
+    p_description: updates.description ?? null,
+    p_category_id: null,
+    p_tag_id: null,
+    p_attributes: null,
+    p_images: updates.images ?? null,

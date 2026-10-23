@@ -3,10 +3,11 @@ import { redirect } from "next/navigation";
 import { createServerClient } from "@/lib/supabase/server";
 import { getCurrentStore } from "@/lib/store-context";
 import { TagManager, type EditableTag } from "@/components/tag-manager";
+import { PanelShell } from "@/components/panel-shell";
 
 export const metadata = {
   title: "Etiquetas · Panel",
-  description: "Distingue productos con etiquetas",
+  description: "Organiza tus productos con etiquetas",
 };
 
 export const instant = false;
@@ -29,5 +30,11 @@ export default async function TagsPage() {
     .eq("store_id", store.id)
     .order("position", { ascending: true });
 
-  return <TagManager storeId={store.id} tags={(tags ?? []) as EditableTag[]} />;
+  return (
+    <PanelShell>
+      <div className="p-4">
+        <TagManager storeId={store.id} tags={(tags ?? []) as EditableTag[]} />
+      </div>
+    </PanelShell>
+  );
 }

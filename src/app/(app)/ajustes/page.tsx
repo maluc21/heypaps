@@ -9,6 +9,7 @@ import {
   type UsageSummary,
 } from "@/components/store-settings-form";
 import { getPlanLimits } from "@/lib/cache";
+import { PanelShell } from "@/components/panel-shell";
 
 export const metadata = {
   title: "Ajustes · Panel",
@@ -18,7 +19,6 @@ export const metadata = {
 export const instant = false;
 
 export default async function SettingsPage() {
-  // Render dinámico por petición: datos privados del inquilino.
   await connection();
   const supabase = await createServerClient();
   const {
@@ -31,15 +31,17 @@ export default async function SettingsPage() {
 
   if (!store) {
     return (
-      <div className="p-4">
-        <p className="rounded-xl border bg-card p-6 text-center text-muted-foreground">
-          Todavía no tienes una tienda.{" "}
-          <a href="/onboarding" className="underline">
-            Crea la primera
-          </a>
-          .
-        </p>
-      </div>
+      <PanelShell>
+        <div className="p-4">
+          <p className="rounded-xl border bg-card p-6 text-center text-muted-foreground">
+            Todavía no tienes una tienda.{" "}
+            <a href="/onboarding" className="underline">
+              Crea la primera
+            </a>
+            .
+          </p>
+        </div>
+      </PanelShell>
     );
   }
 
@@ -69,11 +71,15 @@ export default async function SettingsPage() {
   };
 
   return (
-    <StoreSettingsForm
-      store={store as unknown as StoreSettingsData}
-      role={store.role}
-      plan={planSummary}
-      usage={usage}
-    />
+    <PanelShell>
+      <div className="p-4">
+        <StoreSettingsForm
+          store={store as unknown as StoreSettingsData}
+          role={store.role}
+          plan={planSummary}
+          usage={usage}
+        />
+      </div>
+    </PanelShell>
   );
 }

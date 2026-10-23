@@ -6,6 +6,7 @@ import {
   CategoryManager,
   type Category,
 } from "@/components/category-manager";
+import { PanelShell } from "@/components/panel-shell";
 
 export const metadata = {
   title: "Categorías · Panel",
@@ -33,9 +34,13 @@ export default async function CategoriesPage() {
     .order("position", { ascending: true });
 
   return (
-    <CategoryManager
-      storeId={store.id}
-      categories={(categories ?? []) as Category[]}
-    />
+    <PanelShell>
+      <div className="p-4">
+        <CategoryManager
+          storeId={store.id}
+          categories={(categories ?? []) as Category[]}
+        />
+      </div>
+    </PanelShell>
   );
 }

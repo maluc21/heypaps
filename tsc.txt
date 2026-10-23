@@ -1,0 +1,1 @@
+src/components/product-list-mobile.tsx(7,10): error TS2305: Module '"@/lib/actions/product"' has no exported member 'toggleActive'.

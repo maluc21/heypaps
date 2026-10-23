@@ -4,6 +4,7 @@ import { createServerClient } from "@/lib/supabase/server";
 import { ProductEditorForm } from "@/components/product-editor-form";
 import { VariantManager, type EditableVariant } from "@/components/variant-manager";
 import { getPlanLimits } from "@/lib/cache";
+import { PanelShell } from "@/components/panel-shell";
 
 export const instant = false;
 
@@ -24,15 +25,11 @@ type Product = {
   variants: EditableVariant[];
 };
 
-
 export default async function ProductEditorPage({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  // Render dinámico por petición: la página lee la versión del producto para el
-  // control de concurrencia y getPlanLimits usa Date.now(), que Next no
-  // permite durante el prerender.
   await connection();
   const { slug } = await params;
   const supabase = await createServerClient();
@@ -48,7 +45,6 @@ export default async function ProductEditorPage({
 
   const product = data as Product;
 
-  // El límite de imágenes por producto depende del plan de la tienda.
   const { data: store } = await supabase
     .from("stores")
     .select("plan_code, currency")
@@ -78,21 +74,23 @@ export default async function ProductEditorPage({
   });
 
   return (
-    <>
-      <ProductEditorForm
-        product={product}
-        maxImages={planLimits.max_images_per_product}
-        categories={categories ?? []}
-        tags={tags ?? []}
-      />
-      <div className="p-4 max-w-xl pb-24">
-        <VariantManager
-          productId={product.id}
-          productVersion={product.version}
-          currency={store?.currency ?? "HNL"}
-          variants={product.variants}
+    <PanelShell>
+      <div className="p-4 space-y-4">
+        <ProductEditorForm
+          product={product}
+          maxImages={planLimits.max_images_per_product}
+          categories={categories ?? []}
+          tags={tags ?? []}
         />
+        <div className="max-w-xl">
+          <VariantManager
+            productId={product.id}
+            productVersion={product.version}
+            currency={store?.currency ?? "HNL"}
+            variants={product.variants}
+          />
+        </div>
       </div>
-    </>
+    </PanelShell>
   );
 }

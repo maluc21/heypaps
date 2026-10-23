@@ -1,0 +1,3 @@
+6: export type ProductResult = { error?: string; ok?: boolean };
+8: export async function updateProduct(
+55: export async function bulkUpdateProducts(

@@ -4,6 +4,7 @@ import { createServerClient } from "@/lib/supabase/server";
 import { getCurrentStore } from "@/lib/store-context";
 import { getPlanLimits } from "@/lib/cache";
 import { NewProductForm } from "@/components/new-product-form";
+import { PanelShell } from "@/components/panel-shell";
 
 export const metadata = {
   title: "Nuevo producto · Panel",
@@ -45,13 +46,17 @@ export default async function NewProductPage() {
   const plan = await getPlanLimits(store.plan_code);
 
   return (
-    <NewProductForm
-      storeId={store.id}
-      currency={store.currency}
-      categories={categories ?? []}
-      tags={tags ?? []}
-      maxProducts={plan.max_products}
-      currentProducts={productCount ?? 0}
-    />
+    <PanelShell>
+      <div className="p-4">
+        <NewProductForm
+          storeId={store.id}
+          currency={store.currency}
+          categories={categories ?? []}
+          tags={tags ?? []}
+          maxProducts={plan.max_products}
+          currentProducts={productCount ?? 0}
+        />
+      </div>
+    </PanelShell>
   );
 }
