@@ -125,17 +125,23 @@ export default function OnboardingPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="slug">Dirección (slug)</Label>
-                <Input
-                  id="slug"
-                  name="slug"
-                  value={slug}
-                  onChange={(e) => setSlug(e.target.value)}
-                  placeholder={slugFromName() || "mi-tienda"}
-                  required
-                />
+                <Label htmlFor="slug">Enlace de tu tienda</Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground select-none">
+                    heypaps.app/
+                  </span>
+                  <Input
+                    id="slug"
+                    name="slug"
+                    value={slug}
+                    onChange={(e) => setSlug(e.target.value)}
+                    placeholder={slugFromName() || "mi-tienda"}
+                    required
+                    className="pl-10"
+                  />
+                </div>
                 {RESERVED_SLUGS.has(slug) && (
-                  <p className="text-xs text-destructive">Esta dirección está reservada.</p>
+                  <p className="text-xs text-destructive">Este enlace está reservado.</p>
                 )}
               </div>
               <div className="space-y-2">
