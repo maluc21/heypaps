@@ -114,7 +114,7 @@ export default function OnboardingPage() {
           {step === "tienda" && (
             <form onSubmit={handleCreateStore} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Nombre de la tienda</Label>
+                <Label htmlFor="name">Nombre</Label>
                 <Input
                   id="name"
                   name="name"
@@ -127,7 +127,7 @@ export default function OnboardingPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="slug">Enlace de tu tienda</Label>
+                <Label htmlFor="slug">Enlace personalizado</Label>
                 <Input
                   id="slug"
                   name="slug"
@@ -135,7 +135,6 @@ export default function OnboardingPage() {
                   onChange={(e) => setSlug(e.target.value)}
                   placeholder={slugFromName() || "mi-tienda"}
                   required
-                  className="pl-10"
                 />
                 <p className="text-xs font-bold text-muted-foreground mt-1">
                   heypaps.app/{slug || slugFromName()}
