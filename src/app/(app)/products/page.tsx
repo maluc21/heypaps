@@ -2,6 +2,8 @@ import { connection } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
 import { ProductsTable, type Product } from "@/components/products-table";
 import { getCurrentStore } from "@/lib/store-context";
+import { PanelShell } from "@/components/panel-shell";
+import { ProductListMobile } from "@/components/product-list-mobile";
 
 export const metadata = {
   title: "Productos · Panel",
@@ -11,7 +13,6 @@ export const metadata = {
 export const instant = false;
 
 export default async function ProductsPage() {
-  // Render dinámico por petición: datos privados del inquilino, nunca prerenderizados.
   await connection();
   const supabase = await createServerClient();
   const {
@@ -20,12 +21,11 @@ export default async function ProductsPage() {
 
   if (!user) {
     return (
-      <ProductsTable
-        initialProducts={[]}
-        categories={[]}
-        tags={[]}
-        currency="HNL"
-      />
+      <PanelShell>
+        <div className="p-4">
+          <ProductsTable initialProducts={[]} categories={[]} tags={[]} currency="HNL" />
+        </div>
+      </PanelShell>
     );
   }
 
@@ -49,11 +49,32 @@ export default async function ProductsPage() {
   ]);
 
   return (
-    <ProductsTable
-      initialProducts={(products ?? []) as Product[]}
-      categories={categories ?? []}
-      tags={tags ?? []}
-      currency={store?.currency ?? "HNL"}
-    />
+    <PanelShell>
+      <div className="space-y-4 p-4">
+        <h1 className="text-lg font-semibold">Productos</h1>
+        <div className="hidden sm:block">
+          <ProductsTable
+            initialProducts={(products ?? []) as Product[]}
+            categories={categories ?? []}
+            tags={tags ?? []}
+            currency={store?.currency ?? "HNL"}
+          />
+        </div>
+        <div className="sm:hidden">
+          <ProductListMobile
+            products={(products ?? []).map((p: any) => ({
+              id: p.id,
+              name: p.name,
+              slug: p.slug,
+              price_cents: p.price_cents,
+              active: p.active,
+              category_id: p.category_id,
+              image_url: p.image_url,
+              version: p.version,
+            }))}
+          />
+        </div>
+      </div>
+    </PanelShell>
   );
 }

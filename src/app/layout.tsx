@@ -26,7 +26,11 @@ export default async function RootLayout({
   // Render dinámico por petición: el nonce de la CSP (proxy.ts) solo existe en cada request.
   await connection();
   return (
-    <html lang="es" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
+    <html
+      lang="es"
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      suppressHydrationWarning
+    >
       <body className="min-h-full flex flex-col">
         <Providers>{children}</Providers>
       </body>
