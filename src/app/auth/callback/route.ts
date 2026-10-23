@@ -55,7 +55,10 @@ export async function GET(request: NextRequest) {
     }
   );
 
-  await supabase.auth.exchangeCodeForSession(code);
+  const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+  if (exchangeError) {
+    return NextResponse.redirect(`${getEnv().NEXT_PUBLIC_APP_URL}/login?error=exchange_failed&details=${encodeURIComponent(exchangeError.message)}`);
+  }
 
   return response;
 }
