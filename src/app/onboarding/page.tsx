@@ -101,10 +101,10 @@ export default function OnboardingPage() {
     <div className="flex min-h-screen w-full items-center justify-center bg-muted px-4">
       <Card className="w-full max-w-md space-y-4">
         <CardHeader className="text-center">
-          <CardTitle>Crear tu tienda</CardTitle>
+          <CardTitle>Crea tu Catálogo</CardTitle>
           <CardDescription>
             {step === "tienda"
-              ? "Dale un nombre y una dirección a tu catálogo."
+              ? "Completa los datos para comenzar."
               : step === "producto"
                 ? "Añade tu primer producto."
                 : "Tu tienda está lista."}
