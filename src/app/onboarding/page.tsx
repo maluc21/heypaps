@@ -241,7 +241,7 @@ export default function OnboardingPage() {
           )}
         </CardContent>
         {step === "listo" && (
-          <CardFooter className="space-y-2">
+          <CardFooter className="space-y-2 p-4">
             {published ? (
               <>
                 <p className="text-center text-sm text-muted-foreground">
@@ -250,32 +250,34 @@ export default function OnboardingPage() {
                 <p className="break-all rounded-lg border border-border bg-muted px-3 py-2 text-center text-xs">
                   {catalogUrl}
                 </p>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleCopyLink}
-                  className="w-full"
-                >
-                  Copiar link
-                </Button>
-                <Button
-                  type="button"
-                  onClick={() => router.push(`/s/${storeSlug}`)}
-                  className="w-full"
-                >
-                  Ver mi catálogo
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => router.replace("/panel")}
-                  className="w-full"
-                >
-                  Ir al panel
-                </Button>
+                <div className="flex flex-col gap-2 w-full">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleCopyLink}
+                    className="w-full"
+                  >
+                    Copiar link
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => router.push(`/s/${storeSlug}`)}
+                    className="w-full"
+                  >
+                    Ver mi catálogo
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => router.replace("/panel")}
+                    className="w-full"
+                  >
+                    Ir al panel
+                  </Button>
+                </div>
               </>
             ) : (
-              <>
+              <div className="flex flex-col gap-2 w-full">
                 <Button
                   onClick={handlePublish}
                   disabled={publishing}
@@ -302,7 +304,7 @@ export default function OnboardingPage() {
                 <p className="pt-2 text-center text-xs text-muted-foreground">
                   Tu catálogo sigue oculto hasta que lo publiques.
                 </p>
-              </>
+              </div>
             )}
           </CardFooter>
         )}
