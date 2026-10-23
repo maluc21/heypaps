@@ -137,7 +137,7 @@ export default function OnboardingPage() {
                   required
                 />
                 <p className="text-xs font-bold text-muted-foreground mt-1">
-                  heypaps.app/{slug || slugFromName()}
+                  heypaps.com/{slug || slugFromName()}
                 </p>
                 {RESERVED_SLUGS.has(slug) && (
                   <p className="text-xs text-destructive">Este enlace está reservado.</p>
