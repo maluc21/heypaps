@@ -20,7 +20,12 @@ export async function signInMagicLink(formData: FormData): Promise<AuthResult> {
   }
 
   const supabase = await createServerClient();
-  const { error } = await supabase.auth.signInWithOtp({ email });
+  const { error } = await supabase.auth.signInWithOtp({
+    email,
+    options: {
+      emailRedirectTo: `${getEnv().NEXT_PUBLIC_APP_URL}/auth/callback`,
+    },
+  });
   if (error) return { error: error.message ?? "No se pudo enviar el enlace mágico." };
   return { message: "Revisa tu correo y pulsa el enlace mágico para entrar." };
 }
