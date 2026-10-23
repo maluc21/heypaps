@@ -39,7 +39,7 @@ begin
     where sm.user_id = v_actor and sm.role = 'owner'
   ) into v_exists;
   if v_exists then
-    raise exception 'el usuario ya es duenio de una tienda';
+    raise exception 'el usuario ya es dueño de una tienda';
   end if;
 
   insert into public.stores (slug, name, description, whatsapp_e164, currency, status, appearance)
