@@ -36,7 +36,8 @@ export default function OnboardingPage() {
 
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
-  const [whatsapp, setWhatsapp] = useState("");
+  const [whatsappCode, setWhatsappCode] = useState("+504");
+  const [whatsappNumber, setWhatsappNumber] = useState("");
   const [currency, setCurrency] = useState("HNL");
 
   const [productName, setProductName] = useState("");
@@ -48,6 +49,7 @@ export default function OnboardingPage() {
   const handleCreateStore = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
+    formData.set("whatsapp", `${whatsappCode}${whatsappNumber}`);
     const result = await createStore(formData);
     if (result.error) {
       toast.error(result.error);
@@ -143,8 +145,55 @@ export default function OnboardingPage() {
                 )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="whatsapp">WhatsApp</Label>
-                <Input id="whatsapp" name="whatsapp" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} placeholder="+501 3123 4567" />
+                <Label htmlFor="whatsapp">Número de WhatsApp</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <Select value={whatsappCode} onValueChange={setWhatsappCode}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="+504">Honduras (+504)</SelectItem>
+                      <SelectItem value="+1">Estados Unidos / Canadá (+1)</SelectItem>
+                      <SelectItem value="+52">México (+52)</SelectItem>
+                      <SelectItem value="+54">Argentina (+54)</SelectItem>
+                      <SelectItem value="+56">Chile (+56)</SelectItem>
+                      <SelectItem value="+57">Colombia (+57)</SelectItem>
+                      <SelectItem value="+58">Venezuela (+58)</SelectItem>
+                      <SelectItem value="+55">Brasil (+55)</SelectItem>
+                      <SelectItem value="+51">Perú (+51)</SelectItem>
+                      <SelectItem value="+501">Belice (+501)</SelectItem>
+                      <SelectItem value="+502">Guatemala (+502)</SelectItem>
+                      <SelectItem value="+503">El Salvador (+503)</SelectItem>
+                      <SelectItem value="+505">Nicaragua (+505)</SelectItem>
+                      <SelectItem value="+506">Costa Rica (+506)</SelectItem>
+                      <SelectItem value="+507">Panamá (+507)</SelectItem>
+                      <SelectItem value="+509">Haití (+509)</SelectItem>
+                      <SelectItem value="+31">Países Bajos (+31)</SelectItem>
+                      <SelectItem value="+32">Bélgica (+32)</SelectItem>
+                      <SelectItem value="+33">Francia (+33)</SelectItem>
+                      <SelectItem value="+34">España (+34)</SelectItem>
+                      <SelectItem value="+39">Italia (+39)</SelectItem>
+                      <SelectItem value="+41">Suiza (+41)</SelectItem>
+                      <SelectItem value="+44">Reino Unido (+44)</SelectItem>
+                      <SelectItem value="+49">Alemania (+49)</SelectItem>
+                      <SelectItem value="+53">Cuba (+53)</SelectItem>
+                      <SelectItem value="+61">Australia (+61)</SelectItem>
+                      <SelectItem value="+81">Japón (+81)</SelectItem>
+                      <SelectItem value="+86">China (+86)</SelectItem>
+                      <SelectItem value="+91">India (+91)</SelectItem>
+                      <SelectItem value="+971">Emiratos Árabes (+971)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                    <Input
+                    id="whatsapp-number"
+                    value={whatsappNumber}
+                    onChange={(e) => setWhatsappNumber(e.target.value.replace(/[^0-9]/g, ""))}
+                    placeholder="31234567"
+                    required
+                    className="pl-3"
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">Sin guiones ni espacios. Solo números.</p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="currency">Moneda</Label>
