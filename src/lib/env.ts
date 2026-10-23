@@ -12,6 +12,8 @@ type Env = {
   IMAGEKIT_PRIVATE_KEY: string | undefined
   NEXT_PUBLIC_APP_URL: string
   KV_URL: string | undefined
+  RESEND_API_KEY: string | undefined
+  RESEND_FROM_EMAIL: string | undefined
 }
 
 const REQUIRED: (keyof Env)[] = [
@@ -42,6 +44,8 @@ export function getEnv(): Env {
     IMAGEKIT_PRIVATE_KEY: process.env.IMAGEKIT_PRIVATE_KEY,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL!,
     KV_URL: process.env.KV_URL,
+    RESEND_API_KEY: process.env.RESEND_API_KEY,
+    RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL,
   }
   return cached
 }

@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { updateTag } from "next/cache";
+import { deleteCache } from "@/lib/cache";
 
 /**
  * Invalida la caché del catálogo público y de la ficha de un producto.
@@ -28,6 +29,8 @@ export async function invalidateProductCatalog(
 
   updateTag(`catalog:${store.slug}`);
   updateTag(`product:${store.slug}:${product.slug}`);
+  await deleteCache(`store-published:${store.slug}`);
+  await deleteCache(`product-published:${store.slug}:${product.slug}`);
 }
 
 /**
@@ -47,5 +50,6 @@ export async function invalidateStoreCatalog(
     .maybeSingle();
   if (store?.slug) {
     updateTag(`catalog:${store.slug}`);
+    await deleteCache(`store-published:${store.slug}`);
   }
 }

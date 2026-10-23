@@ -2,6 +2,7 @@
 
 import { updateTag } from "next/cache";
 import { createServerClient } from "@/lib/supabase/server";
+import { deleteCache } from "@/lib/cache";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -130,5 +131,6 @@ async function invalidateStore(
     .maybeSingle();
   if (store?.slug) {
     updateTag(`catalog:${store.slug}`);
+    await deleteCache(`store-published:${store.slug}`);
   }
 }

@@ -51,12 +51,12 @@ export default function LoginPage() {
             <Label htmlFor="email">Correo electrónico</Label>
             <Input
               id="email"
+              name="email"
               type="email"
               placeholder="tu@correo.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              autoFocus
             />
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "Enviando…" : "Enviar enlace mágico"}

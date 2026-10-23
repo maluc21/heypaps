@@ -122,7 +122,6 @@ export default function OnboardingPage() {
                     if (!slug) setSlug(slugFromName());
                   }}
                   required
-                  autoFocus
                 />
               </div>
               <div className="space-y-2">
