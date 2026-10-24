@@ -153,6 +153,8 @@ export function VariantManager({ productId, productVersion, currency, variants }
   };
 
   const sorted = [...variants].sort((a, b) => a.final_price_cents - b.final_price_cents);
+  const baseVariant = variants.find((v) => Object.keys(v.attributes ?? {}).length === 0);
+  const basePrice = baseVariant ? (baseVariant.price_cents / 100).toFixed(2) : "";
 
   return (
     <Card>
@@ -216,6 +218,7 @@ export function VariantManager({ productId, productVersion, currency, variants }
             key={editing.variantId ?? "new"}
             initial={editing}
             currency={currency}
+            basePrice={basePrice}
             busy={busy}
             onCancel={() => setEditing(null)}
             onSave={handleSave}
@@ -238,12 +241,14 @@ export function VariantManager({ productId, productVersion, currency, variants }
 function VariantForm({
   initial,
   currency,
+  basePrice,
   busy,
   onCancel,
   onSave,
 }: {
   initial: VariantInput;
   currency: string;
+  basePrice: string;
   busy: boolean;
   onCancel: () => void;
   onSave: (input: VariantInput) => void;
@@ -333,7 +338,11 @@ function VariantForm({
       className="space-y-4 rounded-xl border border-border p-4"
       onSubmit={(e) => {
         e.preventDefault();
-        onSave(form);
+        const next = { ...form };
+        if (!showPrice && basePrice) {
+          next.price = basePrice;
+        }
+        onSave(next);
       }}
     >
       {/* Tipo y Valor de la variante */}

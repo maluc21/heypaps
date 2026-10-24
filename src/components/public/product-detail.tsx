@@ -66,11 +66,6 @@ export function ProductDetail({ store, storeId, product, productUrl }: Props) {
   );
 
   // "desde $X" solo si las variantes activas difieren en precio (plan §4.4).
-  const isRange = useMemo(() => {
-    const prices = new Set(variants.map((v) => v.final_price_cents));
-    return prices.size > 1;
-  }, [variants]);
-
   const priceFrom = product.price_from;
   const selectedPrice = selected ? selected.final_price_cents : priceFrom;
 
@@ -130,10 +125,9 @@ export function ProductDetail({ store, storeId, product, productUrl }: Props) {
       <div className="space-y-3">
         <h1 className="text-xl font-semibold leading-tight">{product.name}</h1>
 
-        {priceFrom !== null ? (
+        {selectedPrice !== null ? (
           <p className="text-2xl font-bold">
-            {isRange ? "desde " : ""}
-            {formatMoney(priceFrom, store.currency)}
+            {formatMoney(selectedPrice, store.currency)}
           </p>
         ) : (
           <p className="text-sm text-muted-foreground">Consultar precio</p>

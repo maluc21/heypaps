@@ -87,7 +87,11 @@ export function ProductEditorForm({
   const hasVariants = product.variants.length > 0;
   const baseVariant = product.variants.find((v) => Object.keys(v.attributes ?? {}).length === 0) ?? null;
   const [basePrice, setBasePrice] = useState(
-    baseVariant ? (baseVariant.price_cents / 100).toFixed(2) : "",
+    baseVariant
+      ? (baseVariant.price_cents / 100).toFixed(2)
+      : product.variants.length
+        ? (Math.min(...product.variants.map((v) => v.price_cents)) / 100).toFixed(2)
+        : "",
   );
 
   const save = async () => {
@@ -106,24 +110,41 @@ export function ProductEditorForm({
     }
     if (res.error) { toast.error(res.error); setSaving(false); return; }
 
-    // Actualiza el precio de la variante base si cambió.
-    if (baseVariant) {
-      const newCents = Math.round(Number(basePrice) * 100);
-      if (!Number.isNaN(newCents) && newCents > 0 && newCents !== baseVariant.price_cents) {
-        const discountValue =
-          baseVariant.discount_type === "fixed"
-            ? (baseVariant.discount_value / 100).toFixed(2)
-            : String(baseVariant.discount_value);
+    // Actualiza o crea la variante base (precio base) si cambió/indicó.
+    const newCents = Math.round(Number(basePrice) * 100);
+    if (!Number.isNaN(newCents) && newCents > 0) {
+      if (baseVariant) {
+        if (newCents !== baseVariant.price_cents) {
+          const discountValue =
+            baseVariant.discount_type === "fixed"
+              ? (baseVariant.discount_value / 100).toFixed(2)
+              : String(baseVariant.discount_value);
+          const vr = await saveVariant(product.id, product.version, {
+            variantId: baseVariant.id,
+            attributes: [],
+            sku: baseVariant.sku ?? "",
+            price: basePrice,
+            discountType: baseVariant.discount_type as "none" | "percent" | "fixed",
+            discountValue,
+            madeToOrder: baseVariant.stock === null,
+            stock: baseVariant.stock === null ? "" : String(baseVariant.stock),
+            active: baseVariant.active,
+          });
+          if (vr.error && vr.error !== "CONFLICT") {
+            toast.error(vr.error);
+          }
+        }
+      } else {
         const vr = await saveVariant(product.id, product.version, {
-          variantId: baseVariant.id,
+          variantId: null,
           attributes: [],
-          sku: baseVariant.sku ?? "",
+          sku: "",
           price: basePrice,
-          discountType: baseVariant.discount_type as "none" | "percent" | "fixed",
-          discountValue,
-          madeToOrder: baseVariant.stock === null,
-          stock: baseVariant.stock === null ? "" : String(baseVariant.stock),
-          active: baseVariant.active,
+          discountType: "none",
+          discountValue: "",
+          madeToOrder: true,
+          stock: "",
+          active: true,
         });
         if (vr.error && vr.error !== "CONFLICT") {
           toast.error(vr.error);
@@ -188,17 +209,15 @@ export function ProductEditorForm({
             <Label htmlFor="description">Descripción</Label>
             <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} />
           </div>
-          {baseVariant ? (
-            <div className="space-y-2">
-              <Label htmlFor="base-price">Precio ({currency})</Label>
-              <Input
-                id="base-price"
-                inputMode="decimal"
-                value={basePrice}
-                onChange={(e) => setBasePrice(e.target.value)}
-              />
-            </div>
-          ) : null}
+          <div className="space-y-2">
+            <Label htmlFor="base-price">Precio ({currency})</Label>
+            <Input
+              id="base-price"
+              inputMode="decimal"
+              value={basePrice}
+              onChange={(e) => setBasePrice(e.target.value)}
+            />
+          </div>
           <div className="space-y-2">
             <Label htmlFor="category">Categoría</Label>
             <select
