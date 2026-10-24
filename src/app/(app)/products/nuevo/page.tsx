@@ -58,6 +58,7 @@ export default async function NewProductPage() {
           tags={tags ?? []}
           maxProducts={plan.max_products}
           currentProducts={productCount ?? 0}
+          pricingMode={store.pricing_mode ?? "SHOW_ALL"}
         />
       </div>
     </PanelShell>

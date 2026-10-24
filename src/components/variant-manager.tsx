@@ -49,6 +49,7 @@ type Props = {
   productVersion: number;
   currency: string;
   variants: EditableVariant[];
+  pricingMode?: string;
 };
 
 // Tipos de atributos típicos con sus valores predefinidos.
@@ -98,7 +99,7 @@ function toFormState(variant: EditableVariant | null): VariantInput {
   };
 }
 
-export function VariantManager({ productId, productVersion, currency, variants }: Props) {
+export function VariantManager({ productId, productVersion, currency, variants, pricingMode = "SHOW_ALL" }: Props) {
   const router = useRouter();
   const [editing, setEditing] = useState<VariantInput | null>(null);
   const [busy, setBusy] = useState(false);
@@ -220,6 +221,7 @@ export function VariantManager({ productId, productVersion, currency, variants }
             currency={currency}
             basePrice={basePrice}
             busy={busy}
+            pricingMode={pricingMode}
             onCancel={() => setEditing(null)}
             onSave={handleSave}
           />
@@ -243,6 +245,7 @@ function VariantForm({
   currency,
   basePrice,
   busy,
+  pricingMode = "SHOW_ALL",
   onCancel,
   onSave,
 }: {
@@ -250,6 +253,7 @@ function VariantForm({
   currency: string;
   basePrice: string;
   busy: boolean;
+  pricingMode?: string;
   onCancel: () => void;
   onSave: (input: VariantInput) => void;
 }) {
@@ -341,6 +345,9 @@ function VariantForm({
         const next = { ...form };
         if (!showPrice && basePrice) {
           next.price = basePrice;
+        }
+        if (pricingMode === "REQUEST_ALL") {
+          if (!next.price) next.price = basePrice || "0";
         }
         onSave(next);
       }}
@@ -442,9 +449,10 @@ function VariantForm({
           <Switch
             id="variant-show-price"
             checked={showPrice}
+            disabled={pricingMode === "REQUEST_ALL"}
             onCheckedChange={setShowPrice}
           />
-            <Label htmlFor="variant-show-price">Precio específico</Label>
+          <Label htmlFor="variant-show-price">Precio específico</Label>
         </div>
         {showPrice ? (
           <div className="space-y-2">
@@ -455,7 +463,12 @@ function VariantForm({
               placeholder={basePrice || "450.50"}
               value={form.price}
               onChange={(e) => setForm({ ...form, price: e.target.value })}
+              disabled={pricingMode === "REQUEST_ALL"}
+              className={pricingMode === "REQUEST_ALL" ? "opacity-50 cursor-not-allowed bg-muted" : ""}
             />
+            {pricingMode === "REQUEST_ALL" ? (
+              <p className="text-xs text-muted-foreground">Precio bloqueado por la configuración global de la tienda.</p>
+            ) : null}
           </div>
         ) : null}
       </div>

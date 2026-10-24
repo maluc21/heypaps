@@ -91,6 +91,7 @@ export default async function ProductEditorPage({
             productVersion={product.version}
             currency={store?.currency ?? "HNL"}
             variants={product.variants}
+            pricingMode={store?.pricing_mode ?? "SHOW_ALL"}
           />
         </div>
       </div>

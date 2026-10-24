@@ -221,7 +221,12 @@ export function ProductEditorForm({
               inputMode="decimal"
               value={basePrice}
               onChange={(e) => setBasePrice(e.target.value)}
+              disabled={pricingMode === "REQUEST_ALL"}
+              className={pricingMode === "REQUEST_ALL" ? "opacity-50 cursor-not-allowed bg-muted" : ""}
             />
+            {pricingMode === "REQUEST_ALL" ? (
+              <p className="text-xs text-muted-foreground">Precio bloqueado por la configuración global de la tienda.</p>
+            ) : null}
           </div>
           <div className="space-y-2">
             <Label htmlFor="category">Categoría</Label>
@@ -268,9 +273,13 @@ export function ProductEditorForm({
               <Switch id="show-price" checked={showPrice} onCheckedChange={setShowPrice} />
               <Label htmlFor="show-price">{showPrice ? "Mostrar precio" : "Precio a solicitud"}</Label>
             </div>
+          ) : pricingMode === "SHOW_ALL" ? (
+            <p className="text-xs text-muted-foreground">
+              Precio visible en todos los productos (configuración global).
+            </p>
           ) : (
             <p className="text-xs text-muted-foreground">
-              La visibilidad del precio la rige la configuración global de la tienda.
+              Precio a solicitud en todos los productos (configuración global).
             </p>
           )}
           {!hasVariants && (

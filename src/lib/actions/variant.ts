@@ -44,7 +44,7 @@ export async function saveVariant(
   let payload;
   try {
     const priceCents = parseAmountToCents(input.price);
-    if (priceCents === null || priceCents <= 0) {
+    if (priceCents === null || priceCents < 0) {
       throw new Error("El precio debe ser mayor que cero (usa 450 o 450.50).");
     }
     payload = {

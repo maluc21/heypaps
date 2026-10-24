@@ -30,6 +30,7 @@ type Props = {
   tags: ProductOption[];
   maxProducts: number;
   currentProducts: number;
+  pricingMode?: string;
 };
 
 export function NewProductForm({
@@ -39,6 +40,7 @@ export function NewProductForm({
   tags,
   maxProducts,
   currentProducts,
+  pricingMode = "SHOW_ALL",
 }: Props) {
   const router = useRouter();
   const [name, setName] = useState("");
@@ -64,7 +66,7 @@ export function NewProductForm({
       storeId,
       name,
       description,
-      price,
+      price: pricingMode === "REQUEST_ALL" ? price || "0" : price,
       categoryId: categoryId || null,
       tagId: tagId || null,
       stock: inventoryMode === "inventario" ? stockQuantity : undefined,
@@ -129,8 +131,13 @@ export function NewProductForm({
               placeholder="450.50"
               value={price}
               onChange={(e) => setPrice(e.target.value)}
-              required
+              required={pricingMode !== "REQUEST_ALL"}
+              disabled={pricingMode === "REQUEST_ALL"}
+              className={pricingMode === "REQUEST_ALL" ? "opacity-50 cursor-not-allowed bg-muted" : ""}
             />
+            {pricingMode === "REQUEST_ALL" ? (
+              <p className="text-xs text-muted-foreground">Precio bloqueado por la configuración global de la tienda.</p>
+            ) : null}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
