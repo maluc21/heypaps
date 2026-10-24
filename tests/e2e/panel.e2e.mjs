@@ -413,8 +413,9 @@ try {
   check("ajustes muestra el plan y el uso", (await page.getByText("Tu plan").count()) >= 1);
 
   await page.locator("#store-name").fill("Tienda E2E Ajustada");
-  await page.getByRole("button", { name: "Guardar cambios" }).click();
+  await page.locator("#store-name").blur();
   await page.waitForTimeout(2000);
+  await page.waitForLoadState("networkidle");
   await page.reload();
   await page.locator("#store-name").waitFor({ timeout: 15000 });
   check(

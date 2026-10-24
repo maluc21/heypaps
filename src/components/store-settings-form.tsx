@@ -8,7 +8,7 @@
  * productos.
  */
 
-import { useState, useSyncExternalStore } from "react";
+import { useRef, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -97,6 +97,7 @@ export function StoreSettingsForm({ store, role, plan, usage }: Props) {
   const [pricingMode, setPricingMode] = useState(store.pricing_mode ?? "SHOW_ALL");
   const [saving, setSaving] = useState(false);
   const [busy, setBusy] = useState(false);
+  const savingRef = useRef(false);
 
   const storedSocial = (store.appearance?.socialLinks as Record<SocialPlatform, string | null>) ?? {};
   const [socialLinks, setSocialLinks] = useState<Record<SocialPlatform, string>>(
@@ -110,31 +111,91 @@ export function StoreSettingsForm({ store, role, plan, usage }: Props) {
   );
   const publicUrl = origin ? `${origin}/s/${slug}` : `/s/${slug}`;
 
-  const save = async () => {
-    setSaving(true);
+  const persist = async (overrides: Partial<{
+    name: string;
+    description: string;
+    whatsapp: string;
+    currency: string;
+    secondaryCurrency: string;
+    fxRate: string;
+    socialLinks: Record<SocialPlatform, string>;
+    pricingMode: string;
+  }> = {}) => {
+    if (!isOwner || savingRef.current) return;
+
+    const nextName = overrides.name ?? name;
+    const nextDescription = overrides.description ?? description;
+    const nextWhatsapp = overrides.whatsapp ?? whatsapp;
+    const nextCurrency = overrides.currency ?? currency;
+    const nextSecondary = overrides.secondaryCurrency ?? secondaryCurrency;
+    const nextFxRate = overrides.fxRate ?? fxRate;
+    const nextSocial = overrides.socialLinks ?? socialLinks;
+    const nextPricingMode = overrides.pricingMode ?? pricingMode;
+
+    if (!nextName.trim()) {
+      toast.error("El nombre de la tienda es obligatorio.");
+      return;
+    }
+    if (nextSecondary && nextSecondary === nextCurrency) {
+      toast.error("La segunda moneda debe ser distinta a la principal.");
+      return;
+    }
+    if (nextSecondary) {
+      const n = Number(nextFxRate);
+      if (!nextFxRate || Number.isNaN(n) || n <= 0) {
+        toast.error("La tasa de cambio debe ser un número mayor a 0.");
+        return;
+      }
+    }
+
+    if (overrides.name !== undefined) setName(overrides.name);
+    if (overrides.description !== undefined) setDescription(overrides.description);
+    if (overrides.whatsapp !== undefined) setWhatsapp(overrides.whatsapp);
+    if (overrides.currency !== undefined) setCurrency(overrides.currency);
+    if (overrides.secondaryCurrency !== undefined) setSecondaryCurrency(overrides.secondaryCurrency);
+    if (overrides.fxRate !== undefined) setFxRate(overrides.fxRate);
+    if (overrides.socialLinks !== undefined) setSocialLinks(overrides.socialLinks);
+    if (overrides.pricingMode !== undefined) setPricingMode(overrides.pricingMode);
+
     const socialLinksObj = SOCIAL_PLATFORMS.reduce((acc, p) => {
-      const val = socialLinks[p.key]?.trim();
+      const val = nextSocial[p.key]?.trim();
       if (val) acc[p.key] = val;
       return acc;
     }, {} as Record<string, string>);
 
-    const res = await updateStoreSettings(store.id, {
-      name,
-      description,
-      whatsapp,
-      currency,
-      secondaryCurrency: secondaryCurrency || null,
-      fxRate: secondaryCurrency ? Number(fxRate) : null,
+    const payload = {
+      name: nextName,
+      description: nextDescription,
+      whatsapp: nextWhatsapp,
+      currency: nextCurrency,
+      secondaryCurrency: nextSecondary || null,
+      fxRate: nextSecondary ? Number(nextFxRate) : null,
       socialLinks: Object.keys(socialLinksObj).length > 0 ? socialLinksObj : undefined,
-      pricingMode,
+      pricingMode: nextPricingMode,
+    };
+
+    savingRef.current = true;
+    setSaving(true);
+    const promise = updateStoreSettings(store.id, payload).then((res) => {
+      if (res.error) throw new Error(res.error);
+      return res;
     });
-    setSaving(false);
-    if (res.error) {
-      toast.error(res.error);
-      return;
+    toast.promise(promise, {
+      loading: "Guardando…",
+      success: "Ajustes guardados.",
+      error: (e: unknown) => (e instanceof Error ? e.message : "No se pudieron guardar los ajustes."),
+    });
+
+    let ok = true;
+    try {
+      await promise;
+    } catch {
+      ok = false;
+    } finally {
+      savingRef.current = false;
+      setSaving(false);
     }
-    toast.success("Ajustes guardados.");
-    router.refresh();
+    if (ok) router.refresh();
   };
 
   const saveLogo = async (fileId: string | null) => {
@@ -221,8 +282,9 @@ export function StoreSettingsForm({ store, role, plan, usage }: Props) {
             <Input
               id="store-name"
               value={name}
-              disabled={!isOwner}
+              disabled={!isOwner || saving}
               onChange={(e) => setName(e.target.value)}
+              onBlur={() => persist()}
             />
           </div>
 
@@ -231,8 +293,9 @@ export function StoreSettingsForm({ store, role, plan, usage }: Props) {
             <Textarea
               id="store-description"
               value={description}
-              disabled={!isOwner}
+              disabled={!isOwner || saving}
               onChange={(e) => setDescription(e.target.value)}
+              onBlur={() => persist()}
             />
           </div>
 
@@ -241,9 +304,10 @@ export function StoreSettingsForm({ store, role, plan, usage }: Props) {
             <Input
               id="store-whatsapp"
               value={whatsapp}
-              disabled={!isOwner}
+              disabled={!isOwner || saving}
               placeholder="+504 1234 5678"
               onChange={(e) => setWhatsapp(e.target.value)}
+              onBlur={() => persist()}
             />
             <p className="text-xs text-muted-foreground">
               Se guarda en formato internacional. Es a donde caen las ventas.
@@ -277,8 +341,12 @@ export function StoreSettingsForm({ store, role, plan, usage }: Props) {
             <select
               id="store-currency"
               value={currency}
-              disabled={!isOwner}
-              onChange={(e) => setCurrency(e.target.value)}
+              disabled={!isOwner || saving}
+              onChange={(e) => {
+                const v = e.target.value;
+                setCurrency(v);
+                persist({ currency: v });
+              }}
               className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
             >
               {CURRENCIES.map((c) => (
@@ -294,8 +362,12 @@ export function StoreSettingsForm({ store, role, plan, usage }: Props) {
             <select
               id="store-secondary"
               value={secondaryCurrency}
-              disabled={!isOwner}
-              onChange={(e) => setSecondaryCurrency(e.target.value)}
+              disabled={!isOwner || saving}
+              onChange={(e) => {
+                const v = e.target.value;
+                setSecondaryCurrency(v);
+                persist({ secondaryCurrency: v });
+              }}
               className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
             >
               <option value="">Ninguna</option>
@@ -315,10 +387,11 @@ export function StoreSettingsForm({ store, role, plan, usage }: Props) {
               <Input
                 id="store-fx"
                 value={fxRate}
-                disabled={!isOwner}
+                disabled={!isOwner || saving}
                 inputMode="decimal"
                 placeholder="25.50"
                 onChange={(e) => setFxRate(e.target.value)}
+                onBlur={() => persist()}
               />
               <p className="text-xs text-muted-foreground">
                 Tipo de cambio que usas para mostrar precios en la segunda moneda.
@@ -338,34 +411,43 @@ export function StoreSettingsForm({ store, role, plan, usage }: Props) {
         <CardContent className="space-y-3">
           <label className="flex items-center gap-2 text-sm">
             <input
-              type="radio"
-              name="pricing-mode"
-              value="SHOW_ALL"
-              checked={pricingMode === "SHOW_ALL"}
-              disabled={!isOwner}
-              onChange={() => setPricingMode("SHOW_ALL")}
+               type="radio"
+               name="pricing-mode"
+               value="SHOW_ALL"
+               checked={pricingMode === "SHOW_ALL"}
+               disabled={!isOwner || saving}
+               onChange={() => {
+                 setPricingMode("SHOW_ALL");
+                 persist({ pricingMode: "SHOW_ALL" });
+               }}
             />
             Mostrar precio en todos los productos
           </label>
           <label className="flex items-center gap-2 text-sm">
             <input
-              type="radio"
-              name="pricing-mode"
-              value="REQUEST_ALL"
-              checked={pricingMode === "REQUEST_ALL"}
-              disabled={!isOwner}
-              onChange={() => setPricingMode("REQUEST_ALL")}
+               type="radio"
+               name="pricing-mode"
+               value="REQUEST_ALL"
+               checked={pricingMode === "REQUEST_ALL"}
+               disabled={!isOwner || saving}
+               onChange={() => {
+                 setPricingMode("REQUEST_ALL");
+                 persist({ pricingMode: "REQUEST_ALL" });
+               }}
             />
             Precio a solicitud en todos los productos
           </label>
           <label className="flex items-center gap-2 text-sm">
             <input
-              type="radio"
-              name="pricing-mode"
-              value="CUSTOM"
-              checked={pricingMode === "CUSTOM"}
-              disabled={!isOwner}
-              onChange={() => setPricingMode("CUSTOM")}
+               type="radio"
+               name="pricing-mode"
+               value="CUSTOM"
+               checked={pricingMode === "CUSTOM"}
+               disabled={!isOwner || saving}
+               onChange={() => {
+                 setPricingMode("CUSTOM");
+                 persist({ pricingMode: "CUSTOM" });
+               }}
             />
             Personalizado por producto
           </label>
@@ -438,22 +520,16 @@ export function StoreSettingsForm({ store, role, plan, usage }: Props) {
                 <Input
                   id={`social-${platform.key}`}
                   value={socialLinks[platform.key]}
-                  disabled={!isOwner}
+                  disabled={!isOwner || saving}
                   placeholder={`${platform.label.toLowerCase()}.com/${platform.placeholder}`}
                   onChange={(e) => setSocialLinks((prev) => ({ ...prev, [platform.key]: e.target.value }))}
+                  onBlur={() => persist()}
                   className="flex-1"
                 />
               </div>
             </div>
           ))}
         </CardContent>
-        {isOwner ? (
-          <div className="px-6 pb-6">
-            <Button onClick={save} disabled={saving} className="w-full">
-              {saving ? "Guardando…" : "Guardar"}
-            </Button>
-          </div>
-        ) : null}
       </Card>
 
       <Card>
