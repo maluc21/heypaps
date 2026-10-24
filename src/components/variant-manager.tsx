@@ -373,13 +373,13 @@ function VariantForm({
       <div className="space-y-2">
         <div className="flex items-center gap-2">
           <Switch
-            id="variant-made-to-order"
-            checked={form.madeToOrder}
-            onCheckedChange={(checked) => setForm({ ...form, madeToOrder: checked })}
+            id="variant-inventory-mode"
+            checked={!form.madeToOrder}
+            onCheckedChange={(checked) => setForm({ ...form, madeToOrder: !checked })}
           />
-          <Label htmlFor="variant-made-to-order">Por Inventario</Label>
+          <Label htmlFor="variant-inventory-mode">Por Inventario</Label>
         </div>
-        {form.madeToOrder ? null : (
+        {!form.madeToOrder ? (
           <>
             <Input
               id="variant-stock"
@@ -396,7 +396,7 @@ function VariantForm({
               </p>
             ) : null}
           </>
-        )}
+        ) : null}
       </div>
 
       <div className="flex items-center gap-2">

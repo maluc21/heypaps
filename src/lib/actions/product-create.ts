@@ -51,7 +51,7 @@ export async function createProduct(
   if (!input.madeToOrder) {
     const raw = (input.stock ?? "").trim();
     if (raw === "") {
-      return { error: "Indica el stock o marca el producto como por encargo." };
+      return { error: "Indica la cantidad de unidades de producto." };
     }
     const value = Number(raw);
     if (!Number.isInteger(value) || value < 0) {

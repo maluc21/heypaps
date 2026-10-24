@@ -79,15 +79,15 @@ export function discountValueToStorage(
 }
 
 /**
- * Stock del formulario. `madeToOrder` guarda null (sin límite). Sin stock y
- * sin "por encargo" no se guarda: un campo vacío no debe significar agotado
- * ni ilimitado por accidente.
+ * Stock del formulario. Cuando el modo es inventario (madeToOrder=false) se
+ * requiere una cantidad numérica. Sin stock no se guarda: un campo vacío no
+ * debe significar agotado ni ilimitado por accidente.
  */
 export function stockToStorage(input: string, madeToOrder: boolean): number | null {
   if (madeToOrder) return null;
   const trimmed = input.trim();
   if (trimmed === "") {
-    throw new Error("Indica el stock o marca la variante como por encargo.");
+    throw new Error("Indica la cantidad de unidades de producto.");
   }
   const value = Number(trimmed);
   if (!Number.isInteger(value) || value < 0) {
