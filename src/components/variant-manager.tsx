@@ -61,14 +61,14 @@ const COLOR_OPTIONS = ["Negro", "Blanco", "Rojo", "Azul", "Verde", "Amarillo", "
 
 const SIZE_WORD_OPTIONS = ["XS", "S", "M", "L", "XL", "XXL", "XXXL"];
 
-const SIZE_CODE_OPTIONS = ["s", "m", "l", "xl", "xxl", "xxxl"];
+const SIZE_CODE_OPTIONS = ["S", "M", "L", "XL", "XXL", "XXXL"];
 
 /** Estado inicial del formulario: vacío para crear, o lo guardado para editar. */
 function toFormState(variant: EditableVariant | null): VariantInput {
   if (!variant) {
     return {
       variantId: null,
-      attributes: [{ name: "", value: "", type: "color" }],
+      attributes: [{ name: "Color", value: "", type: "color" }],
       sku: "",
       price: "",
       discountType: "none",
@@ -79,9 +79,14 @@ function toFormState(variant: EditableVariant | null): VariantInput {
     };
   }
   const pairs = pairsFromAttributes(variant.attributes);
+  const inferredType = (name: string): AttributeTypeKey =>
+    name.toLowerCase() === "color" ? "color" : "talla-codigo";
   return {
     variantId: variant.id,
-    attributes: pairs.length > 0 ? pairs.map((p) => ({ ...p, type: "color" })) : [{ name: "", value: "", type: "color" }],
+    attributes:
+      pairs.length > 0
+        ? pairs.map((p) => ({ ...p, type: inferredType(p.name) }))
+        : [{ name: "Color", value: "", type: "color" }],
     sku: variant.sku ?? "",
     price: (variant.price_cents / 100).toFixed(2),
     discountType: variant.discount_type,
@@ -260,10 +265,13 @@ function VariantForm({
     stockError = (err as Error).message;
   }
 
+  const labelForType = (key: AttributeTypeKey): string =>
+    key === "color" ? "Color" : "Talla";
+
   const setType = (value: AttributeTypeKey) => {
     setForm((current) => ({
       ...current,
-      attributes: [{ ...pair, type: value }],
+      attributes: [{ name: labelForType(value), value: "", type: value }],
     }));
   };
 
@@ -279,7 +287,12 @@ function VariantForm({
     if (checked) {
       setForm((current) => ({
         ...current,
-        attributes: [{ ...pair, type: "color" }],
+        attributes: [{ name: "", value: "", type: "color" }],
+      }));
+    } else {
+      setForm((current) => ({
+        ...current,
+        attributes: [{ name: "Color", value: "", type: "color" }],
       }));
     }
   };
@@ -320,27 +333,36 @@ function VariantForm({
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-2">
-            <Select
-              defaultValue={pair.type}
-              onValueChange={(value) => setType(value as AttributeTypeKey)}
-            >
-              <SelectTrigger id="variant-type" className="w-full">
-                <SelectValue placeholder="Seleccionar tipo" />
-              </SelectTrigger>
-              <SelectContent>
-                {ATTRIBUTE_TYPES.map((t) => (
-                  <SelectItem key={t.key} value={t.key}>
-                    {t.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {customAttributes ? (
+              <Input
+                id="variant-type"
+                placeholder=""
+                value={pair.name}
+                onChange={(e) => setForm((current) => ({ ...current, attributes: [{ ...pair, name: e.target.value }] }))}
+              />
+            ) : (
+              <Select
+                defaultValue={pair.type}
+                onValueChange={(value) => setType(value as AttributeTypeKey)}
+              >
+                <SelectTrigger id="variant-type" className="w-full">
+                  <SelectValue placeholder="Seleccionar tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  {ATTRIBUTE_TYPES.map((t) => (
+                    <SelectItem key={t.key} value={t.key}>
+                      {t.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
           <div className="space-y-2">
             {customAttributes ? (
               <Input
                 id="variant-value"
-                placeholder="Valor"
+                placeholder=""
                 value={pair.value}
                 onChange={(e) => setValue(e.target.value)}
               />
@@ -413,11 +435,16 @@ function VariantForm({
 
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-2">
-          <Label htmlFor="variant-sku">SKU (opcional)</Label>
+          <Label htmlFor="variant-discount-value">
+            {form.discountType === "percent" ? "Porcentaje" : "Monto"}
+          </Label>
           <Input
-            id="variant-sku"
-            value={form.sku}
-            onChange={(e) => setForm({ ...form, sku: e.target.value })}
+            id="variant-discount-value"
+            inputMode="decimal"
+            disabled={form.discountType === "none"}
+            placeholder={form.discountType === "percent" ? "10" : "50.00"}
+            value={form.discountValue}
+            onChange={(e) => setForm({ ...form, discountValue: e.target.value })}
           />
         </div>
         <div className="space-y-2">
@@ -434,19 +461,6 @@ function VariantForm({
             <option value="percent">Porcentaje (%)</option>
             <option value="fixed">Monto fijo</option>
           </select>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="variant-discount-value">
-            {form.discountType === "percent" ? "Porcentaje" : "Monto"}
-          </Label>
-          <Input
-            id="variant-discount-value"
-            inputMode="decimal"
-            disabled={form.discountType === "none"}
-            placeholder={form.discountType === "percent" ? "10" : "50.00"}
-            value={form.discountValue}
-            onChange={(e) => setForm({ ...form, discountValue: e.target.value })}
-          />
         </div>
       </div>
 
@@ -479,6 +493,15 @@ function VariantForm({
             ) : null}
           </div>
         ) : null}
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="variant-sku">Código propio (SKU opcional)</Label>
+        <Input
+          id="variant-sku"
+          value={form.sku}
+          onChange={(e) => setForm({ ...form, sku: e.target.value })}
+        />
       </div>
 
       {/* Activar/desactivar variante individual */}

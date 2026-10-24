@@ -138,21 +138,6 @@ export function ProductEditorForm({
 
       <Card>
         <CardHeader>
-          <CardTitle>Imágenes</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ProductImageManager
-            storeId={product.store_id}
-            productId={product.id}
-            images={images}
-            maxImages={maxImages}
-            onChange={setImages}
-          />
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
           <CardTitle>{product.name}</CardTitle>
           <CardDescription>
             {priceFrom == null ? "—" : formatMoney(priceFrom, "HNL")}
@@ -259,6 +244,21 @@ export function ProductEditorForm({
             {saving ? "Guardando…" : "Guardar cambios"}
           </Button>
         </CardFooter>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Imágenes</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ProductImageManager
+            storeId={product.store_id}
+            productId={product.id}
+            images={images}
+            maxImages={maxImages}
+            onChange={setImages}
+          />
+        </CardContent>
       </Card>
     </div>
   );
