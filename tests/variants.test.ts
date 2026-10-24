@@ -99,8 +99,8 @@ describe("stockToStorage", () => {
   });
 
   it("sin stock ni 'por encargo' pide indicar una de las dos", () => {
-    expect(() => stockToStorage("", false)).toThrow(/Indica el stock/);
-    expect(() => stockToStorage("   ", false)).toThrow(/Indica el stock/);
+    expect(() => stockToStorage("", false)).toThrow(/Indica la cantidad de unidades de producto/);
+    expect(() => stockToStorage("   ", false)).toThrow(/Indica la cantidad de unidades de producto/);
   });
 
   it("rechaza negativo, decimal o texto", () => {

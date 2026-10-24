@@ -19,6 +19,7 @@ import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { deleteVariant, saveVariant, type VariantInput } from "@/lib/actions/variant";
+import { COLOR_HEX, COLOR_OPTIONS } from "@/lib/colors";
 import { formatMoney } from "@/lib/utils";
 import {
   attributesFromPairs,
@@ -56,10 +57,6 @@ const ATTRIBUTE_TYPES = [
 ] as const;
 
 type AttributeTypeKey = (typeof ATTRIBUTE_TYPES)[number]["key"];
-
-const COLOR_OPTIONS = ["Negro", "Blanco", "Rojo", "Azul", "Verde", "Amarillo", "Gris", "Rosa", "Naranja", "Morado"];
-
-const SIZE_WORD_OPTIONS = ["XS", "S", "M", "L", "XL", "XXL", "XXXL"];
 
 const SIZE_CODE_OPTIONS = ["S", "M", "L", "XL", "XXL", "XXXL"];
 
@@ -253,6 +250,7 @@ function VariantForm({
   const [form, setForm] = useState<VariantInput>(initial);
   const [customAttributes, setCustomAttributes] = useState(false);
   const [showPrice, setShowPrice] = useState(true);
+  const [showDiscount, setShowDiscount] = useState(initial.discountType !== "none");
 
   // Solo usamos el primer par de atributos (tipo + valor) para esta variante.
   const pair = form.attributes[0] ?? { name: "", value: "", type: "color" };
@@ -297,7 +295,7 @@ function VariantForm({
     }
   };
 
-  const getValueOptions = (type: AttributeTypeKey): string[] => {
+  const getValueOptions = (type: AttributeTypeKey): readonly string[] => {
     switch (type) {
       case "color":
         return COLOR_OPTIONS;
@@ -380,7 +378,7 @@ function VariantForm({
                       <span className="flex items-center gap-2">
                         <span
                           className="inline-block h-3 w-3 rounded-full border border-border"
-                          style={{ backgroundColor: color.toLowerCase() }}
+                          style={{ backgroundColor: COLOR_HEX[color] ?? color.toLowerCase() }}
                         />
                         {color}
                       </span>
@@ -417,11 +415,11 @@ function VariantForm({
             checked={showPrice}
             onCheckedChange={setShowPrice}
           />
-          <Label htmlFor="variant-show-price">Precio</Label>
+            <Label htmlFor="variant-show-price">Precio específico</Label>
         </div>
         {showPrice ? (
           <div className="space-y-2">
-            <Label htmlFor="variant-price">Precio ({currency})</Label>
+            <Label htmlFor="variant-price">Precio específico ({currency})</Label>
             <Input
               id="variant-price"
               inputMode="decimal"
@@ -433,35 +431,57 @@ function VariantForm({
         ) : null}
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-2">
-          <Label htmlFor="variant-discount-value">
-            {form.discountType === "percent" ? "Porcentaje" : "Monto"}
-          </Label>
-          <Input
-            id="variant-discount-value"
-            inputMode="decimal"
-            disabled={form.discountType === "none"}
-            placeholder={form.discountType === "percent" ? "10" : "50.00"}
-            value={form.discountValue}
-            onChange={(e) => setForm({ ...form, discountValue: e.target.value })}
+      {/* Descuento toggle */}
+      <div className="space-y-2">
+        <div className="flex items-center gap-2">
+          <Switch
+            id="variant-show-discount"
+            checked={showDiscount}
+            onCheckedChange={(checked) => {
+              setShowDiscount(checked);
+              setForm((current) => ({
+                ...current,
+                discountType: checked
+                  ? current.discountType === "none"
+                    ? "percent"
+                    : current.discountType
+                  : "none",
+                discountValue: checked ? current.discountValue : "",
+              }));
+            }}
           />
+          <Label htmlFor="variant-show-discount">Descuento</Label>
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="variant-discount-type">Descuento</Label>
-          <select
-            id="variant-discount-type"
-            value={form.discountType}
-            onChange={(e) =>
-              setForm({ ...form, discountType: e.target.value as DiscountType, discountValue: "" })
-            }
-            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-          >
-            <option value="none">Sin descuento</option>
-            <option value="percent">Porcentaje (%)</option>
-            <option value="fixed">Monto fijo</option>
-          </select>
-        </div>
+        {showDiscount ? (
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label htmlFor="variant-discount-type">Tipo de descuento</Label>
+              <select
+                id="variant-discount-type"
+                value={form.discountType}
+                onChange={(e) =>
+                  setForm({ ...form, discountType: e.target.value as DiscountType, discountValue: "" })
+                }
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              >
+                <option value="percent">Porcentaje (%)</option>
+                <option value="fixed">Monto fijo</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="variant-discount-value">
+                {form.discountType === "percent" ? "Porcentaje" : "Monto"}
+              </Label>
+              <Input
+                id="variant-discount-value"
+                inputMode="decimal"
+                placeholder={form.discountType === "percent" ? "10" : "50.00"}
+                value={form.discountValue}
+                onChange={(e) => setForm({ ...form, discountValue: e.target.value })}
+              />
+            </div>
+          </div>
+        ) : null}
       </div>
 
       {/* Por Inventario toggle + stock */}

@@ -166,15 +166,6 @@ export function ProductsTable({
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">Productos</h2>
         <div className="flex gap-2">
-          <Button onClick={() => handleBulk("activate")} disabled={selected.size === 0} size="sm">
-            Activar
-          </Button>
-          <Button onClick={() => handleBulk("deactivate")} disabled={selected.size === 0} variant="outline" size="sm">
-            Desactivar
-          </Button>
-          <Button onClick={() => handleBulk("pause")} disabled={selected.size === 0} variant="outline" size="sm">
-            Pausar
-          </Button>
           <Button render={<Link href="/products/nuevo" />} size="sm">
             Nuevo producto
           </Button>
@@ -248,7 +239,27 @@ export function ProductsTable({
               Ningún producto coincide con el filtro.
             </div>
           ) : (
-            <div className="overflow-x-auto border rounded-xl">
+            <>
+            {selected.size > 0 ? (
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border bg-muted/50 p-3">
+              <span className="text-sm font-medium">
+                {selected.size} producto(s) seleccionado(s)
+              </span>
+              <div className="flex gap-2">
+                <Button onClick={() => handleBulk("activate")} size="sm">
+                  Activar
+                </Button>
+                <Button onClick={() => handleBulk("deactivate")} variant="outline" size="sm">
+                  Desactivar
+                </Button>
+                <Button onClick={() => handleBulk("pause")} variant="outline" size="sm">
+                  Pausar
+                </Button>
+              </div>
+            </div>
+          ) : null}
+
+          <div className="overflow-x-auto border rounded-xl">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b bg-muted/40">
@@ -311,6 +322,7 @@ export function ProductsTable({
                 </tbody>
               </table>
             </div>
+            </>
           )}
         </>
       )}

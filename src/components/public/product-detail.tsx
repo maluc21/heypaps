@@ -16,20 +16,8 @@ import {
   formatVariantAttributes,
 } from "@/lib/whatsapp";
 import { WhatsAppButton } from "@/components/public/whatsapp-button";
+import { COLOR_HEX } from "@/lib/colors";
 import type { PublicProduct, PublicVariant } from "@/lib/catalog";
-
-const colorMap: Record<string, string> = {
-  Negro: "#000000",
-  Blanco: "#FFFFFF",
-  Rojo: "#FF0000",
-  Azul: "#0000FF",
-  Verde: "#008000",
-  Amarillo: "#FFFF00",
-  Gris: "#808080",
-  Rosa: "#FFC0CB",
-  Naranja: "#FFA500",
-  Morado: "#800080",
-};
 
 function ProductPlaceholder({ name }: { name: string }) {
   const initials = name
@@ -194,11 +182,11 @@ export function ProductDetail({ store, storeId, product, productUrl }: Props) {
                             : "border-border"
                         } disabled:cursor-not-allowed disabled:opacity-40`}
                       >
-                        {name.toLowerCase() === "color" && colorMap[value] ? (
+                        {name.toLowerCase() === "color" && COLOR_HEX[value] ? (
                           <span className="flex items-center gap-1.5">
                             <span
                               className="inline-block h-3 w-3 rounded-full border border-border"
-                              style={{ backgroundColor: colorMap[value] }}
+                              style={{ backgroundColor: COLOR_HEX[value] }}
                             />
                             {value}
                           </span>
