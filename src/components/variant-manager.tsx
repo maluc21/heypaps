@@ -20,6 +20,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { deleteVariant, saveVariant, type VariantInput } from "@/lib/actions/variant";
 import { COLOR_HEX, COLOR_OPTIONS } from "@/lib/colors";
+import { parseAmountToCents } from "@/lib/money";
 import { formatMoney } from "@/lib/utils";
 import {
   attributesFromPairs,
@@ -70,7 +71,7 @@ function toFormState(variant: EditableVariant | null): VariantInput {
       price: "",
       discountType: "none",
       discountValue: "",
-      madeToOrder: false,
+      madeToOrder: true,
       stock: "",
       active: true,
     };
@@ -251,6 +252,7 @@ function VariantForm({
   const [customAttributes, setCustomAttributes] = useState(false);
   const [showPrice, setShowPrice] = useState(true);
   const [showDiscount, setShowDiscount] = useState(initial.discountType !== "none");
+  const [showSku, setShowSku] = useState(Boolean(initial.sku && initial.sku.trim() !== ""));
 
   // Solo usamos el primer par de atributos (tipo + valor) para esta variante.
   const pair = form.attributes[0] ?? { name: "", value: "", type: "color" };
@@ -261,6 +263,24 @@ function VariantForm({
     stockToStorage(form.stock, form.madeToOrder);
   } catch (err) {
     stockError = (err as Error).message;
+  }
+
+  // Precio con descuento calculado en vivo para la vista previa.
+  const priceCents = parseAmountToCents(form.price);
+  let discountedPriceCents: number | null = null;
+  if (showDiscount && priceCents !== null && priceCents > 0) {
+    if (form.discountType === "percent") {
+      const pct = Number(form.discountValue.trim());
+      if (Number.isInteger(pct) && pct >= 0 && pct <= 100) {
+        const discountAmount = Math.trunc((priceCents * pct + 50) / 100);
+        discountedPriceCents = Math.max(0, priceCents - discountAmount);
+      }
+    } else if (form.discountType === "fixed") {
+      const cents = parseAmountToCents(form.discountValue);
+      if (cents !== null && cents >= 0 && cents < priceCents) {
+        discountedPriceCents = priceCents - cents;
+      }
+    }
   }
 
   const labelForType = (key: AttributeTypeKey): string =>
@@ -482,6 +502,14 @@ function VariantForm({
             </div>
           </div>
         ) : null}
+        {showDiscount && discountedPriceCents !== null && priceCents !== null ? (
+          <div className="rounded-md border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-800">
+            <span className="line-through text-muted-foreground mr-2">
+              {formatMoney(priceCents, currency)}
+            </span>
+            <span className="font-semibold">{formatMoney(discountedPriceCents, currency)}</span>
+          </div>
+        ) : null}
       </div>
 
       {/* Por Inventario toggle + stock */}
@@ -515,13 +543,29 @@ function VariantForm({
         ) : null}
       </div>
 
+      {/* Código propio toggle */}
       <div className="space-y-2">
-        <Label htmlFor="variant-sku">Código propio (SKU opcional)</Label>
-        <Input
-          id="variant-sku"
-          value={form.sku}
-          onChange={(e) => setForm({ ...form, sku: e.target.value })}
-        />
+        <div className="flex items-center gap-2">
+          <Switch
+            id="variant-show-sku"
+            checked={showSku}
+            onCheckedChange={(checked) => {
+              setShowSku(checked);
+              if (!checked) setForm((current) => ({ ...current, sku: "" }));
+            }}
+          />
+          <Label htmlFor="variant-show-sku">Código propio</Label>
+        </div>
+        {showSku ? (
+          <div className="space-y-2">
+            <Input
+              id="variant-sku"
+              value={form.sku}
+              onChange={(e) => setForm({ ...form, sku: e.target.value })}
+            />
+            <p className="text-xs text-muted-foreground">(SKU opcional)</p>
+          </div>
+        ) : null}
       </div>
 
       {/* Activar/desactivar variante individual */}

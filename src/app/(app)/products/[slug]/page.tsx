@@ -81,6 +81,7 @@ export default async function ProductEditorPage({
           maxImages={planLimits.max_images_per_product}
           categories={categories ?? []}
           tags={tags ?? []}
+          currency={store?.currency ?? "HNL"}
         />
         <div className="max-w-xl">
           <VariantManager

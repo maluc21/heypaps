@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { formatMoney } from "@/lib/utils";
 import { updateProduct } from "@/lib/actions/product";
+import { saveVariant } from "@/lib/actions/variant";
 import { setProductCategory } from "@/lib/actions/category";
 import { setProductTag } from "@/lib/actions/tag";
 import { toast } from "sonner";
@@ -39,6 +40,9 @@ type Product = {
     stock: number | null;
     active: boolean;
     position: number;
+    sku: string | null;
+    discount_type: string;
+    discount_value: number;
   }>;
 };
 
@@ -58,6 +62,7 @@ type ProductEditorFormProps = {
   maxImages: number;
   categories: CategoryOption[];
   tags: TagOption[];
+  currency?: string;
 };
 
 export function ProductEditorForm({
@@ -65,6 +70,7 @@ export function ProductEditorForm({
   maxImages,
   categories,
   tags,
+  currency = "HNL",
 }: ProductEditorFormProps) {
   const router = useRouter();
   const [name, setName] = useState(product.name);
@@ -79,6 +85,10 @@ export function ProductEditorForm({
   const [saving, setSaving] = useState(false);
 
   const hasVariants = product.variants.length > 0;
+  const baseVariant = product.variants.find((v) => Object.keys(v.attributes ?? {}).length === 0) ?? null;
+  const [basePrice, setBasePrice] = useState(
+    baseVariant ? (baseVariant.price_cents / 100).toFixed(2) : "",
+  );
 
   const save = async () => {
     setSaving(true);
@@ -95,6 +105,32 @@ export function ProductEditorForm({
       return;
     }
     if (res.error) { toast.error(res.error); setSaving(false); return; }
+
+    // Actualiza el precio de la variante base si cambió.
+    if (baseVariant) {
+      const newCents = Math.round(Number(basePrice) * 100);
+      if (!Number.isNaN(newCents) && newCents > 0 && newCents !== baseVariant.price_cents) {
+        const discountValue =
+          baseVariant.discount_type === "fixed"
+            ? (baseVariant.discount_value / 100).toFixed(2)
+            : String(baseVariant.discount_value);
+        const vr = await saveVariant(product.id, product.version, {
+          variantId: baseVariant.id,
+          attributes: [],
+          sku: baseVariant.sku ?? "",
+          price: basePrice,
+          discountType: baseVariant.discount_type as "none" | "percent" | "fixed",
+          discountValue,
+          madeToOrder: baseVariant.stock === null,
+          stock: baseVariant.stock === null ? "" : String(baseVariant.stock),
+          active: baseVariant.active,
+        });
+        if (vr.error && vr.error !== "CONFLICT") {
+          toast.error(vr.error);
+        }
+      }
+    }
+
     toast.success("Producto guardado.");
     setSaving(false);
     router.refresh();
@@ -152,6 +188,17 @@ export function ProductEditorForm({
             <Label htmlFor="description">Descripción</Label>
             <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} />
           </div>
+          {baseVariant ? (
+            <div className="space-y-2">
+              <Label htmlFor="base-price">Precio ({currency})</Label>
+              <Input
+                id="base-price"
+                inputMode="decimal"
+                value={basePrice}
+                onChange={(e) => setBasePrice(e.target.value)}
+              />
+            </div>
+          ) : null}
           <div className="space-y-2">
             <Label htmlFor="category">Categoría</Label>
             <select

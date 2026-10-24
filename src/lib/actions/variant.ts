@@ -57,8 +57,22 @@ export async function saveVariant(
   } catch (err) {
     return { error: (err as Error).message };
   }
-
   const supabase = await createServerClient();
+
+  // Regla: las variantes con atributos no pueden costar menos que la variante
+  // base (la de atributos vacíos). Si existe una base, se valida aquí.
+  if (payload.attributes && Object.keys(payload.attributes).length > 0) {
+    const { data: baseVariant } = await supabase
+      .from("variants")
+      .select("id, price_cents")
+      .eq("product_id", productId)
+      .eq("attributes", {})
+      .maybeSingle();
+    if (baseVariant && payload.priceCents < (baseVariant as { price_cents: number }).price_cents) {
+      return { error: "El precio de la variante no puede ser menor al precio base." };
+    }
+  }
+
   const { data, error } = await supabase.rpc("upsert_variant", {
     p_product_id: productId,
     p_variant_id: input.variantId,
