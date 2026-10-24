@@ -18,6 +18,19 @@ import {
 import { WhatsAppButton } from "@/components/public/whatsapp-button";
 import type { PublicProduct, PublicVariant } from "@/lib/catalog";
 
+const colorMap: Record<string, string> = {
+  Negro: "#000000",
+  Blanco: "#FFFFFF",
+  Rojo: "#FF0000",
+  Azul: "#0000FF",
+  Verde: "#008000",
+  Amarillo: "#FFFF00",
+  Gris: "#808080",
+  Rosa: "#FFC0CB",
+  Naranja: "#FFA500",
+  Morado: "#800080",
+};
+
 function ProductPlaceholder({ name }: { name: string }) {
   const initials = name
     .split(/\s+/)
@@ -181,7 +194,17 @@ export function ProductDetail({ store, storeId, product, productUrl }: Props) {
                             : "border-border"
                         } disabled:cursor-not-allowed disabled:opacity-40`}
                       >
-                        {value}
+                        {name.toLowerCase() === "color" && colorMap[value] ? (
+                          <span className="flex items-center gap-1.5">
+                            <span
+                              className="inline-block h-3 w-3 rounded-full border border-border"
+                              style={{ backgroundColor: colorMap[value] }}
+                            />
+                            {value}
+                          </span>
+                        ) : (
+                          value
+                        )}
                       </button>
                     );
                   })}

@@ -21,6 +21,7 @@ type Props = {
 export function StoreLogoManager({ storeId, logo, storeName, onChange }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
+  const [selectedFileName, setSelectedFileName] = useState<string | null>(null);
 
   const initials = storeName
     .split(/\s+/)
@@ -32,6 +33,7 @@ export function StoreLogoManager({ storeId, logo, storeName, onChange }: Props) 
     const file = files?.[0];
     if (!file) return;
 
+    setSelectedFileName(file.name);
     setBusy(true);
     try {
       // El logo anterior se borra del DAM para no dejar archivos huerfanos
@@ -47,6 +49,7 @@ export function StoreLogoManager({ storeId, logo, storeName, onChange }: Props) 
     } finally {
       setBusy(false);
       if (inputRef.current) inputRef.current.value = "";
+      setSelectedFileName(null);
     }
   };
 
@@ -84,8 +87,27 @@ export function StoreLogoManager({ storeId, logo, storeName, onChange }: Props) 
             accept="image/jpeg,image/png,image/webp"
             disabled={busy}
             onChange={(e) => void handleFile(e.target.files)}
-            className="block w-full text-sm text-muted-foreground file:mr-3 file:rounded-md file:border-0 file:bg-muted file:px-3 file:py-2 file:text-sm file:font-medium"
+            className="hidden"
           />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={busy}
+            onClick={() => inputRef.current?.click()}
+            className="w-full text-sm"
+          >
+            {busy ? "Subiendo…" : "Seleccionar imagen"}
+          </Button>
+          {selectedFileName ? (
+            <p className="text-xs text-muted-foreground">
+              {selectedFileName}
+            </p>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              sin archivo seleccionado
+            </p>
+          )}
           {logo ? (
             <Button
               type="button"

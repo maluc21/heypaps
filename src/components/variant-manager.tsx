@@ -52,9 +52,7 @@ type Props = {
 // Tipos de atributos típicos con sus valores predefinidos.
 const ATTRIBUTE_TYPES = [
   { key: "color", label: "Color" },
-  { key: "talla-palabra", label: "Talla (palabra)" },
   { key: "talla-codigo", label: "Talla (código)" },
-  { key: "libre", label: "Libre" },
 ] as const;
 
 type AttributeTypeKey = (typeof ATTRIBUTE_TYPES)[number]["key"];
@@ -70,7 +68,7 @@ function toFormState(variant: EditableVariant | null): VariantInput {
   if (!variant) {
     return {
       variantId: null,
-      attributes: [{ name: "", value: "", type: "libre" }],
+      attributes: [{ name: "", value: "", type: "color" }],
       sku: "",
       price: "",
       discountType: "none",
@@ -83,7 +81,7 @@ function toFormState(variant: EditableVariant | null): VariantInput {
   const pairs = pairsFromAttributes(variant.attributes);
   return {
     variantId: variant.id,
-    attributes: pairs.length > 0 ? pairs.map((p) => ({ ...p, type: "libre" })) : [{ name: "", value: "", type: "libre" }],
+    attributes: pairs.length > 0 ? pairs.map((p) => ({ ...p, type: "color" })) : [{ name: "", value: "", type: "color" }],
     sku: variant.sku ?? "",
     price: (variant.price_cents / 100).toFixed(2),
     discountType: variant.discount_type,
@@ -156,7 +154,7 @@ export function VariantManager({ productId, productVersion, currency, variants }
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Variantes</CardTitle>
+        <CardTitle>Variantes (opcional)</CardTitle>
         <CardDescription>
           Tallas, colores o presentaciones. Cada combinación tiene su precio y stock.
         </CardDescription>
@@ -226,7 +224,7 @@ export function VariantManager({ productId, productVersion, currency, variants }
             disabled={busy}
             onClick={() => setEditing(toFormState(null))}
           >
-            Nueva variante
+            Agregar variante
           </Button>
         )}
       </CardContent>
@@ -252,7 +250,7 @@ function VariantForm({
   const [showPrice, setShowPrice] = useState(true);
 
   // Solo usamos el primer par de atributos (tipo + valor) para esta variante.
-  const pair = form.attributes[0] ?? { name: "", value: "", type: "libre" };
+  const pair = form.attributes[0] ?? { name: "", value: "", type: "color" };
 
   // Stock: se valida mientras se escribe, antes de enviar.
   let stockError: string | null = null;
@@ -279,7 +277,10 @@ function VariantForm({
   const setCustomToggle = (checked: boolean) => {
     setCustomAttributes(checked);
     if (checked) {
-      setType("libre");
+      setForm((current) => ({
+        ...current,
+        attributes: [{ ...pair, type: "color" }],
+      }));
     }
   };
 
@@ -287,8 +288,6 @@ function VariantForm({
     switch (type) {
       case "color":
         return COLOR_OPTIONS;
-      case "talla-palabra":
-        return SIZE_WORD_OPTIONS;
       case "talla-codigo":
         return SIZE_CODE_OPTIONS;
       default:
@@ -308,29 +307,37 @@ function VariantForm({
     >
       {/* Tipo y Valor de la variante */}
       <div className="space-y-2">
-        <div className="space-y-2">
+        <div className="flex items-center justify-between">
           <Label htmlFor="variant-type">Tipo</Label>
-          <Select
-            defaultValue={pair.type}
-            onValueChange={(value) => setType(value as AttributeTypeKey)}
-          >
-            <SelectTrigger id="variant-type" className="w-full">
-              <SelectValue placeholder="Seleccionar tipo" />
-            </SelectTrigger>
-            <SelectContent>
-              {ATTRIBUTE_TYPES.map((t) => (
-                <SelectItem key={t.key} value={t.key}>
-                  {t.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-2">
+            <Switch
+              id="variant-custom"
+              checked={customAttributes}
+              onCheckedChange={setCustomToggle}
+            />
+            <Label htmlFor="variant-custom">Personalizado</Label>
+          </div>
         </div>
-
-        <div className="space-y-2 flex items-end gap-2">
-          <Label htmlFor="variant-value">Valor</Label>
-          <div className="flex-1">
-            {pair.type === "libre" || customAttributes ? (
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-2">
+            <Select
+              defaultValue={pair.type}
+              onValueChange={(value) => setType(value as AttributeTypeKey)}
+            >
+              <SelectTrigger id="variant-type" className="w-full">
+                <SelectValue placeholder="Seleccionar tipo" />
+              </SelectTrigger>
+              <SelectContent>
+                {ATTRIBUTE_TYPES.map((t) => (
+                  <SelectItem key={t.key} value={t.key}>
+                    {t.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            {customAttributes ? (
               <Input
                 id="variant-value"
                 placeholder="Valor"
@@ -338,20 +345,27 @@ function VariantForm({
                 onChange={(e) => setValue(e.target.value)}
               />
             ) : pair.type === "color" ? (
-              <div className="flex gap-1">
-                {COLOR_OPTIONS.map((color) => (
-                  <button
-                    key={color}
-                    type="button"
-                    onClick={() => setValue(color)}
-                    className={`w-8 h-8 rounded-full border border-border ${
-                      pair.value === color ? "ring-2 ring-primary" : ""
-                    }`}
-                    style={{ backgroundColor: color.toLowerCase() }}
-                    aria-label={color}
-                  />
-                ))}
-              </div>
+              <Select
+                defaultValue={pair.value}
+                onValueChange={(value) => setValue(value)}
+              >
+                <SelectTrigger id="variant-value" className="w-full">
+                  <SelectValue placeholder="Seleccionar color" />
+                </SelectTrigger>
+                <SelectContent>
+                  {COLOR_OPTIONS.map((color) => (
+                    <SelectItem key={color} value={color}>
+                      <span className="flex items-center gap-2">
+                        <span
+                          className="inline-block h-3 w-3 rounded-full border border-border"
+                          style={{ backgroundColor: color.toLowerCase() }}
+                        />
+                        {color}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             ) : (
               <Select
                 defaultValue={pair.value}
@@ -369,14 +383,6 @@ function VariantForm({
                 </SelectContent>
               </Select>
             )}
-          </div>
-          <div className="flex items-center gap-1 ml-2">
-            <Switch
-              id="variant-custom"
-              checked={customAttributes}
-              onCheckedChange={setCustomToggle}
-            />
-            <Label htmlFor="variant-custom">Personalizado</Label>
           </div>
         </div>
       </div>

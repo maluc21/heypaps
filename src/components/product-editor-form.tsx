@@ -138,6 +138,21 @@ export function ProductEditorForm({
 
       <Card>
         <CardHeader>
+          <CardTitle>Imágenes</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ProductImageManager
+            storeId={product.store_id}
+            productId={product.id}
+            images={images}
+            maxImages={maxImages}
+            onChange={setImages}
+          />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
           <CardTitle>{product.name}</CardTitle>
           <CardDescription>
             {priceFrom == null ? "—" : formatMoney(priceFrom, "HNL")}
@@ -184,13 +199,6 @@ export function ProductEditorForm({
               ))}
             </select>
           </div>
-          <ProductImageManager
-            storeId={product.store_id}
-            productId={product.id}
-            images={images}
-            maxImages={maxImages}
-            onChange={setImages}
-          />
           <div className="flex items-center gap-2">
             <Switch id="active" checked={active} onCheckedChange={setActive} />
             <Label htmlFor="active">Visible en el catálogo</Label>
@@ -201,7 +209,6 @@ export function ProductEditorForm({
           </div>
           {!hasVariants && (
             <div className="space-y-2">
-              <Label>Gestión de stock</Label>
               <div className="flex items-center gap-2">
                 <Switch
                   id="inventory-mode"
@@ -229,7 +236,6 @@ export function ProductEditorForm({
           )}
           {hasVariants && (
             <div className="space-y-2">
-              <Label>Gestión de stock</Label>
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Switch
                   id="inventory-mode"
