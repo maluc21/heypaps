@@ -38,6 +38,7 @@ export type StoreSettingsData = {
   slug: string;
   status: "draft" | "published" | "suspended";
   plan_code: string;
+  appearance: Record<string, unknown> | null;
 };
 
 export type PlanSummary = {
@@ -69,6 +70,17 @@ const CURRENCIES = [
   { code: "USD", label: "Dólar (USD)" },
 ];
 
+const SOCIAL_PLATFORMS = [
+  { key: "instagram", label: "Instagram", placeholder: "tuusuario" },
+  { key: "facebook", label: "Facebook", placeholder: "tupagina" },
+  { key: "tiktok", label: "TikTok", placeholder: "tuusuario" },
+  { key: "linkedin", label: "LinkedIn", placeholder: "tuempresa" },
+  { key: "youtube", label: "YouTube", placeholder: "tucanal" },
+  { key: "x", label: "X (Twitter)", placeholder: "tuusuario" },
+] as const;
+
+type SocialPlatform = (typeof SOCIAL_PLATFORMS)[number]["key"];
+
 export function StoreSettingsForm({ store, role, plan, usage }: Props) {
   const router = useRouter();
   const isOwner = role === "owner";
@@ -84,6 +96,11 @@ export function StoreSettingsForm({ store, role, plan, usage }: Props) {
   const [saving, setSaving] = useState(false);
   const [busy, setBusy] = useState(false);
 
+  const storedSocial = (store.appearance?.socialLinks as Record<SocialPlatform, string | null>) ?? {};
+  const [socialLinks, setSocialLinks] = useState<Record<SocialPlatform, string>>(
+    SOCIAL_PLATFORMS.reduce((acc, p) => ({ ...acc, [p.key]: storedSocial[p.key] ?? "" }), {} as Record<SocialPlatform, string>)
+  );
+
   const origin = useSyncExternalStore(
     subscribeToNothing,
     () => window.location.origin,
@@ -93,6 +110,12 @@ export function StoreSettingsForm({ store, role, plan, usage }: Props) {
 
   const save = async () => {
     setSaving(true);
+    const socialLinksObj = SOCIAL_PLATFORMS.reduce((acc, p) => {
+      const val = socialLinks[p.key]?.trim();
+      if (val) acc[p.key] = val;
+      return acc;
+    }, {} as Record<string, string>);
+
     const res = await updateStoreSettings(store.id, {
       name,
       description,
@@ -100,6 +123,7 @@ export function StoreSettingsForm({ store, role, plan, usage }: Props) {
       currency,
       secondaryCurrency: secondaryCurrency || null,
       fxRate: secondaryCurrency ? Number(fxRate) : null,
+      socialLinks: Object.keys(socialLinksObj).length > 0 ? socialLinksObj : undefined,
     });
     setSaving(false);
     if (res.error) {
@@ -237,13 +261,6 @@ export function StoreSettingsForm({ store, role, plan, usage }: Props) {
             )}
           </div>
         </CardContent>
-        {isOwner ? (
-          <div className="px-6 pb-6">
-            <Button onClick={save} disabled={saving} className="w-full">
-              {saving ? "Guardando…" : "Guardar"}
-            </Button>
-          </div>
-        ) : null}
       </Card>
 
       <Card>
@@ -356,6 +373,40 @@ export function StoreSettingsForm({ store, role, plan, usage }: Props) {
             </Button>
           ) : null}
         </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Cuentas</CardTitle>
+          <CardDescription>
+            Enlaces a tus redes sociales. Se mostrarán en tu catálogo público.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {SOCIAL_PLATFORMS.map((platform) => (
+            <div key={platform.key} className="space-y-2">
+              <Label htmlFor={`social-${platform.key}`}>{platform.label}</Label>
+              <div className="flex gap-2">
+                <span className="flex items-center px-3 text-muted-foreground">https://</span>
+                <Input
+                  id={`social-${platform.key}`}
+                  value={socialLinks[platform.key]}
+                  disabled={!isOwner}
+                  placeholder={`${platform.label.toLowerCase()}.com/${platform.placeholder}`}
+                  onChange={(e) => setSocialLinks((prev) => ({ ...prev, [platform.key]: e.target.value }))}
+                  className="flex-1"
+                />
+              </div>
+            </div>
+          ))}
+        </CardContent>
+        {isOwner ? (
+          <div className="px-6 pb-6">
+            <Button onClick={save} disabled={saving} className="w-full">
+              {saving ? "Guardando…" : "Guardar"}
+            </Button>
+          </div>
+        ) : null}
       </Card>
 
       <Card>

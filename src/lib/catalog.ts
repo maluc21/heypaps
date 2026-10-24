@@ -23,6 +23,7 @@ export type PublicStore = {
   fx_rate: number | null;
   appearance: Record<string, unknown> | null;
   plan_code: string;
+  social_links: Record<string, string> | null;
 };
 
 export type PublicCategory = { slug: string; name: string };

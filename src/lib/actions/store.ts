@@ -132,6 +132,7 @@ export type StoreSettings = {
   currency?: string;
   secondaryCurrency?: string | null;
   fxRate?: number | null;
+  socialLinks?: Record<string, string>;
 };
 
 /** Datos visibles de la tienda para el panel. */
@@ -155,6 +156,7 @@ export async function updateStoreSettings(
     p_currency: settings.currency ?? "HNL",
     p_secondary_currency: settings.secondaryCurrency ?? null,
     p_fx_rate: settings.fxRate ?? null,
+    p_social_links: settings.socialLinks ?? null,
   });
 
   if (error) {
