@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { deleteVariant, saveVariant, type VariantInput } from "@/lib/actions/variant";
 import { formatMoney } from "@/lib/utils";
 import {
@@ -50,12 +51,28 @@ type Props = {
   variants: EditableVariant[];
 };
 
+// Tipos de atributos típicos con sus valores predefinidos.
+const ATTRIBUTE_TYPES = [
+  { key: "color", label: "Color" },
+  { key: "talla-palabra", label: "Talla (palabra)" },
+  { key: "talla-codigo", label: "Talla (código)" },
+  { key: "libre", label: "Libre" },
+] as const;
+
+type AttributeTypeKey = (typeof ATTRIBUTE_TYPES)[number]["key"];
+
+const COLOR_OPTIONS = ["Negro", "Blanco", "Rojo", "Azul", "Verde", "Amarillo", "Gris", "Rosa", "Naranja", "Morado"];
+
+const SIZE_WORD_OPTIONS = ["XS", "S", "M", "L", "XL", "XXL", "XXXL"];
+
+const SIZE_CODE_OPTIONS = ["s", "m", "l", "xl", "xxl", "xxxl"];
+
 /** Estado inicial del formulario: vacío para crear, o lo guardado para editar. */
 function toFormState(variant: EditableVariant | null): VariantInput {
   if (!variant) {
     return {
       variantId: null,
-      attributes: [{ name: "", value: "" }],
+      attributes: [{ name: "", value: "", type: "libre" }],
       sku: "",
       price: "",
       discountType: "none",
@@ -68,7 +85,7 @@ function toFormState(variant: EditableVariant | null): VariantInput {
   const pairs = pairsFromAttributes(variant.attributes);
   return {
     variantId: variant.id,
-    attributes: pairs.length > 0 ? pairs : [{ name: "", value: "" }],
+    attributes: pairs.length > 0 ? pairs.map((p) => ({ ...p, type: "libre" })) : [{ name: "", value: "", type: "libre" }],
     sku: variant.sku ?? "",
     price: (variant.price_cents / 100).toFixed(2),
     discountType: variant.discount_type,
@@ -137,8 +154,6 @@ export function VariantManager({ productId, productVersion, currency, variants }
   };
 
   const sorted = [...variants].sort((a, b) => a.final_price_cents - b.final_price_cents);
-  // Si solo queda una variante activa no se puede ocultar: el producto necesita
-  // al menos una visible (la base también lo rechaza).
   const activeOnes = variants.filter((v) => v.active);
   const onlyActiveVariantId = activeOnes.length === 1 ? activeOnes[0].id : null;
 
@@ -168,13 +183,15 @@ export function VariantManager({ productId, productVersion, currency, variants }
                   ) : null}
                   {" · "}
                   {variant.stock === null
-                    ? "Por encargo"
+                    ? "Sin límite de stock"
                     : variant.stock > 0
                       ? `${variant.stock} en stock`
                       : "Agotado"}
                 </p>
               </div>
-              {variant.active ? null : <Badge variant="secondary">Oculta</Badge>}
+              <Badge variant={variant.active ? "default" : "secondary"}>
+                {variant.active ? "Activa" : "Inactiva"}
+              </Badge>
               <Button
                 variant="ghost"
                 size="sm"
@@ -238,9 +255,10 @@ function VariantForm({
   onSave: (input: VariantInput) => void;
 }) {
   const [form, setForm] = useState<VariantInput>(initial);
+  const [freeAttributes, setFreeAttributes] = useState(false);
+  const [showPrice, setShowPrice] = useState(true);
 
-  // Stock: se valida mientras se escribe, antes de enviar. La misma regla de
-  // src/lib/variants.ts que aplica el servidor.
+  // Stock: se valida mientras se escribe, antes de enviar.
   let stockError: string | null = null;
   try {
     stockToStorage(form.stock, form.madeToOrder);
@@ -248,7 +266,7 @@ function VariantForm({
     stockError = (err as Error).message;
   }
 
-  const setPair = (index: number, patch: Partial<AttributePair>) => {
+  const setPair = (index: number, patch: Partial<AttributePair> & { type?: AttributeTypeKey }) => {
     setForm((current) => ({
       ...current,
       attributes: current.attributes.map((pair, i) =>
@@ -260,7 +278,7 @@ function VariantForm({
   const addPair = () => {
     setForm((current) => ({
       ...current,
-      attributes: [...current.attributes, { name: "", value: "" }],
+      attributes: [...current.attributes, { name: "", value: "", type: "libre" }],
     }));
   };
 
@@ -271,6 +289,29 @@ function VariantForm({
     }));
   };
 
+  const setFreeAttributesToggle = (checked: boolean) => {
+    setFreeAttributes(checked);
+    if (checked) {
+      setForm((current) => ({
+        ...current,
+        attributes: current.attributes.map((p) => ({ ...p, type: "libre" })),
+      }));
+    }
+  };
+
+  const getValueOptions = (type: AttributeTypeKey): string[] => {
+    switch (type) {
+      case "color":
+        return COLOR_OPTIONS;
+      case "talla-palabra":
+        return SIZE_WORD_OPTIONS;
+      case "talla-codigo":
+        return SIZE_CODE_OPTIONS;
+      default:
+        return [];
+    }
+  };
+
   return (
     <form
       className="space-y-4 rounded-xl border border-border p-4"
@@ -279,43 +320,116 @@ function VariantForm({
         onSave(form);
       }}
     >
+      {/* Atributos: tarjeta por tarjeta */}
       <div className="space-y-2">
         <Label>Atributos</Label>
-        {form.attributes.map((pair, index) => (
-          <div key={index} className="flex gap-2">
-            <Input
-              aria-label={`Nombre del atributo ${index + 1}`}
-              placeholder="Talle"
-              value={pair.name}
-              onChange={(e) => setPair(index, { name: e.target.value })}
-            />
-            <Input
-              aria-label={`Valor del atributo ${index + 1}`}
-              placeholder="M"
-              value={pair.value}
-              onChange={(e) => setPair(index, { value: e.target.value })}
-            />
-            {form.attributes.length > 1 ? (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => removePair(index)}
-                aria-label={`Quitar atributo ${index + 1}`}
-              >
-                ✕
-              </Button>
-            ) : null}
-          </div>
-        ))}
+        {form.attributes.map((pair, index) => {
+          const options = getValueOptions(pair.type as AttributeTypeKey);
+          return (
+            <div key={index} className="rounded-lg border border-border p-3 space-y-3">
+              {/* Tipo de atributo */}
+              <div className="space-y-2">
+                <Label htmlFor={`attr-type-${index}`}>Tipo</Label>
+                <Select
+                  defaultValue={pair.type}
+                  onValueChange={(value) => setPair(index, { type: value as AttributeTypeKey })}
+                >
+                  <SelectTrigger id={`attr-type-${index}`} className="w-full">
+                    <SelectValue placeholder="Seleccionar tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ATTRIBUTE_TYPES.map((t) => (
+                      <SelectItem key={t.key} value={t.key}>
+                        {t.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Valor del atributo */}
+              <div className="space-y-2">
+                <Label htmlFor={`attr-value-${index}`}>Valor</Label>
+                {pair.type === "libre" || freeAttributes ? (
+                  <Input
+                    id={`attr-value-${index}`}
+                    placeholder="Valor"
+                    value={pair.value}
+                    onChange={(e) => setPair(index, { value: e.target.value })}
+                  />
+                ) : pair.type === "color" ? (
+                  <div className="flex gap-1">
+                    {COLOR_OPTIONS.map((color) => (
+                      <button
+                        key={color}
+                        type="button"
+                        onClick={() => setPair(index, { value: color })}
+                        className={`w-8 h-8 rounded-full border border-border ${
+                          pair.value === color ? "ring-2 ring-primary" : ""
+                        }`}
+                        style={{ backgroundColor: color.toLowerCase() }}
+                        aria-label={color}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <Select
+                    defaultValue={pair.value}
+                    onValueChange={(value) => setPair(index, { value })}
+                  >
+                    <SelectTrigger id={`attr-value-${index}`} className="w-full">
+                      <SelectValue placeholder="Seleccionar valor" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {options.map((opt) => (
+                        <SelectItem key={opt} value={opt}>
+                          {opt}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+
+              {form.attributes.length > 1 ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => removePair(index)}
+                  aria-label={`Quitar atributo ${index + 1}`}
+                >
+                  ✕
+                </Button>
+              ) : null}
+            </div>
+          );
+        })}
         {form.attributes.length < MAX_ATTRIBUTES ? (
           <Button type="button" variant="ghost" size="sm" onClick={addPair}>
             + Agregar atributo
           </Button>
         ) : null}
         <p className="text-xs text-muted-foreground">
-          Deja vacío para un producto sin variantes (una sola presentación).
+          Cada tarjeta es un atributo independiente (ej. Color, Talla).
         </p>
+      </div>
+
+      {/* Atributos libres */}
+      <div className="space-y-2">
+        <div className="flex items-center gap-2">
+          <Switch
+            id="variant-free-attributes"
+            checked={freeAttributes}
+            onCheckedChange={setFreeAttributesToggle}
+          />
+          <Label htmlFor="variant-free-attributes">Atributos libres</Label>
+        </div>
+        {freeAttributes ? (
+          <p className="text-xs text-muted-foreground">
+            Los campos de tipo y valor se editan libremente.
+          </p>
+        ) : null}
       </div>
 
       <div className="grid grid-cols-2 gap-3">
@@ -370,17 +484,19 @@ function VariantForm({
         </div>
       </div>
 
+      {/* Precio atributo toggle */}
       <div className="space-y-2">
         <div className="flex items-center gap-2">
           <Switch
-            id="variant-inventory-mode"
-            checked={!form.madeToOrder}
-            onCheckedChange={(checked) => setForm({ ...form, madeToOrder: !checked })}
+            id="variant-show-price"
+            checked={showPrice}
+            onCheckedChange={setShowPrice}
           />
-          <Label htmlFor="variant-inventory-mode">Por Inventario</Label>
+          <Label htmlFor="variant-show-price">Precio atributo</Label>
         </div>
-        {!form.madeToOrder ? (
-          <>
+        {showPrice ? (
+          <div className="space-y-2">
+            <Label htmlFor="variant-stock-label">Cantidad (stock)</Label>
             <Input
               id="variant-stock"
               inputMode="numeric"
@@ -395,18 +511,16 @@ function VariantForm({
                 {stockError}
               </p>
             ) : null}
-          </>
+            <div className="flex items-center gap-2">
+              <Switch
+                id="variant-inventory-mode"
+                checked={!form.madeToOrder}
+                onCheckedChange={(checked) => setForm({ ...form, madeToOrder: !checked })}
+              />
+              <Label htmlFor="variant-inventory-mode">Por Inventario</Label>
+            </div>
+          </div>
         ) : null}
-      </div>
-
-      <div className="flex items-center gap-2">
-        <Switch
-          id="variant-active"
-          checked={form.active}
-          disabled={!canHide}
-          onCheckedChange={(checked) => setForm({ ...form, active: checked })}
-        />
-        <Label htmlFor="variant-active">Visible en el catálogo</Label>
       </div>
 
       <div className="flex gap-2">

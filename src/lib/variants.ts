@@ -8,7 +8,9 @@ import { parseAmountToCents } from "@/lib/money";
 export const MAX_ATTRIBUTES = 3;
 export const MAX_ATTRIBUTE_LENGTH = 40;
 
-export type AttributePair = { name: string; value: string };
+export type AttributeTypeKey = "color" | "talla-palabra" | "talla-codigo" | "libre";
+
+export type AttributePair = { name: string; value: string; type?: AttributeTypeKey };
 export type DiscountType = "none" | "percent" | "fixed";
 
 /**
