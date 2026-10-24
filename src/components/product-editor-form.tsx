@@ -204,6 +204,12 @@ export function ProductEditorForm({
           <CardDescription>
             {priceFrom == null ? "—" : formatMoney(priceFrom, "HNL")}
           </CardDescription>
+          <div className="flex gap-2 pt-1">
+            <Badge variant={!available ? "secondary" : "default"}>
+              Estado: {!available ? "No Disponible" : active ? "Activo" : "Oculto"}
+            </Badge>
+            <Badge variant="outline">{product.variants.length} variante(s)</Badge>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
@@ -214,6 +220,36 @@ export function ProductEditorForm({
             <Label htmlFor="description">Descripción</Label>
             <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} />
           </div>
+          {pricingMode === "CUSTOM" ? (
+            <div className="flex items-center gap-3">
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="radio"
+                  name="show-price"
+                  checked={showPrice}
+                  onChange={() => setShowPrice(true)}
+                />
+                Precio
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="radio"
+                  name="show-price"
+                  checked={!showPrice}
+                  onChange={() => setShowPrice(false)}
+                />
+                A solicitud
+              </label>
+            </div>
+          ) : pricingMode === "SHOW_ALL" ? (
+            <p className="text-xs text-muted-foreground">
+              Precio visible en todos los productos (configuración global).
+            </p>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              Precio a solicitud en todos los productos (configuración global).
+            </p>
+          )}
           <div className="space-y-2">
             <Label htmlFor="base-price">Precio ({currency})</Label>
             <Input
@@ -221,8 +257,12 @@ export function ProductEditorForm({
               inputMode="decimal"
               value={basePrice}
               onChange={(e) => setBasePrice(e.target.value)}
-              disabled={pricingMode === "REQUEST_ALL"}
-              className={pricingMode === "REQUEST_ALL" ? "opacity-50 cursor-not-allowed bg-muted" : ""}
+              disabled={pricingMode === "REQUEST_ALL" || (pricingMode === "CUSTOM" && !showPrice)}
+              className={
+                pricingMode === "REQUEST_ALL" || (pricingMode === "CUSTOM" && !showPrice)
+                  ? "opacity-50 cursor-not-allowed bg-muted"
+                  : ""
+              }
             />
             {pricingMode === "REQUEST_ALL" ? (
               <p className="text-xs text-muted-foreground">Precio bloqueado por la configuración global de la tienda.</p>
@@ -261,27 +301,9 @@ export function ProductEditorForm({
             </select>
           </div>
           <div className="flex items-center gap-2">
-            <Switch id="active" checked={active} onCheckedChange={setActive} />
-            <Label htmlFor="active">Visible en el catálogo</Label>
-          </div>
-          <div className="flex items-center gap-2">
-            <Switch id="available" checked={available} onCheckedChange={setAvailable} />
+            <Switch id="available" checked={available} onCheckedChange={setAvailable} disabled={inventoryMode === "inventario" && stockQuantity === "0"} />
             <Label htmlFor="available">{available ? "Disponible" : "No Disponible"}</Label>
           </div>
-          {pricingMode === "CUSTOM" ? (
-            <div className="flex items-center gap-2">
-              <Switch id="show-price" checked={showPrice} onCheckedChange={setShowPrice} />
-              <Label htmlFor="show-price">{showPrice ? "Mostrar precio" : "Precio a solicitud"}</Label>
-            </div>
-          ) : pricingMode === "SHOW_ALL" ? (
-            <p className="text-xs text-muted-foreground">
-              Precio visible en todos los productos (configuración global).
-            </p>
-          ) : (
-            <p className="text-xs text-muted-foreground">
-              Precio a solicitud en todos los productos (configuración global).
-            </p>
-          )}
           {!hasVariants && (
             <div className="space-y-2">
               <div className="flex items-center gap-2">
@@ -322,16 +344,14 @@ export function ProductEditorForm({
               </div>
             </div>
           )}
-          <div className="flex gap-2">
-            <Badge variant={!available ? "secondary" : "default"}>
-              Estado: {!available ? "No Disponible" : active ? "Activo" : "Oculto"}
-            </Badge>
-            <Badge variant="outline">{product.variants.length} variante(s)</Badge>
-          </div>
         </CardContent>
-        <CardFooter>
+        <CardFooter className="flex flex-col gap-3">
+          <div className="flex items-center gap-2">
+            <Switch id="active" checked={active} onCheckedChange={setActive} />
+            <Label htmlFor="active">Visible en el catálogo</Label>
+          </div>
           <Button onClick={save} disabled={saving} className="w-full">
-            {saving ? "Guardando…" : "Guardar cambios"}
+            {saving ? "Guardando…" : "Guardar"}
           </Button>
         </CardFooter>
       </Card>

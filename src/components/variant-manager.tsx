@@ -259,7 +259,7 @@ function VariantForm({
 }) {
   const [form, setForm] = useState<VariantInput>(initial);
   const [customAttributes, setCustomAttributes] = useState(false);
-  const [showPrice, setShowPrice] = useState(true);
+  const [showPrice, setShowPrice] = useState(initial.variantId !== null);
   const [showDiscount, setShowDiscount] = useState(initial.discountType !== "none");
   const [showSku, setShowSku] = useState(Boolean(initial.sku && initial.sku.trim() !== ""));
 

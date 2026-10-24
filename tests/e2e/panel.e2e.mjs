@@ -335,7 +335,7 @@ try {
     const commit = await commitResponse.then((r) => r.json()).catch(() => null);
     check("el commit registra el peso real del archivo", (commit?.size ?? 0) > 0, `${commit?.size} bytes`);
 
-    await page.getByRole("button", { name: "Guardar cambios" }).click();
+    await page.getByRole("button", { name: "Guardar" }).click();
     await page.waitForLoadState("networkidle");
     await page.reload();
     const persisted = await page.locator('li img[src*="tr=w-"]').count();
