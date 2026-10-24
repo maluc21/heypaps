@@ -3,6 +3,7 @@ import type { NextConfig } from "next";
 // La CSP se genera por petición con nonce en src/proxy.ts. No definir una CSP estática
 // aquí: dos cabeceras CSP se aplican a la vez y la estática no tendría nonce.
 const nextConfig: NextConfig = {
+  poweredByHeader: false,
   cacheComponents: true,
   partialPrefetching: true,
   images: {

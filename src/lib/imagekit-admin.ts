@@ -115,6 +115,33 @@ export async function purgeCache(url: string, privateKey: string): Promise<boole
   return true;
 }
 
+export type ImageKitFileListItem = {
+  fileId: string;
+  filePath: string;
+  createdAt?: string;
+};
+
+/** Lista los archivos de una carpeta del DAM (no recursiva). */
+export async function listFiles(
+  folderPath: string,
+  privateKey: string,
+): Promise<ImageKitFileListItem[]> {
+  const normalized = folderPath.startsWith("/") ? folderPath : `/${folderPath}`;
+  const url = `/v1/files?path=${encodeURIComponent(normalized)}&fileType=file&limit=1000`;
+  const res = await imageKitRequest(url, { method: "GET", privateKey });
+  if (!res.ok) {
+    throw new Error(`ImageKit list falló con HTTP ${res.status}`);
+  }
+  const data = (await res.json()) as unknown;
+  const list = Array.isArray(data)
+    ? data
+    : (data as { data?: unknown[] })?.data ?? [];
+  return (list as Record<string, unknown>[]).map((f) => ({
+    fileId: String(f.fileId ?? f.id ?? ""),
+    filePath: String(f.filePath ?? f.path ?? ""),
+    createdAt: f.createdAt ? String(f.createdAt) : undefined,
+  }));
+}
 /** Clave privada configurada, o null si el proyecto no habilitó subidas. */
 export function getPrivateKey(): string | null {
   return getEnv().IMAGEKIT_PRIVATE_KEY ?? null;
