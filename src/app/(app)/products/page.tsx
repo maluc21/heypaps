@@ -78,16 +78,28 @@ export default async function ProductsPage() {
         </div>
         <div className="sm:hidden">
           <ProductListMobile
-            products={(products ?? []).map((p: any) => ({
-              id: p.id,
-              name: p.name,
-              slug: p.slug,
-              price_cents: p.price_cents,
-              active: p.active,
-              category_id: p.category_id,
-              image_url: p.image_url,
-              version: p.version,
-            }))}
+            products={(products ?? []).map((p) => {
+              const row = p as {
+                id: string;
+                name: string;
+                slug: string;
+                price_cents: number | null;
+                active: boolean;
+                category_id: string | null;
+                image_url: string | null;
+                version: number;
+              };
+              return {
+                id: row.id,
+                name: row.name,
+                slug: row.slug,
+                price_cents: row.price_cents,
+                active: row.active,
+                category_id: row.category_id,
+                image_url: row.image_url,
+                version: row.version,
+              };
+            })}
           />
         </div>
       </div>

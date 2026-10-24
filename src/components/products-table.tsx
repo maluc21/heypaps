@@ -166,7 +166,7 @@ export function ProductsTable({
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">Productos</h2>
         <div className="flex gap-2">
-          <Button render={<Link href="/products/nuevo" />} size="sm">
+          <Button render={<Link href="/products/nuevo" />} nativeButton={false} size="sm">
             Nuevo producto
           </Button>
         </div>

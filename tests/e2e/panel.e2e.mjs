@@ -124,7 +124,7 @@ try {
   await page.locator("#name").fill("Tienda E2E");
   await page.locator("#slug").fill(slug);
   // WhatsApp es parte del onboarding (plan §8.1) y habilita el CTA de la ficha.
-  await page.locator("#whatsapp").fill("+504 1234 5678");
+  await page.locator("#whatsapp-number").fill("12345678");
   await page.getByRole("button", { name: "Continuar" }).click();
 
   await page.locator("#productName").waitFor({ timeout: 15000 });
@@ -312,7 +312,7 @@ try {
   // ---------------------------------------------------------------
   if (process.env.IMAGEKIT_PRIVATE_KEY) {
     await page.goto(`${APP}/products/${productSlug}`);
-    await page.locator("#product-images").waitFor({ timeout: 15000 });
+      await page.locator("#product-images").waitFor({ state: "attached", timeout: 15000 });
 
     const sample = readFileSync(join(FIXTURES, "sample.png"));
     const commitResponse = page.waitForResponse(
@@ -493,12 +493,14 @@ try {
     await page.getByLabel("Valor del atributo 1").fill(attr);
     await page.locator("#variant-price").fill(price);
     if (discountType) {
+      await page.locator("#variant-show-discount").click();
       await page.locator("#variant-discount-type").selectOption(discountType);
       await page.locator("#variant-discount-value").fill(discountValue);
     }
     if (madeToOrder) {
-      await page.locator("#variant-made-to-order").click();
+      // El toggle "Por Inventario" viene desactivado por defecto (por encargo).
     } else if (stock !== undefined) {
+      await page.locator("#variant-made-to-order").click();
       await page.locator("#variant-stock").fill(stock);
     }
     await page.getByRole("button", { name: "Guardar variante" }).click();
@@ -510,8 +512,9 @@ try {
   await page.getByLabel("Nombre del atributo 1").fill("Talle");
   await page.getByLabel("Valor del atributo 1").fill("XS");
   await page.locator("#variant-price").fill("400");
+  await page.locator("#variant-made-to-order").click();
   const stockHint = await page
-    .getByText("Indica el stock o marca la variante como por encargo.")
+    .getByText("Indica la cantidad de unidades de producto.")
     .waitFor({ timeout: 5000 })
     .then(() => true, () => false);
   check("sin stock el formulario avisa antes de enviar", stockHint);
@@ -540,6 +543,7 @@ try {
   await page.getByLabel("Valor del atributo 1").fill("M");
   await page.locator("#variant-price").fill("550");
   // Con stock explícito, la validación llega a la regla de duplicados.
+  await page.locator("#variant-made-to-order").click();
   await page.locator("#variant-stock").fill("5");
   await page.getByRole("button", { name: "Guardar variante" }).click();
   const duplicateShown = await page

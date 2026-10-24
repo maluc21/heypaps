@@ -225,9 +225,15 @@ returns jsonb language sql stable security definer set search_path = '' as $$
     ),
     'products', (
       select coalesce(jsonb_agg(jsonb_build_object(
-        'id', p.id, 'slug', p.slug, 'name', p.name, 'description', p.description,
-        'images', p.images, 'tag', tg.name, 'tag_color', tg.color,
-        'category', cat.slug, 'status', public.derive_status(p.id),
+        'id', p.id,
+        'slug', p.slug,
+        'name', p.name,
+        'description', p.description,
+        'images', p.images,
+        'tag', tg.name,
+        'tag_color', tg.color,
+        'category', cat.slug,
+        'status', public.derive_status(p.id),
         'price_from', (
           select min(v.final_price_cents)
           from public.variants v
@@ -240,16 +246,47 @@ returns jsonb language sql stable security definer set search_path = '' as $$
         ),
         'show_price', coalesce(p.show_price, true)
       ) order by p.featured desc, p.position), '[]'::jsonb)
-      from public.products p
+      from (
+        select p.*
+        from public.products p
+        left join public.categories cat on cat.id = p.category_id
+        left join public.tags tg on p.tag_id = tg.id
+        where p.store_id = s.id
+          and p.active
+          and p.deleted_at is null
+          and (p_category_slug is null or cat.slug = p_category_slug)
+          and (p_tag_slug is null or regexp_replace(lower(tg.name), '[^a-z0-9]+', '-', 'g') = p_tag_slug)
+        order by p.featured desc, p.position, p.id
+        limit greatest(1, least(coalesce(p_limit, 50), 100))
+        offset greatest(0, coalesce(p_offset, 0))
+      ) p
       left join public.categories cat on cat.id = p.category_id
       left join public.tags tg on tg.id = p.tag_id
-      where p.store_id = s.id and p.active and p.deleted_at is null
-        and (p_category_slug is null or cat.slug = p_category_slug)
-        and (p_tag_slug is null or tg.slug = p_tag_slug)
     ),
     'pagination', jsonb_build_object(
-      'total', (select count(*) from public.products p where p.store_id = s.id and p.active and p.deleted_at is null),
-      'has_more', false
+      'total', (
+        select count(*)
+        from public.products p
+        left join public.categories cat on cat.id = p.category_id
+        left join public.tags tg on tg.id = p.tag_id
+        where p.store_id = s.id
+          and p.active
+          and p.deleted_at is null
+          and (p_category_slug is null or cat.slug = p_category_slug)
+          and (p_tag_slug is null or regexp_replace(lower(tg.name), '[^a-z0-9]+', '-', 'g') = p_tag_slug)
+      ),
+      'has_more', (
+        (select count(*)
+         from public.products p
+         left join public.categories cat on cat.id = p.category_id
+         left join public.tags tg on tg.id = p.tag_id
+         where p.store_id = s.id
+           and p.active
+           and p.deleted_at is null
+           and (p_category_slug is null or cat.slug = p_category_slug)
+           and (p_tag_slug is null or regexp_replace(lower(tg.name), '[^a-z0-9]+', '-', 'g') = p_tag_slug)
+        ) > (greatest(0, coalesce(p_offset, 0)) + greatest(1, least(coalesce(p_limit, 50), 100)))
+      )
     )
   )
   from public.stores s
@@ -301,3 +338,4 @@ returns jsonb language sql stable security definer set search_path = '' as $$
     and p.active
     and p.deleted_at is null
 $$;
+

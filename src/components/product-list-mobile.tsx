@@ -12,7 +12,7 @@ type Product = {
   id: string;
   name: string;
   slug: string;
-  price_cents: number;
+  price_cents: number | null;
   active: boolean;
   category_id: string | null;
   image_url: string | null;
@@ -51,7 +51,7 @@ export function ProductListMobile({ products }: { products: Product[] }) {
             <div className="flex-1 min-w-0">
               <div className="font-medium truncate">{product.name}</div>
               <div className="text-sm text-muted-foreground">
-                ${(product.price_cents / 100).toFixed(2)}
+                ${((product.price_cents ?? 0) / 100).toFixed(2)}
               </div>
             </div>
             <div className="flex items-center gap-2">
