@@ -23,7 +23,10 @@ export default async function NewProductPage() {
   if (!user) redirect("/login");
 
   const store = await getCurrentStore(user.id);
-  if (!store) redirect("/onboarding");
+
+  if (!store) {
+    redirect("/panel");
+  }
 
   const [{ data: categories }, { data: tags }, { count: productCount }] = await Promise.all([
     supabase

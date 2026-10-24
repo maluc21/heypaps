@@ -31,6 +31,22 @@ export default async function ProductsPage() {
 
   const store = await getCurrentStore(user.id);
 
+  if (!store) {
+    return (
+      <PanelShell>
+        <div className="p-4">
+          <p className="rounded-xl border bg-card p-6 text-center text-muted-foreground">
+            Todavía no tienes una tienda.{" "}
+            <a href="/onboarding" className="underline">
+              Crea la primera
+            </a>
+            .
+          </p>
+        </div>
+      </PanelShell>
+    );
+  }
+
   const [{ data: products }, { data: categories }, { data: tags }] = await Promise.all([
     supabase
       .from("products")
@@ -39,12 +55,12 @@ export default async function ProductsPage() {
     supabase
       .from("categories")
       .select("id, name")
-      .eq("store_id", store?.id ?? "")
+      .eq("store_id", store.id)
       .order("position", { ascending: true }),
     supabase
       .from("tags")
       .select("id, name")
-      .eq("store_id", store?.id ?? "")
+      .eq("store_id", store.id)
       .order("position", { ascending: true }),
   ]);
 
@@ -57,7 +73,7 @@ export default async function ProductsPage() {
             initialProducts={(products ?? []) as Product[]}
             categories={categories ?? []}
             tags={tags ?? []}
-            currency={store?.currency ?? "HNL"}
+            currency={store.currency ?? "HNL"}
           />
         </div>
         <div className="sm:hidden">

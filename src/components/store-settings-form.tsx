@@ -181,7 +181,7 @@ export function StoreSettingsForm({ store, role, plan, usage }: Props) {
 
       <Card>
         <CardHeader>
-          <CardTitle>Tu tienda</CardTitle>
+          <CardTitle>Tu Catálogo</CardTitle>
           <CardDescription>
             {isOwner
               ? "Estos datos aparecen en tu catálogo público."
@@ -240,7 +240,7 @@ export function StoreSettingsForm({ store, role, plan, usage }: Props) {
         {isOwner ? (
           <div className="px-6 pb-6">
             <Button onClick={save} disabled={saving} className="w-full">
-              {saving ? "Guardando…" : "Guardar cambios"}
+              {saving ? "Guardando…" : "Guardar"}
             </Button>
           </div>
         ) : null}

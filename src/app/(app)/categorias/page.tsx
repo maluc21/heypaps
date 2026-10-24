@@ -25,7 +25,22 @@ export default async function CategoriesPage() {
   if (!user) redirect("/login");
 
   const store = await getCurrentStore(user.id);
-  if (!store) redirect("/onboarding");
+
+  if (!store) {
+    return (
+      <PanelShell>
+        <div className="p-4">
+          <p className="rounded-xl border bg-card p-6 text-center text-muted-foreground">
+            Todavía no tienes una tienda.{" "}
+            <a href="/onboarding" className="underline">
+              Crea la primera
+            </a>
+            .
+          </p>
+        </div>
+      </PanelShell>
+    );
+  }
 
   const { data: categories } = await supabase
     .from("categories")

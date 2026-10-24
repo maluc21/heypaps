@@ -105,21 +105,47 @@ export function ProductImageManager({
               />
               <Button
                 type="button"
-                variant="destructive"
                 size="sm"
                 disabled={busy}
                 onClick={() => handleRemove(filePath)}
-                className="absolute right-1 top-1 h-7 px-2 text-xs"
+                className="absolute right-1 top-1 h-7 px-2 text-xs bg-white text-red-600 hover:bg-white/90"
               >
                 Quitar
               </Button>
             </li>
           ))}
+          {slotsLeft > 0 ? (
+            <li
+              role="button"
+              tabIndex={0}
+              onClick={() => inputRef.current?.click()}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  inputRef.current?.click();
+                }
+              }}
+              className="relative aspect-square overflow-hidden rounded-lg border border-dashed border-border flex items-center justify-center cursor-pointer hover:bg-muted/50"
+            >
+              <span className="text-2xl text-muted-foreground">+</span>
+            </li>
+          ) : null}
         </ul>
       ) : (
-        <p className="rounded-lg border border-dashed border-border p-4 text-center text-sm text-muted-foreground">
-          Sin imágenes. Se muestra un marcador con las iniciales del producto.
-        </p>
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => inputRef.current?.click()}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              inputRef.current?.click();
+            }
+          }}
+          className="relative aspect-square w-full max-w-[200px] overflow-hidden rounded-lg border border-dashed border-border flex items-center justify-center cursor-pointer hover:bg-muted/50"
+        >
+          <span className="text-3xl text-muted-foreground">+</span>
+        </div>
       )}
 
       <input
@@ -130,7 +156,7 @@ export function ProductImageManager({
         multiple
         disabled={busy || slotsLeft === 0}
         onChange={(e) => void handleFiles(e.target.files)}
-        className="block w-full text-sm text-muted-foreground file:mr-3 file:rounded-md file:border-0 file:bg-muted file:px-3 file:py-2 file:text-sm file:font-medium"
+        className="hidden"
       />
 
       {progress ? (
