@@ -377,7 +377,7 @@ function VariantForm({
             checked={form.madeToOrder}
             onCheckedChange={(checked) => setForm({ ...form, madeToOrder: checked })}
           />
-          <Label htmlFor="variant-made-to-order">Por encargo (sin límite de stock)</Label>
+          <Label htmlFor="variant-made-to-order">Por Inventario</Label>
         </div>
         {form.madeToOrder ? null : (
           <>

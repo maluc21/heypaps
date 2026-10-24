@@ -46,8 +46,8 @@ export function NewProductForm({
   const [price, setPrice] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [tagId, setTagId] = useState("");
-  const [stock, setStock] = useState("");
-  const [madeToOrder, setMadeToOrder] = useState(false);
+  const [inventoryMode, setInventoryMode] = useState<"inventario" | "libre">("libre");
+  const [stockQuantity, setStockQuantity] = useState("");
   const [saving, setSaving] = useState(false);
 
   const atLimit = currentProducts >= maxProducts;
@@ -67,8 +67,8 @@ export function NewProductForm({
       price,
       categoryId: categoryId || null,
       tagId: tagId || null,
-      stock,
-      madeToOrder,
+      stock: inventoryMode === "inventario" ? stockQuantity : undefined,
+      madeToOrder: inventoryMode === "libre",
     });
     setSaving(false);
 
@@ -170,22 +170,29 @@ export function NewProductForm({
           </div>
 
           <div className="space-y-2">
+            <Label>Gestión de stock</Label>
             <div className="flex items-center gap-2">
               <Switch
-                id="new-made-to-order"
-                checked={madeToOrder}
-                onCheckedChange={setMadeToOrder}
+                id="new-inventory-mode"
+                checked={inventoryMode === "inventario"}
+                onCheckedChange={(checked) => setInventoryMode(checked ? "inventario" : "libre")}
               />
-              <Label htmlFor="new-made-to-order">Por encargo (sin límite de stock)</Label>
+              <Label htmlFor="new-inventory-mode">Por Inventario</Label>
             </div>
-            {madeToOrder ? null : (
-              <Input
-                id="new-stock"
-                inputMode="numeric"
-                placeholder="Unidades disponibles"
-                value={stock}
-                onChange={(e) => setStock(e.target.value)}
-              />
+            {inventoryMode === "inventario" && (
+              <div className="space-y-2">
+                <Label htmlFor="new-stock-quantity">Cantidad disponible</Label>
+                <Input
+                  id="new-stock-quantity"
+                  inputMode="numeric"
+                  placeholder="Unidades disponibles"
+                  value={stockQuantity}
+                  onChange={(e) => setStockQuantity(e.target.value)}
+                />
+              </div>
+            )}
+            {inventoryMode === "libre" && (
+              <p className="text-xs text-muted-foreground">Sin límite de stock (Libre).</p>
             )}
           </div>
         </CardContent>

@@ -70,11 +70,15 @@ export function ProductEditorForm({
   const [name, setName] = useState(product.name);
   const [description, setDescription] = useState(product.description ?? "");
   const [active, setActive] = useState(product.active);
-  const [paused, setPaused] = useState(product.paused);
+  const [available, setAvailable] = useState(!product.paused);
   const [images, setImages] = useState<string[]>(product.images ?? []);
   const [categoryId, setCategoryId] = useState<string>(product.category_id ?? "");
   const [tagId, setTagId] = useState<string>(product.tag_id ?? "");
+  const [inventoryMode, setInventoryMode] = useState<"inventario" | "libre">("libre");
+  const [stockQuantity, setStockQuantity] = useState("");
   const [saving, setSaving] = useState(false);
+
+  const hasVariants = product.variants.length > 0;
 
   const save = async () => {
     setSaving(true);
@@ -82,7 +86,7 @@ export function ProductEditorForm({
       name,
       description,
       active,
-      paused,
+      paused: !available,
       images,
     });
     if (res.error === "CONFLICT") {
@@ -192,12 +196,54 @@ export function ProductEditorForm({
             <Label htmlFor="active">Visible en el catálogo</Label>
           </div>
           <div className="flex items-center gap-2">
-            <Switch id="paused" checked={paused} onCheckedChange={setPaused} />
-            <Label htmlFor="paused">Pausado temporalmente</Label>
+            <Switch id="available" checked={available} onCheckedChange={setAvailable} />
+            <Label htmlFor="available">{available ? "Disponible" : "No Disponible"}</Label>
           </div>
+          {!hasVariants && (
+            <div className="space-y-2">
+              <Label>Gestión de stock</Label>
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="inventory-mode"
+                  checked={inventoryMode === "inventario"}
+                  onCheckedChange={(checked) => setInventoryMode(checked ? "inventario" : "libre")}
+                />
+                <Label htmlFor="inventory-mode">Por Inventario</Label>
+              </div>
+              {inventoryMode === "inventario" && (
+                <div className="space-y-2">
+                  <Label htmlFor="stock-quantity">Cantidad disponible</Label>
+                  <Input
+                    id="stock-quantity"
+                    inputMode="numeric"
+                    placeholder="Unidades disponibles"
+                    value={stockQuantity}
+                    onChange={(e) => setStockQuantity(e.target.value)}
+                  />
+                </div>
+              )}
+              {inventoryMode === "libre" && (
+                <p className="text-xs text-muted-foreground">Sin límite de stock (Libre).</p>
+              )}
+            </div>
+          )}
+          {hasVariants && (
+            <div className="space-y-2">
+              <Label>Gestión de stock</Label>
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Switch
+                  id="inventory-mode"
+                  checked={inventoryMode === "inventario"}
+                  disabled
+                />
+                <Label htmlFor="inventory-mode">Por Inventario</Label>
+                <span className="text-sm">Controlado por cada variante</span>
+              </div>
+            </div>
+          )}
           <div className="flex gap-2">
-            <Badge variant={product.paused ? "secondary" : "default"}>
-              Estado: {product.paused ? "Pausado" : product.active ? "Activo" : "Oculto"}
+            <Badge variant={!available ? "secondary" : "default"}>
+              Estado: {!available ? "No Disponible" : active ? "Activo" : "Oculto"}
             </Badge>
             <Badge variant="outline">{product.variants.length} variante(s)</Badge>
           </div>
