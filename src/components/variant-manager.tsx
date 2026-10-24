@@ -152,8 +152,6 @@ export function VariantManager({ productId, productVersion, currency, variants }
   };
 
   const sorted = [...variants].sort((a, b) => a.final_price_cents - b.final_price_cents);
-  const activeOnes = variants.filter((v) => v.active);
-  const onlyActiveVariantId = activeOnes.length === 1 ? activeOnes[0].id : null;
 
   return (
     <Card>
@@ -218,7 +216,6 @@ export function VariantManager({ productId, productVersion, currency, variants }
             initial={editing}
             currency={currency}
             busy={busy}
-            canHide={!onlyActiveVariantId || onlyActiveVariantId !== editing.variantId}
             onCancel={() => setEditing(null)}
             onSave={handleSave}
           />
@@ -241,14 +238,12 @@ function VariantForm({
   initial,
   currency,
   busy,
-  canHide,
   onCancel,
   onSave,
 }: {
   initial: VariantInput;
   currency: string;
   busy: boolean;
-  canHide: boolean;
   onCancel: () => void;
   onSave: (input: VariantInput) => void;
 }) {
@@ -486,18 +481,13 @@ function VariantForm({
           <Switch
             id="variant-active"
             checked={form.active}
-            disabled={!canHide}
+            disabled={busy}
             onCheckedChange={(checked) => setForm({ ...form, active: checked })}
           />
           <Label htmlFor="variant-active">
             {form.active ? "Activa" : "Inactiva"}
           </Label>
         </div>
-        {!canHide && (
-          <p className="text-xs text-muted-foreground">
-            No se puede desactivar: es la última variante activa del producto.
-          </p>
-        )}
       </div>
 
       <div className="flex gap-2">
