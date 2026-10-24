@@ -32,25 +32,7 @@ export default async function PanelLayout({
 
   return (
     <div className="flex flex-col h-full">
-      <main className="flex-1 overflow-auto pb-20">{children}</main>
-      <nav
-        className="fixed bottom-0 left-0 right-0 z-50 border-t border-muted bg-background/90 backdrop-blur-md px-4 pt-2 pb-[env(safe-area-inset-bottom,0px)]"
-      >
-        <div className="flex justify-around">
-          {NAV_ITEMS.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="flex flex-col items-center gap-1 text-xs text-muted-foreground"
-            >
-              <span className="relative" aria-hidden="true">
-                {item.icon}
-              </span>
-              <span>{item.label}</span>
-            </Link>
-          ))}
-        </div>
-      </nav>
+      <main className="flex-1 overflow-auto">{children}</main>
     </div>
   );
 }
