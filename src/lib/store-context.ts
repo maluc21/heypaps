@@ -20,6 +20,7 @@ export type CurrentStore = {
   fx_rate: number | null;
   plan_code: string;
   status: "draft" | "published" | "suspended";
+  pricing_mode?: string | null;
   role: "owner" | "editor" | "viewer";
 };
 

@@ -452,7 +452,7 @@ function VariantForm({
             <Input
               id="variant-price"
               inputMode="decimal"
-              placeholder="450.50"
+              placeholder={basePrice || "450.50"}
               value={form.price}
               onChange={(e) => setForm({ ...form, price: e.target.value })}
             />

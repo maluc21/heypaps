@@ -17,6 +17,7 @@ export async function updateProduct(
     position?: number;
     /** Array completo de fileIds. `[]` quita todas; undefined conserva. */
     images?: string[];
+    showPrice?: boolean;
   },
 ): Promise<ProductResult> {
   // null = conservar el valor actual (semántica parcial de update_product, migración 0005).
@@ -34,6 +35,7 @@ export async function updateProduct(
     p_active: updates.active ?? null,
     p_paused: updates.paused ?? null,
     p_featured: updates.featured ?? null,
+    p_show_price: updates.showPrice ?? null,
     p_expected_version: expectedVersion,
   });
 

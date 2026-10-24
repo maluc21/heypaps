@@ -133,6 +133,7 @@ export type StoreSettings = {
   secondaryCurrency?: string | null;
   fxRate?: number | null;
   socialLinks?: Record<string, string>;
+  pricingMode?: string;
 };
 
 /** Datos visibles de la tienda para el panel. */
@@ -157,6 +158,7 @@ export async function updateStoreSettings(
     p_secondary_currency: settings.secondaryCurrency ?? null,
     p_fx_rate: settings.fxRate ?? null,
     p_social_links: settings.socialLinks ?? null,
+    p_pricing_mode: settings.pricingMode ?? null,
   });
 
   if (error) {

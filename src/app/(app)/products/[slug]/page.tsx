@@ -17,6 +17,7 @@ type Product = {
   active: boolean;
   paused: boolean;
   featured: boolean;
+  show_price: boolean;
   position: number;
   version: number;
   images: string[];
@@ -47,7 +48,7 @@ export default async function ProductEditorPage({
 
   const { data: store } = await supabase
     .from("stores")
-    .select("plan_code, currency")
+    .select("plan_code, currency, pricing_mode")
     .eq("id", product.store_id)
     .maybeSingle();
 
@@ -82,6 +83,7 @@ export default async function ProductEditorPage({
           categories={categories ?? []}
           tags={tags ?? []}
           currency={store?.currency ?? "HNL"}
+          pricingMode={store?.pricing_mode ?? "SHOW_ALL"}
         />
         <div className="max-w-xl">
           <VariantManager

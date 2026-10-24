@@ -50,7 +50,7 @@ function isSoldOut(variant: PublicVariant): boolean {
 }
 
 type Props = {
-  store: { name: string; whatsapp: string | null; currency: string };
+  store: { name: string; whatsapp: string | null; currency: string; pricing_mode?: string };
   storeId: string;
   product: PublicProduct;
   productUrl: string;
@@ -84,6 +84,10 @@ export function ProductDetail({ store, storeId, product, productUrl }: Props) {
 
   const soldOut = selected ? isSoldOut(selected) : false;
   const canOrder = Boolean(store.whatsapp) && !soldOut;
+  const pricingMode = store.pricing_mode ?? "SHOW_ALL";
+  const canShowPrice =
+    pricingMode === "SHOW_ALL" ||
+    (pricingMode === "CUSTOM" && (product.show_price ?? true));
 
   return (
     <div className="space-y-6">
@@ -125,10 +129,23 @@ export function ProductDetail({ store, storeId, product, productUrl }: Props) {
       <div className="space-y-3">
         <h1 className="text-xl font-semibold leading-tight">{product.name}</h1>
 
-        {selectedPrice !== null ? (
+        {canShowPrice && selectedPrice !== null ? (
           <p className="text-2xl font-bold">
             {formatMoney(selectedPrice, store.currency)}
           </p>
+        ) : !canShowPrice ? (
+          store.whatsapp ? (
+            <WhatsAppButton
+              phone={store.whatsapp}
+              message={message}
+              storeId={storeId}
+              productId={product.id}
+              label="Precio a solicitud"
+              className="w-fit rounded-full border border-border px-3 py-1 text-sm font-medium text-muted-foreground hover:text-primary"
+            />
+          ) : (
+            <p className="text-sm font-medium text-muted-foreground">Precio a solicitud</p>
+          )
         ) : (
           <p className="text-sm text-muted-foreground">Consultar precio</p>
         )}

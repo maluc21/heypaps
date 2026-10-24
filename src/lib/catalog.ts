@@ -24,6 +24,7 @@ export type PublicStore = {
   appearance: Record<string, unknown> | null;
   plan_code: string;
   social_links: Record<string, string> | null;
+  pricing_mode: string;
 };
 
 export type PublicCategory = { slug: string; name: string };
@@ -49,6 +50,7 @@ export type PublicProductCard = {
   price_from: number | null;
   /** true si las variantes activas difieren en precio → mostrar "desde $X". */
   price_is_range: boolean;
+  show_price: boolean;
 };
 
 export type CatalogPagination = {
@@ -89,6 +91,7 @@ export type PublicProduct = {
   active: boolean;
   status: string;
   price_from: number | null;
+  show_price: boolean;
   variants: PublicVariant[];
 };
 

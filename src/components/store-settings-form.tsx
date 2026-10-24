@@ -39,6 +39,7 @@ export type StoreSettingsData = {
   status: "draft" | "published" | "suspended";
   plan_code: string;
   appearance: Record<string, unknown> | null;
+  pricing_mode: string;
 };
 
 export type PlanSummary = {
@@ -93,6 +94,7 @@ export function StoreSettingsForm({ store, role, plan, usage }: Props) {
   const [fxRate, setFxRate] = useState(store.fx_rate ? String(store.fx_rate) : "");
   const [logo, setLogo] = useState(store.logo_file_id);
   const [slug, setSlug] = useState(store.slug);
+  const [pricingMode, setPricingMode] = useState(store.pricing_mode ?? "SHOW_ALL");
   const [saving, setSaving] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -124,6 +126,7 @@ export function StoreSettingsForm({ store, role, plan, usage }: Props) {
       secondaryCurrency: secondaryCurrency || null,
       fxRate: secondaryCurrency ? Number(fxRate) : null,
       socialLinks: Object.keys(socialLinksObj).length > 0 ? socialLinksObj : undefined,
+      pricingMode,
     });
     setSaving(false);
     if (res.error) {
@@ -322,6 +325,50 @@ export function StoreSettingsForm({ store, role, plan, usage }: Props) {
               </p>
             </div>
           ) : null}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Visibilidad de precios</CardTitle>
+          <CardDescription>
+            Define cómo se muestran los precios en tu catálogo público.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="radio"
+              name="pricing-mode"
+              value="SHOW_ALL"
+              checked={pricingMode === "SHOW_ALL"}
+              disabled={!isOwner}
+              onChange={() => setPricingMode("SHOW_ALL")}
+            />
+            Mostrar precio en todos los productos
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="radio"
+              name="pricing-mode"
+              value="REQUEST_ALL"
+              checked={pricingMode === "REQUEST_ALL"}
+              disabled={!isOwner}
+              onChange={() => setPricingMode("REQUEST_ALL")}
+            />
+            Precio a solicitud en todos los productos
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="radio"
+              name="pricing-mode"
+              value="CUSTOM"
+              checked={pricingMode === "CUSTOM"}
+              disabled={!isOwner}
+              onChange={() => setPricingMode("CUSTOM")}
+            />
+            Personalizado por producto
+          </label>
         </CardContent>
       </Card>
 

@@ -27,6 +27,7 @@ type Product = {
   active: boolean;
   paused: boolean;
   featured: boolean;
+  show_price: boolean;
   position: number;
   version: number;
   images: string[];
@@ -63,6 +64,7 @@ type ProductEditorFormProps = {
   categories: CategoryOption[];
   tags: TagOption[];
   currency?: string;
+  pricingMode?: string;
 };
 
 export function ProductEditorForm({
@@ -71,12 +73,14 @@ export function ProductEditorForm({
   categories,
   tags,
   currency = "HNL",
+  pricingMode = "SHOW_ALL",
 }: ProductEditorFormProps) {
   const router = useRouter();
   const [name, setName] = useState(product.name);
   const [description, setDescription] = useState(product.description ?? "");
   const [active, setActive] = useState(product.active);
   const [available, setAvailable] = useState(!product.paused);
+  const [showPrice, setShowPrice] = useState(product.show_price ?? true);
   const [images, setImages] = useState<string[]>(product.images ?? []);
   const [categoryId, setCategoryId] = useState<string>(product.category_id ?? "");
   const [tagId, setTagId] = useState<string>(product.tag_id ?? "");
@@ -102,6 +106,7 @@ export function ProductEditorForm({
       active,
       paused: !available,
       images,
+      showPrice: pricingMode === "CUSTOM" ? showPrice : undefined,
     });
     if (res.error === "CONFLICT") {
       toast.error("El producto cambió en otra pestaña. Recarga.");
@@ -258,6 +263,16 @@ export function ProductEditorForm({
             <Switch id="available" checked={available} onCheckedChange={setAvailable} />
             <Label htmlFor="available">{available ? "Disponible" : "No Disponible"}</Label>
           </div>
+          {pricingMode === "CUSTOM" ? (
+            <div className="flex items-center gap-2">
+              <Switch id="show-price" checked={showPrice} onCheckedChange={setShowPrice} />
+              <Label htmlFor="show-price">{showPrice ? "Mostrar precio" : "Precio a solicitud"}</Label>
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              La visibilidad del precio la rige la configuración global de la tienda.
+            </p>
+          )}
           {!hasVariants && (
             <div className="space-y-2">
               <div className="flex items-center gap-2">

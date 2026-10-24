@@ -243,6 +243,7 @@ export default async function PublicCatalogPage({ params, searchParams }: PagePr
           storeSlug={storeSlug}
           products={products}
           currency={store.currency}
+          pricingMode={store.pricing_mode ?? "SHOW_ALL"}
         />
 
         {totalPages > 1 ? (

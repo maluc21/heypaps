@@ -40,13 +40,17 @@ type Props = {
   storeSlug: string;
   product: PublicProductCard;
   currency: string;
+  pricingMode?: string;
   /** La primera imagen de la pagina es el LCP: se carga con prioridad. */
   priority?: boolean;
 };
 
-export function ProductCard({ storeSlug, product, currency, priority = false }: Props) {
+export function ProductCard({ storeSlug, product, currency, pricingMode = "SHOW_ALL", priority = false }: Props) {
   const href = `/s/${storeSlug}/${product.slug}`;
   const image = product.images[0];
+  const canShowPrice =
+    pricingMode === "SHOW_ALL" ||
+    (pricingMode === "CUSTOM" && product.show_price === true);
 
   return (
     <Link
@@ -83,10 +87,14 @@ export function ProductCard({ storeSlug, product, currency, priority = false }: 
           </span>
         ) : null}
         <h3 className="line-clamp-2 text-sm font-medium leading-snug">{product.name}</h3>
-        {product.price_from !== null ? (
+        {canShowPrice && product.price_from !== null ? (
           <p className="mt-auto pt-1 text-base font-semibold">
             {product.price_is_range ? "desde " : ""}
             {formatMoney(product.price_from, currency)}
+          </p>
+        ) : !canShowPrice ? (
+          <p className="mt-auto pt-1 text-sm font-medium text-muted-foreground">
+            Precio a solicitud
           </p>
         ) : (
           <p className="mt-auto pt-1 text-sm text-muted-foreground">Consultar precio</p>

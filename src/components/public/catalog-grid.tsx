@@ -16,9 +16,10 @@ type Props = {
   storeSlug: string;
   products: PublicProductCard[];
   currency: string;
+  pricingMode: string;
 };
 
-export function CatalogGrid({ storeSlug, products, currency }: Props) {
+export function CatalogGrid({ storeSlug, products, currency, pricingMode }: Props) {
   const [query, setQuery] = useState("");
 
   const filtered = useMemo(() => {
@@ -63,6 +64,7 @@ export function CatalogGrid({ storeSlug, products, currency }: Props) {
               storeSlug={storeSlug}
               product={product}
               currency={currency}
+              pricingMode={pricingMode}
               priority={index === 0}
             />
           ))}
