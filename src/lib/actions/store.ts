@@ -134,6 +134,10 @@ export type StoreSettings = {
   fxRate?: number | null;
   socialLinks?: Record<string, string>;
   pricingMode?: string;
+  address?: string | null;
+  city?: string | null;
+  country?: string | null;
+  email?: string | null;
 };
 
 /** Datos visibles de la tienda para el panel. */
@@ -146,6 +150,19 @@ export async function updateStoreSettings(
   }
 
   const supabase = await createServerClient();
+  const identification =
+    settings.address !== undefined ||
+    settings.city !== undefined ||
+    settings.country !== undefined ||
+    settings.email !== undefined
+      ? {
+          address: settings.address ?? null,
+          city: settings.city ?? null,
+          country: settings.country ?? null,
+          email: settings.email ?? null,
+        }
+      : null;
+
   const { error } = await supabase.rpc("update_store", {
     p_store_id: storeId,
     p_name: settings.name,
@@ -159,6 +176,7 @@ export async function updateStoreSettings(
     p_fx_rate: settings.fxRate ?? null,
     p_social_links: settings.socialLinks ?? null,
     p_pricing_mode: settings.pricingMode ?? null,
+    p_identification: identification,
   });
 
   if (error) {

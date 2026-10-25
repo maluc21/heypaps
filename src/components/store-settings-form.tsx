@@ -40,6 +40,10 @@ export type StoreSettingsData = {
   plan_code: string;
   appearance: Record<string, unknown> | null;
   pricing_mode: string;
+  address: string | null;
+  city: string | null;
+  country: string | null;
+  email: string | null;
 };
 
 export type PlanSummary = {
@@ -89,6 +93,11 @@ export function StoreSettingsForm({ store, role, plan, usage }: Props) {
   const [name, setName] = useState(store.name);
   const [description, setDescription] = useState(store.description ?? "");
   const [whatsapp, setWhatsapp] = useState(store.whatsapp_e164 ?? "");
+  const storedIdent = (store.appearance?.identification as Record<string, string | null>) ?? {};
+  const [address, setAddress] = useState(storedIdent.address ?? "");
+  const [city, setCity] = useState(storedIdent.city ?? "");
+  const [country, setCountry] = useState(storedIdent.country ?? "");
+  const [email, setEmail] = useState(storedIdent.email ?? "");
   const [currency, setCurrency] = useState(store.currency);
   const [secondaryCurrency, setSecondaryCurrency] = useState(store.secondary_currency ?? "");
   const [fxRate, setFxRate] = useState(store.fx_rate ? String(store.fx_rate) : "");
@@ -120,12 +129,20 @@ export function StoreSettingsForm({ store, role, plan, usage }: Props) {
     fxRate: string;
     socialLinks: Record<SocialPlatform, string>;
     pricingMode: string;
+    address: string;
+    city: string;
+    country: string;
+    email: string;
   }> = {}) => {
     if (!isOwner || savingRef.current) return;
 
     const nextName = overrides.name ?? name;
     const nextDescription = overrides.description ?? description;
     const nextWhatsapp = overrides.whatsapp ?? whatsapp;
+    const nextAddress = overrides.address ?? address;
+    const nextCity = overrides.city ?? city;
+    const nextCountry = overrides.country ?? country;
+    const nextEmail = overrides.email ?? email;
     const nextCurrency = overrides.currency ?? currency;
     const nextSecondary = overrides.secondaryCurrency ?? secondaryCurrency;
     const nextFxRate = overrides.fxRate ?? fxRate;
@@ -151,6 +168,10 @@ export function StoreSettingsForm({ store, role, plan, usage }: Props) {
     if (overrides.name !== undefined) setName(overrides.name);
     if (overrides.description !== undefined) setDescription(overrides.description);
     if (overrides.whatsapp !== undefined) setWhatsapp(overrides.whatsapp);
+    if (overrides.address !== undefined) setAddress(overrides.address);
+    if (overrides.city !== undefined) setCity(overrides.city);
+    if (overrides.country !== undefined) setCountry(overrides.country);
+    if (overrides.email !== undefined) setEmail(overrides.email);
     if (overrides.currency !== undefined) setCurrency(overrides.currency);
     if (overrides.secondaryCurrency !== undefined) setSecondaryCurrency(overrides.secondaryCurrency);
     if (overrides.fxRate !== undefined) setFxRate(overrides.fxRate);
@@ -167,6 +188,10 @@ export function StoreSettingsForm({ store, role, plan, usage }: Props) {
       name: nextName,
       description: nextDescription,
       whatsapp: nextWhatsapp,
+      address: nextAddress,
+      city: nextCity,
+      country: nextCountry,
+      email: nextEmail,
       currency: nextCurrency,
       secondaryCurrency: nextSecondary || null,
       fxRate: nextSecondary ? Number(nextFxRate) : null,
@@ -313,20 +338,56 @@ export function StoreSettingsForm({ store, role, plan, usage }: Props) {
               Se guarda en formato internacional. Es a donde caen las ventas.
             </p>
           </div>
+        </CardContent>
+      </Card>
 
-          <div className="space-y-2">
-            <Label>Logo</Label>
-            {isOwner ? (
-              <StoreLogoManager
-                storeId={store.id}
-                logo={logo ?? null}
-                storeName={name}
-                onChange={saveLogo}
-              />
-            ) : (
-              <p className="text-sm text-muted-foreground">Sin logo.</p>
-            )}
+      <Card>
+        <CardHeader>
+          <CardTitle>Link público</CardTitle>
+          <CardDescription>Compártelo por WhatsApp con tus clientes.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex gap-2">
+            <Input readOnly value={publicUrl} className="font-mono text-xs" />
+            <Button type="button" variant="outline" onClick={copyLink}>
+              Copiar
+            </Button>
           </div>
+
+          {isOwner ? (
+            <div className="space-y-2">
+              <Label htmlFor="store-slug">Parte final del link</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="store-slug"
+                  value={slug}
+                  onChange={(e) => setSlug(e.target.value.toLowerCase())}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={busy || slug === store.slug}
+                  onClick={changeSlug}
+                >
+                  Cambiar
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Cambiarlo rompe los enlaces que ya compartiste.
+              </p>
+            </div>
+          ) : null}
+
+          {isOwner ? (
+            <Button
+              variant={store.status === "published" ? "outline" : "default"}
+              disabled={busy}
+              onClick={togglePublished}
+              className="w-full"
+            >
+              {store.status === "published" ? "Despublicar catálogo" : "Publicar catálogo"}
+            </Button>
+          ) : null}
         </CardContent>
       </Card>
 
@@ -398,137 +459,149 @@ export function StoreSettingsForm({ store, role, plan, usage }: Props) {
               </p>
             </div>
           ) : null}
+
+          <div className="space-y-3 pt-2">
+            <Label>Visibilidad de precios</Label>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="radio"
+                name="pricing-mode"
+                value="SHOW_ALL"
+                checked={pricingMode === "SHOW_ALL"}
+                disabled={!isOwner || saving}
+                onChange={() => {
+                  setPricingMode("SHOW_ALL");
+                  persist({ pricingMode: "SHOW_ALL" });
+                }}
+              />
+              Mostrar precio en todos los productos
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="radio"
+                name="pricing-mode"
+                value="REQUEST_ALL"
+                checked={pricingMode === "REQUEST_ALL"}
+                disabled={!isOwner || saving}
+                onChange={() => {
+                  setPricingMode("REQUEST_ALL");
+                  persist({ pricingMode: "REQUEST_ALL" });
+                }}
+              />
+              Precio a solicitud en todos los productos
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="radio"
+                name="pricing-mode"
+                value="CUSTOM"
+                checked={pricingMode === "CUSTOM"}
+                disabled={!isOwner || saving}
+                onChange={() => {
+                  setPricingMode("CUSTOM");
+                  persist({ pricingMode: "CUSTOM" });
+                }}
+              />
+              Personalizado por producto
+            </label>
+          </div>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Visibilidad de precios</CardTitle>
-          <CardDescription>
-            Define cómo se muestran los precios en tu catálogo público.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <label className="flex items-center gap-2 text-sm">
-            <input
-               type="radio"
-               name="pricing-mode"
-               value="SHOW_ALL"
-               checked={pricingMode === "SHOW_ALL"}
-               disabled={!isOwner || saving}
-               onChange={() => {
-                 setPricingMode("SHOW_ALL");
-                 persist({ pricingMode: "SHOW_ALL" });
-               }}
-            />
-            Mostrar precio en todos los productos
-          </label>
-          <label className="flex items-center gap-2 text-sm">
-            <input
-               type="radio"
-               name="pricing-mode"
-               value="REQUEST_ALL"
-               checked={pricingMode === "REQUEST_ALL"}
-               disabled={!isOwner || saving}
-               onChange={() => {
-                 setPricingMode("REQUEST_ALL");
-                 persist({ pricingMode: "REQUEST_ALL" });
-               }}
-            />
-            Precio a solicitud en todos los productos
-          </label>
-          <label className="flex items-center gap-2 text-sm">
-            <input
-               type="radio"
-               name="pricing-mode"
-               value="CUSTOM"
-               checked={pricingMode === "CUSTOM"}
-               disabled={!isOwner || saving}
-               onChange={() => {
-                 setPricingMode("CUSTOM");
-                 persist({ pricingMode: "CUSTOM" });
-               }}
-            />
-            Personalizado por producto
-          </label>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Link público</CardTitle>
-          <CardDescription>Compártelo por WhatsApp con tus clientes.</CardDescription>
+          <CardTitle>Identificación</CardTitle>
+          <CardDescription>Datos de tu negocio.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex gap-2">
-            <Input readOnly value={publicUrl} className="font-mono text-xs" />
-            <Button type="button" variant="outline" onClick={copyLink}>
-              Copiar
-            </Button>
+          <div className="space-y-2">
+            <Label htmlFor="store-address">Dirección</Label>
+            <Input
+              id="store-address"
+              value={address}
+              disabled={!isOwner || saving}
+              onChange={(e) => setAddress(e.target.value)}
+              onBlur={() => persist()}
+            />
           </div>
-
-          {isOwner ? (
+          <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
-              <Label htmlFor="store-slug">Parte final del link</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="store-slug"
-                  value={slug}
-                  onChange={(e) => setSlug(e.target.value.toLowerCase())}
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={busy || slug === store.slug}
-                  onClick={changeSlug}
-                >
-                  Cambiar
-                </Button>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Cambiarlo rompe los enlaces que ya compartiste.
-              </p>
+              <Label htmlFor="store-city">Ciudad</Label>
+              <Input
+                id="store-city"
+                value={city}
+                disabled={!isOwner || saving}
+                onChange={(e) => setCity(e.target.value)}
+                onBlur={() => persist()}
+              />
             </div>
-          ) : null}
-
-          {isOwner ? (
-            <Button
-              variant={store.status === "published" ? "outline" : "default"}
-              disabled={busy}
-              onClick={togglePublished}
-              className="w-full"
-            >
-              {store.status === "published" ? "Despublicar catálogo" : "Publicar catálogo"}
-            </Button>
-          ) : null}
+            <div className="space-y-2">
+              <Label htmlFor="store-country">País</Label>
+              <Input
+                id="store-country"
+                value={country}
+                disabled={!isOwner || saving}
+                onChange={(e) => setCountry(e.target.value)}
+                onBlur={() => persist()}
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="store-email">Correo electrónico</Label>
+            <Input
+              id="store-email"
+              type="email"
+              value={email}
+              disabled={!isOwner || saving}
+              onChange={(e) => setEmail(e.target.value)}
+              onBlur={() => persist()}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Logo</Label>
+            {isOwner ? (
+              <StoreLogoManager
+                storeId={store.id}
+                logo={logo ?? null}
+                storeName={name}
+                onChange={saveLogo}
+              />
+            ) : (
+              <p className="text-sm text-muted-foreground">Sin logo.</p>
+            )}
+          </div>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Cuentas</CardTitle>
+          <CardTitle>Redes Sociales</CardTitle>
           <CardDescription>
             Enlaces a tus redes sociales. Se mostrarán en tu catálogo público.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {SOCIAL_PLATFORMS.map((platform) => (
-            <div key={platform.key} className="space-y-2">
-              <Label htmlFor={`social-${platform.key}`}>{platform.label}</Label>
-              <div className="flex gap-2">
-                <span className="flex items-center px-3 text-muted-foreground">https://</span>
-                <Input
-                  id={`social-${platform.key}`}
-                  value={socialLinks[platform.key]}
-                  disabled={!isOwner || saving}
-                  placeholder={`${platform.label.toLowerCase()}.com/${platform.placeholder}`}
-                  onChange={(e) => setSocialLinks((prev) => ({ ...prev, [platform.key]: e.target.value }))}
-                  onBlur={() => persist()}
-                  className="flex-1"
-                />
+          {SOCIAL_PLATFORMS.map((platform) => {
+            return (
+              <div key={platform.key} className="space-y-2">
+                <Label htmlFor={`social-${platform.key}`}>{platform.label}</Label>
+                <div className="flex gap-2 items-center">
+                  <span className="flex size-8 items-center justify-center rounded-full bg-muted text-xs font-semibold text-muted-foreground">
+                    {platform.label.charAt(0).toUpperCase()}
+                  </span>
+                  <Input
+                    id={`social-${platform.key}`}
+                    value={socialLinks[platform.key]}
+                    disabled={!isOwner || saving}
+                    placeholder={`https://${platform.label.toLowerCase()}.com/${platform.placeholder}`}
+                    onChange={(e) => setSocialLinks((prev) => ({ ...prev, [platform.key]: e.target.value }))}
+                    onBlur={() => persist()}
+                    className="flex-1"
+                  />
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </CardContent>
       </Card>
 
@@ -573,6 +646,7 @@ export function StoreSettingsForm({ store, role, plan, usage }: Props) {
       </Card>
     </div>
   );
+
 }
 
 function formatBytes(bytes: number): string {
@@ -580,3 +654,4 @@ function formatBytes(bytes: number): string {
   if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
+

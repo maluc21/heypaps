@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { formatMoney } from "@/lib/utils";
 import { updateProduct } from "@/lib/actions/product";
 import { saveVariant } from "@/lib/actions/variant";
 import { setProductCategory } from "@/lib/actions/category";
@@ -14,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ProductImageManager } from "@/components/product-image-manager";
 
@@ -186,9 +185,6 @@ export function ProductEditorForm({
     router.refresh();
   };
 
-  const actives = product.variants.filter((v) => v.active);
-  const priceFrom = actives.length > 0 ? Math.min(...actives.map((v) => v.final_price_cents)) : null;
-
   return (
     <div className="p-4 max-w-xl space-y-4">
       <div className="flex items-center justify-between">
@@ -201,9 +197,6 @@ export function ProductEditorForm({
       <Card>
         <CardHeader>
           <CardTitle>{product.name}</CardTitle>
-          <CardDescription>
-            {priceFrom == null ? "—" : formatMoney(priceFrom, "HNL")}
-          </CardDescription>
           <div className="flex gap-2 pt-1">
             <Badge variant={!available ? "secondary" : "default"}>
               Estado: {!available ? "No Disponible" : active ? "Activo" : "Oculto"}
@@ -301,8 +294,8 @@ export function ProductEditorForm({
             </select>
           </div>
           <div className="flex items-center gap-2">
-            <Switch id="available" checked={available} onCheckedChange={setAvailable} disabled={inventoryMode === "inventario" && stockQuantity === "0"} />
-            <Label htmlFor="available">{available ? "Disponible" : "No Disponible"}</Label>
+            <Switch id="active" checked={active} onCheckedChange={setActive} />
+            <Label htmlFor="active">Visible en catálogo</Label>
           </div>
           {!hasVariants && (
             <div className="space-y-2">
@@ -347,8 +340,8 @@ export function ProductEditorForm({
         </CardContent>
         <CardFooter className="flex flex-col gap-3">
           <div className="flex items-center gap-2">
-            <Switch id="active" checked={active} onCheckedChange={setActive} />
-            <Label htmlFor="active">Visible en el catálogo</Label>
+            <Switch id="available" checked={available} onCheckedChange={setAvailable} disabled={inventoryMode === "inventario" && stockQuantity === "0"} />
+            <Label htmlFor="available">{available ? "Disponible" : "No Disponible"}</Label>
           </div>
           <Button onClick={save} disabled={saving} className="w-full">
             {saving ? "Guardando…" : "Guardar"}
