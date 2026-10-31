@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import type { FormEvent } from "react"
+import Image from "next/image"
 import { Sparkles } from "lucide-react"
 import { signInMagicLink, signInGoogle } from "@/lib/actions/auth"
 import { toast } from "sonner"
@@ -138,9 +139,15 @@ export function AuthBlock() {
       </div>
 
       <div className="dark relative hidden overflow-hidden md:block">
-        <div className="absolute inset-0 [background-image:linear-gradient(to_right,var(--foreground)/0.06,transparent),linear-gradient(to_bottom,var(--foreground)/0.06,transparent)] [background-size:40px_40px]" />
-        <div className="absolute -top-1/4 right-0 size-[500px] rounded-full bg-foreground/10 blur-3xl" />
-        <div className="absolute bottom-0 left-0 size-[400px] rounded-full bg-foreground/10 blur-3xl" />
+        <Image
+          src="/login-hero.jpg"
+          alt=""
+          fill
+          priority
+          sizes="(min-width: 768px) 50vw, 100vw"
+          className="object-cover"
+        />
+        <div className="absolute inset-0 [background-image:linear-gradient(to_top,var(--background)/0.9,var(--background)/0.5,var(--background)/0.1)]" />
         <div className="absolute inset-0 z-10 flex flex-col gap-6 p-6 md:p-10">
           <div className="flex items-center gap-2 font-medium text-foreground">
             <div className="flex size-6 items-center justify-center rounded-md bg-foreground text-background">
