@@ -2,7 +2,6 @@
 
 import { useState } from "react"
 import type { FormEvent } from "react"
-import Image from "next/image"
 import { Sparkles } from "lucide-react"
 import { signInMagicLink, signInGoogle } from "@/lib/actions/auth"
 import { toast } from "sonner"
@@ -139,13 +138,11 @@ export function AuthBlock() {
       </div>
 
       <div className="dark relative hidden overflow-hidden md:block">
-        <Image
+        {/* eslint-disable-next-line @next/next/no-img-element -- foto estática local en public/, no usa el loader de ImageKit */}
+        <img
           src="/login-hero.jpg"
           alt=""
-          fill
-          priority
-          sizes="(min-width: 768px) 50vw, 100vw"
-          className="object-cover"
+          className="absolute inset-0 h-full w-full object-cover"
         />
         <div className="absolute inset-0 [background-image:linear-gradient(to_top,var(--background)/0.9,var(--background)/0.5,var(--background)/0.1)]" />
         <div className="absolute inset-0 z-10 flex flex-col gap-6 p-6 md:p-10">
