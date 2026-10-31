@@ -1,33 +1,42 @@
-# Plan: Auto-save y toasts en Ajustes
+# Plan: Rediseño de la página de login (AuthBlock split-screen)
 
 ## Objetivo
-Implementar guardado automático y notificaciones flotantes con Sonner exclusivamente en `src/components/store-settings-form.tsx`. Sin botón "Guardar" en las cards/secciones; los controles guardan al cambiar (selects/switches/radios) y los textos al salir (onBlur) o con debounce.
+Reemplazar la página de login actual por un componente `AuthBlock` tipo split-screen (originUI): formulario a la izquierda y panel de marca oscuro con grid/blur a la derecha. Se conserva el flujo de autenticación real de la app.
 
-## Alcance
-- Solo `StoreSettingsForm`.
-- No modificar otros formularios (productos, variantes, onboarding).
+## Decisiones
+- **Auth passwordless (se mantiene)**: el formulario usa magic link por email (`signInMagicLink`) + botón "Continuar con Google" (`signInGoogle`). No se añaden contraseñas ni registro con password.
+- **Elementos del snippet que se omiten** (no existen en la app): campo contraseña, "Remember me", "GitHub", "Sign up", "Forgot password".
+- **Wordmark de marca**: "Catálogo" (coincide con `layout.tsx` título "Catálogo SaaS" y footer "Hecho con Catalogo"). Logo: SVG inline de 4 cuadrados rotados (del snippet). Ícono del badge: `Sparkles` de `lucide-react` (ya instalado).
+- **Dependencias**: no se instala `@mynaui` ni `@mynaui/icons-react`. Se añade solo el componente `separator` de shadcn.
+- **Componentes ausentes no requeridos**: `checkbox`, `field` e `icon-placeholder` no se usan; el formulario reutiliza `Label` + `Input` + `Button` existentes y muestra errores con `toast` (comportamiento actual).
 
-## Cambios en UI
-- Eliminar el botón "Guardar" de la card de redes sociales.
-- Mantener botones de acción explícita: publicar/despublicar, cambiar slug, logo.
-- Controles de selección (`currency`, `secondaryCurrency`, `fxRate` al confirmar, `pricingMode`, switches sociales si existieran) guardan inmediatamente en `onValueChange`/`onChange`.
-- Campos de texto (`name`, `description`, `whatsapp`, enlaces sociales) guardan en `onBlur` (o debounce 600ms).
-- Mostrar toast con `toast.promise()` en cada guardado: "Guardando..." → "Ajustes guardados" / error.
+## Tareas (ordenadas)
+1. Crear `src/components/ui/separator.tsx` (separator estándar de shadcn: `<div>` con `shrink-0 bg-border` y orientación horizontal/vertical).
+2. Crear `src/components/auth-block.tsx` (`"use client"`):
+   - `section` grid `grid-cols-1 md:grid-cols-2 min-h-svh`.
+   - **Columna izquierda**: título "Iniciar sesión", descripción, formulario:
+     - Email (`Input` + `Label`), botón submit "Entrar" → `signInMagicLink` (mantener estado `loading` y `toast`).
+     - Separador "o" (`Separator`).
+     - Botón outline "Continuar con Google" con `GoogleMark` (SVG inline del snippet) → `signInGoogle` (redirección a `result.url`).
+   - **Columna derecha** (`hidden md:block dark`): fondo grid (gradiente lineal 40px), blobs blur (`bg-foreground/10 blur-3xl`), logo SVG inline + wordmark "Catálogo", badge con `Sparkles` + texto, heading + párrafo (copy en español sobre catálogos para microemprendedores), footer de copyright.
+3. Reemplazar `src/app/login/page.tsx` para renderizar `<AuthBlock />` (la página sigue siendo client; `AuthBlock` asume el estado). Eliminar la implementación actual basada en `Card`.
+4. Mantener `signInMagicLink` / `signInGoogle` en `src/lib/actions/auth.ts` sin cambios.
 
-## Cambios en lógica
-- Reemplazar `save()` manual por `persist(nextState)` que:
-  - construye el payload completo a partir del estado actual + cambios,
-  - llama a `updateStoreSettings(store.id, payload)`,
-  - usa `toast.promise` para feedback,
-  - ejecuta `router.refresh()` si éxito.
-- Evitar guardados concurrentes con un flag `saving` y deshabilitar controles mientras se guarda.
-- Validaciones existentes (moneda, tasa, nombre) se mantienen; si fallan, mostrar error en toast y no refrescar.
+## Flujo de datos
+- Email → `signInMagicLink(formData)` → `toast.success(message)` o `toast.error(error)`.
+- Google → `signInGoogle()` → si `result.url`, `window.location.href = result.url`; si error, `toast.error`.
+- Rate limiting ya aplicado en las actions (magic link 5/min, Google 5/min).
 
-## Riesgos
-- Guardados parciales: siempre enviar el estado completo para no sobrescribir con valores stale.
-- Debounce en campos de texto para no saturar la API.
-- Mantener `pricingMode` y `socialLinks` en el payload.
+## Casos de error / edge cases
+- Email vacío o inválido: `signInMagicLink` devuelve error → toast.
+- Rate limit alcanzado: toast "Demasiados intentos…".
+- Google sin URL de redirección: toast error.
 
 ## Validación
-- `npx tsc --noEmit`, `npm run lint`, tests unitarios.
-- Verificación manual en móvil: toast flotante y auto-save en cada control.
+- `npx tsc --noEmit` y `npm run lint` sin errores nuevos.
+- Revisión manual móvil (una columna, formulario primero) y desktop (dos columnas con panel de marca a la derecha).
+- Verificar que el panel oscuro derecho usa `dark` correctamente y no rompe el theme global.
+
+## Fuera de alcance
+- Autenticación con contraseña, registro con password, "olvidé mi contraseña", OAuth de GitHub.
+- Instalar `@mynaui` / `@mynaui/icons-react`.
