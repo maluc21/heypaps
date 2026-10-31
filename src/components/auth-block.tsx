@@ -137,14 +137,7 @@ export function AuthBlock() {
         </div>
       </div>
 
-      <div className="dark relative hidden overflow-hidden md:block">
-        {/* eslint-disable-next-line @next/next/no-img-element -- foto estática local en public/, no usa el loader de ImageKit */}
-        <img
-          src="/login-hero.jpg"
-          alt=""
-          className="absolute inset-0 h-full w-full object-cover"
-        />
-        <div className="absolute inset-0 [background-image:linear-gradient(to_top,var(--background)/0.9,var(--background)/0.5,var(--background)/0.1)]" />
+      <div className="dark relative hidden bg-background md:block">
         <div className="absolute inset-0 z-10 flex flex-col gap-6 p-6 md:p-10">
           <div className="flex items-center gap-2 font-medium text-foreground">
             <div className="flex size-6 items-center justify-center rounded-md bg-foreground text-background">
