@@ -1,20 +1,12 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
+import DashboardHeader from "@/components/blocks/dashboard-header-01";
 
 export const metadata = {
   title: "Panel · Catálogo SaaS",
   description: "Panel de tu catálogo digital",
 };
-
-const NAV_ITEMS = [
-  { href: "/panel", label: "Panel", icon: "🏠" },
-  { href: "/products", label: "Productos", icon: "📦" },
-  { href: "/categorias", label: "Categorías", icon: "🏷️" },
-  { href: "/etiquetas", label: "Etiquetas", icon: "🔖" },
-  { href: "/ajustes", label: "Ajustes", icon: "⚙️" },
-];
 
 export default async function PanelLayout({
   children,
@@ -32,6 +24,7 @@ export default async function PanelLayout({
 
   return (
     <div className="flex flex-col h-full">
+      <DashboardHeader />
       <main className="flex-1 overflow-auto">{children}</main>
     </div>
   );
