@@ -14,6 +14,47 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 type Step = "tienda" | "producto" | "listo";
 
+// Base UI renderiza en <SelectValue> la etiqueta del item seleccionado, y
+// solo si el Select recibe la lista de items. Sin esto el trigger muestra el
+// valor crudo ("+504") en vez de la etiqueta ("Honduras (+504)").
+const WHATSAPP_CODES = [
+  { value: "+504", label: "Honduras (+504)" },
+  { value: "+1", label: "Estados Unidos / Canadá (+1)" },
+  { value: "+52", label: "México (+52)" },
+  { value: "+54", label: "Argentina (+54)" },
+  { value: "+56", label: "Chile (+56)" },
+  { value: "+57", label: "Colombia (+57)" },
+  { value: "+58", label: "Venezuela (+58)" },
+  { value: "+55", label: "Brasil (+55)" },
+  { value: "+51", label: "Perú (+51)" },
+  { value: "+501", label: "Belice (+501)" },
+  { value: "+502", label: "Guatemala (+502)" },
+  { value: "+503", label: "El Salvador (+503)" },
+  { value: "+505", label: "Nicaragua (+505)" },
+  { value: "+506", label: "Costa Rica (+506)" },
+  { value: "+507", label: "Panamá (+507)" },
+  { value: "+509", label: "Haití (+509)" },
+  { value: "+31", label: "Países Bajos (+31)" },
+  { value: "+32", label: "Bélgica (+32)" },
+  { value: "+33", label: "Francia (+33)" },
+  { value: "+34", label: "España (+34)" },
+  { value: "+39", label: "Italia (+39)" },
+  { value: "+41", label: "Suiza (+41)" },
+  { value: "+44", label: "Reino Unido (+44)" },
+  { value: "+49", label: "Alemania (+49)" },
+  { value: "+53", label: "Cuba (+53)" },
+  { value: "+61", label: "Australia (+61)" },
+  { value: "+81", label: "Japón (+81)" },
+  { value: "+86", label: "China (+86)" },
+  { value: "+91", label: "India (+91)" },
+  { value: "+971", label: "Emiratos Árabes (+971)" },
+];
+
+const CURRENCIES = [
+  { value: "HNL", label: "Lempiras (HNL)" },
+  { value: "USD", label: "Dólares (USD)" },
+];
+
 /** El origin no cambia durante la vida de la página: sin suscripciones. */
 function subscribeToNothing(): () => void {
   return () => {};
@@ -143,41 +184,20 @@ export default function OnboardingPage() {
               <div className="space-y-2">
                 <Label htmlFor="whatsapp">Número de WhatsApp</Label>
                 <div className="grid grid-cols-2 gap-2">
-                  <Select value={whatsappCode} onValueChange={setWhatsappCode}>
+                  <Select
+                    items={WHATSAPP_CODES}
+                    value={whatsappCode}
+                    onValueChange={(value) => setWhatsappCode(value ?? "+504")}
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="+504">Honduras (+504)</SelectItem>
-                      <SelectItem value="+1">Estados Unidos / Canadá (+1)</SelectItem>
-                      <SelectItem value="+52">México (+52)</SelectItem>
-                      <SelectItem value="+54">Argentina (+54)</SelectItem>
-                      <SelectItem value="+56">Chile (+56)</SelectItem>
-                      <SelectItem value="+57">Colombia (+57)</SelectItem>
-                      <SelectItem value="+58">Venezuela (+58)</SelectItem>
-                      <SelectItem value="+55">Brasil (+55)</SelectItem>
-                      <SelectItem value="+51">Perú (+51)</SelectItem>
-                      <SelectItem value="+501">Belice (+501)</SelectItem>
-                      <SelectItem value="+502">Guatemala (+502)</SelectItem>
-                      <SelectItem value="+503">El Salvador (+503)</SelectItem>
-                      <SelectItem value="+505">Nicaragua (+505)</SelectItem>
-                      <SelectItem value="+506">Costa Rica (+506)</SelectItem>
-                      <SelectItem value="+507">Panamá (+507)</SelectItem>
-                      <SelectItem value="+509">Haití (+509)</SelectItem>
-                      <SelectItem value="+31">Países Bajos (+31)</SelectItem>
-                      <SelectItem value="+32">Bélgica (+32)</SelectItem>
-                      <SelectItem value="+33">Francia (+33)</SelectItem>
-                      <SelectItem value="+34">España (+34)</SelectItem>
-                      <SelectItem value="+39">Italia (+39)</SelectItem>
-                      <SelectItem value="+41">Suiza (+41)</SelectItem>
-                      <SelectItem value="+44">Reino Unido (+44)</SelectItem>
-                      <SelectItem value="+49">Alemania (+49)</SelectItem>
-                      <SelectItem value="+53">Cuba (+53)</SelectItem>
-                      <SelectItem value="+61">Australia (+61)</SelectItem>
-                      <SelectItem value="+81">Japón (+81)</SelectItem>
-                      <SelectItem value="+86">China (+86)</SelectItem>
-                      <SelectItem value="+91">India (+91)</SelectItem>
-                      <SelectItem value="+971">Emiratos Árabes (+971)</SelectItem>
+                      {WHATSAPP_CODES.map((code) => (
+                        <SelectItem key={code.value} value={code.value}>
+                          {code.label}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                     <Input
@@ -193,13 +213,20 @@ export default function OnboardingPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="currency">Moneda</Label>
-                <Select value={currency} onValueChange={setCurrency}>
+                <Select
+                  items={CURRENCIES}
+                  value={currency}
+                  onValueChange={(value) => setCurrency(value ?? "HNL")}
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="HNL">Lempiras (HNL)</SelectItem>
-                    <SelectItem value="USD">Dólares (USD)</SelectItem>
+                    {CURRENCIES.map((item) => (
+                      <SelectItem key={item.value} value={item.value}>
+                        {item.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>

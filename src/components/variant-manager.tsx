@@ -8,7 +8,7 @@
  * se captura el formulario y se muestran los errores.
  */
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -61,6 +61,19 @@ const ATTRIBUTE_TYPES = [
 type AttributeTypeKey = (typeof ATTRIBUTE_TYPES)[number]["key"];
 
 const SIZE_CODE_OPTIONS = ["S", "M", "L", "XL", "XXL", "XXXL"];
+
+// Base UI renderiza en <SelectValue> la etiqueta del item seleccionado, y
+// solo si el Select recibe la lista de items. Sin esto el trigger muestra el
+// valor crudo ("+504") en vez de la etiqueta ("Honduras (+504)").
+const ATTRIBUTE_TYPE_ITEMS = ATTRIBUTE_TYPES.map((t) => ({
+  label: t.label,
+  value: t.key,
+}));
+
+const COLOR_ITEMS = COLOR_OPTIONS.map((color) => ({
+  label: color,
+  value: color,
+}));
 
 /** Estado inicial del formulario: vacío para crear, o lo guardado para editar. */
 function toFormState(variant: EditableVariant | null): VariantInput {
@@ -153,7 +166,14 @@ export function VariantManager({ productId, productVersion, currency, variants, 
     router.refresh();
   };
 
-  const sorted = [...variants].sort((a, b) => a.final_price_cents - b.final_price_cents);
+  // La variante sin atributos es la "presentación única" (precio base del
+  // producto): se edita desde el campo Precio del editor, no aparece como item.
+  const attributedVariants = variants.filter(
+    (v) => Object.keys(v.attributes ?? {}).length > 0,
+  );
+  const sorted = [...attributedVariants].sort(
+    (a, b) => a.final_price_cents - b.final_price_cents,
+  );
   const baseVariant = variants.find((v) => Object.keys(v.attributes ?? {}).length === 0);
   const basePrice = baseVariant ? (baseVariant.price_cents / 100).toFixed(2) : "";
 
@@ -166,53 +186,59 @@ export function VariantManager({ productId, productVersion, currency, variants, 
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <ul className="space-y-2">
-          {sorted.map((variant) => (
-            <li
-              key={variant.id}
-              className="flex items-center gap-2 rounded-lg border border-border p-3"
-            >
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium">
-                  {variantLabel(variant.attributes)}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {formatMoney(variant.final_price_cents, currency)}
-                  {variant.final_price_cents !== variant.price_cents ? (
-                    <span className="line-through"> {formatMoney(variant.price_cents, currency)}</span>
-                  ) : null}
-                  {" · "}
-                  {variant.stock === null
-                    ? "Sin límite de stock"
-                    : variant.stock > 0
-                      ? `${variant.stock} en stock`
-                      : "Agotado"}
-                </p>
-              </div>
-              <Badge variant={variant.active ? "default" : "secondary"}>
-                {variant.active ? "Activa" : "Inactiva"}
-              </Badge>
-              <Button
-                variant="ghost"
-                size="sm"
-                disabled={busy}
-                onClick={() => setEditing(toFormState(variant))}
-                aria-label={`Editar ${variantLabel(variant.attributes)}`}
+        {sorted.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            Sin variantes. Agrega tallas o colores si tu producto las tiene.
+          </p>
+        ) : (
+          <ul className="space-y-2">
+            {sorted.map((variant) => (
+              <li
+                key={variant.id}
+                className="flex items-center gap-2 rounded-lg border border-border p-3"
               >
-                Editar
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                disabled={busy}
-                onClick={() => void handleDelete(variant)}
-                aria-label={`Eliminar ${variantLabel(variant.attributes)}`}
-              >
-                Eliminar
-              </Button>
-            </li>
-          ))}
-        </ul>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium">
+                    {variantLabel(variant.attributes)}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {formatMoney(variant.final_price_cents, currency)}
+                    {variant.final_price_cents !== variant.price_cents ? (
+                      <span className="line-through"> {formatMoney(variant.price_cents, currency)}</span>
+                    ) : null}
+                    {" · "}
+                    {variant.stock === null
+                      ? "Sin límite de stock"
+                      : variant.stock > 0
+                        ? `${variant.stock} en stock`
+                        : "Agotado"}
+                  </p>
+                </div>
+                <Badge variant={variant.active ? "default" : "secondary"}>
+                  {variant.active ? "Activa" : "Inactiva"}
+                </Badge>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={busy}
+                  onClick={() => setEditing(toFormState(variant))}
+                  aria-label={`Editar ${variantLabel(variant.attributes)}`}
+                >
+                  Editar
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={busy}
+                  onClick={() => void handleDelete(variant)}
+                  aria-label={`Eliminar ${variantLabel(variant.attributes)}`}
+                >
+                  Eliminar
+                </Button>
+              </li>
+            ))}
+          </ul>
+        )}
 
         {editing ? (
           <VariantForm
@@ -336,6 +362,10 @@ function VariantForm({
   };
 
   const options = getValueOptions(pair.type as AttributeTypeKey);
+  const valueItems = useMemo(
+    () => options.map((opt) => ({ label: opt, value: opt })),
+    [options],
+  );
 
   return (
     <form
@@ -376,8 +406,11 @@ function VariantForm({
               />
             ) : (
               <Select
-                defaultValue={pair.type}
-                onValueChange={(value) => setType(value as AttributeTypeKey)}
+                items={ATTRIBUTE_TYPE_ITEMS}
+                value={pair.type}
+                onValueChange={(value) => {
+                  if (value && value !== pair.type) setType(value as AttributeTypeKey);
+                }}
               >
                 <SelectTrigger id="variant-type" className="w-full">
                   <SelectValue placeholder="Seleccionar tipo" />
@@ -402,8 +435,11 @@ function VariantForm({
               />
             ) : pair.type === "color" ? (
               <Select
-                defaultValue={pair.value}
-                onValueChange={(value) => setValue(value)}
+                items={COLOR_ITEMS}
+                value={pair.value}
+                onValueChange={(value) => {
+                  if (value) setValue(value);
+                }}
               >
                 <SelectTrigger id="variant-value" className="w-full">
                   <SelectValue placeholder="Seleccionar color" />
@@ -424,8 +460,11 @@ function VariantForm({
               </Select>
             ) : (
               <Select
-                defaultValue={pair.value}
-                onValueChange={(value) => setValue(value)}
+                items={valueItems}
+                value={pair.value}
+                onValueChange={(value) => {
+                  if (value) setValue(value);
+                }}
               >
                 <SelectTrigger id="variant-value" className="w-full">
                   <SelectValue placeholder="Seleccionar valor" />

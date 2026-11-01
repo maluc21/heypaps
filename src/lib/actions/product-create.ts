@@ -1,7 +1,7 @@
 'use server'
 
 import { createServerClient } from "@/lib/supabase/server";
-import { parseAmountToCents } from "@/lib/money";
+import { parseAmountToCents, amountError } from "@/lib/money";
 import { normalizeSlug } from "@/lib/utils";
 import { invalidateProductCatalog } from "@/lib/catalog-cache";
 
@@ -44,7 +44,7 @@ export async function createProduct(
 
   const priceCents = parseAmountToCents(input.price);
   if (priceCents === null || priceCents < 0) {
-    return { error: "El precio debe ser mayor que cero (usa 450 o 450.50)." };
+    return { error: amountError(input.price) ?? "El precio debe ser mayor que cero (usa 450 o 450.50)." };
   }
 
   let stock: number | null = null;

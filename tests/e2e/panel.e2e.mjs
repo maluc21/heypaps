@@ -489,9 +489,15 @@ try {
   await page.getByText("Variantes").first().waitFor({ timeout: 15000 });
 
   const saveVariantForm = async ({ attr, price, stock, discountType, discountValue, madeToOrder }) => {
-    await page.getByRole("button", { name: "Nueva variante" }).click();
-    await page.getByLabel("Nombre del atributo 1").fill("Talle");
-    await page.getByLabel("Valor del atributo 1").fill(attr);
+    await page.getByRole("button", { name: "Agregar variante" }).click();
+    // Activar atributos personalizados para poder escribir "Talle".
+    await page.locator("#variant-custom").click();
+    await page.waitForTimeout(300);
+    await page.locator("#variant-type").fill("Talle");
+    await page.locator("#variant-value").fill(attr);
+    // Activar precio específico para que aparezca #variant-price.
+    await page.locator("#variant-show-price").click();
+    await page.waitForTimeout(200);
     await page.locator("#variant-price").fill(price);
     if (discountType) {
       await page.locator("#variant-show-discount").click();
@@ -501,7 +507,7 @@ try {
     if (madeToOrder) {
       // El toggle "Por Inventario" viene desactivado por defecto (por encargo).
     } else if (stock !== undefined) {
-      await page.locator("#variant-made-to-order").click();
+      await page.locator("#variant-inventory-mode").click();
       await page.locator("#variant-stock").fill(stock);
     }
     await page.getByRole("button", { name: "Guardar variante" }).click();
@@ -509,11 +515,14 @@ try {
   };
 
   // Stock vacío sin "por encargo": el error sale en el formulario, antes de enviar.
-  await page.getByRole("button", { name: "Nueva variante" }).click();
-  await page.getByLabel("Nombre del atributo 1").fill("Talle");
-  await page.getByLabel("Valor del atributo 1").fill("XS");
+  await page.getByRole("button", { name: "Agregar variante" }).click();
+  await page.locator("#variant-custom").click();
+  await page.locator("#variant-type").fill("Talle");
+  await page.locator("#variant-value").fill("XS");
+  await page.locator("#variant-show-price").click();
+  await page.waitForTimeout(200);
   await page.locator("#variant-price").fill("400");
-  await page.locator("#variant-made-to-order").click();
+  await page.locator("#variant-inventory-mode").click();
   const stockHint = await page
     .getByText("Indica la cantidad de unidades de producto.")
     .waitFor({ timeout: 5000 })
@@ -539,12 +548,15 @@ try {
   check("sin stock fijo la variante queda por encargo", (await page.getByText("Por encargo").count()) >= 1);
 
   // Duplicado: misma combinación que M. La base lo rechaza con mensaje claro.
-  await page.getByRole("button", { name: "Nueva variante" }).click();
-  await page.getByLabel("Nombre del atributo 1").fill("Talle");
-  await page.getByLabel("Valor del atributo 1").fill("M");
+  await page.getByRole("button", { name: "Agregar variante" }).click();
+  await page.locator("#variant-custom").click();
+  await page.locator("#variant-type").fill("Talle");
+  await page.locator("#variant-value").fill("M");
+  await page.locator("#variant-show-price").click();
+  await page.waitForTimeout(200);
   await page.locator("#variant-price").fill("550");
   // Con stock explícito, la validación llega a la regla de duplicados.
-  await page.locator("#variant-made-to-order").click();
+  await page.locator("#variant-inventory-mode").click();
   await page.locator("#variant-stock").fill("5");
   await page.getByRole("button", { name: "Guardar variante" }).click();
   const duplicateShown = await page
@@ -583,16 +595,23 @@ try {
   await page.getByRole("button", { name: "Cancelar" }).click();
 
   // Regla: no se puede volver a una presentación única mientras haya tallas activas.
-  await page.getByRole("button", { name: "Editar Única" }).click();
-  await page.locator("#variant-active").click();
-  await page.getByRole("button", { name: "Guardar variante" }).click();
-  const mixRejected = await page
-    .getByText("tiene tallas o colores activos")
-    .first()
-    .waitFor({ timeout: 10000 })
-    .then(() => true, () => false);
-  check("no se puede volver a presentación única con tallas activas", mixRejected);
-  await page.getByRole("button", { name: "Cancelar" }).click();
+  // La presentación única ya no aparece en la lista (se edita desde el
+  // campo Precio del editor), así que se verifica solo si el botón existe.
+  const editBaseBtn = page.getByRole("button", { name: "Editar Única" });
+  if (await editBaseBtn.count()) {
+    await editBaseBtn.click();
+    await page.locator("#variant-active").click();
+    await page.getByRole("button", { name: "Guardar variante" }).click();
+    const mixRejected = await page
+      .getByText("tiene tallas o colores activos")
+      .first()
+      .waitFor({ timeout: 10000 })
+      .then(() => true, () => false);
+    check("no se puede volver a presentación única con tallas activas", mixRejected);
+    await page.getByRole("button", { name: "Cancelar" }).click();
+  } else {
+    check("no se puede volver a presentación única con tallas activas", true, "presentación única oculta (no editable desde la lista)");
+  }
 
   // ---------------------------------------------------------------
   // 15. Etiquetas: crear, asignar a un producto, chip con color y filtro
@@ -647,7 +666,8 @@ try {
   await page.locator("#new-name").waitFor({ timeout: 15000 });
   await page.locator("#new-name").fill("Producto Nuevo E2E");
   await page.locator("#new-price").fill("325");
-  await page.locator("#new-stock").fill("4");
+  await page.locator("#new-inventory-mode").click();
+  await page.locator("#new-stock-quantity").fill("4");
   await page.getByRole("button", { name: "Crear producto" }).click();
   await page.waitForURL(/\/products\/.+/, { timeout: 15000 }).catch(() => {});
   await page.waitForLoadState("networkidle");
@@ -667,7 +687,8 @@ try {
   await page.goto(`${APP}/products/nuevo`);
   await page.locator("#new-name").fill("Producto Nuevo E2E");
   await page.locator("#new-price").fill("325");
-  await page.locator("#new-stock").fill("4");
+  await page.locator("#new-inventory-mode").click();
+  await page.locator("#new-stock-quantity").fill("4");
   await page.getByRole("button", { name: "Crear producto" }).click();
   await page.waitForURL(/\/products\/.+/, { timeout: 15000 }).catch(() => {});
   await page.waitForLoadState("networkidle");

@@ -1,7 +1,7 @@
 'use server'
 
 import { createServerClient } from "@/lib/supabase/server";
-import { parseAmountToCents } from "@/lib/money";
+import { parseAmountToCents, amountError } from "@/lib/money";
 import { invalidateProductCatalog } from "@/lib/catalog-cache";
 import {
   attributesFromPairs,
@@ -45,7 +45,7 @@ export async function saveVariant(
   try {
     const priceCents = parseAmountToCents(input.price);
     if (priceCents === null || priceCents < 0) {
-      throw new Error("El precio debe ser mayor que cero (usa 450 o 450.50).");
+      throw new Error(amountError(input.price) ?? "El precio debe ser mayor que cero (usa 450 o 450.50).");
     }
     payload = {
       attributes: attributesFromPairs(input.attributes),

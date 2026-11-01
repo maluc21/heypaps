@@ -39,8 +39,11 @@ export async function updateTag(
   const supabase = await createServerClient();
   const { error } = await supabase.rpc("update_tag", {
     p_tag_id: tagId,
+    // NULL conserva el color actual; '' lo quita; un hex lo establece.
+    // Así la función mantiene la firma de 4 parámetros y es compatible con
+    // la versión anterior (PostgREST resuelve por nombre).
     p_name: updates.name ?? null,
-    p_color: updates.color ?? null,
+    p_color: updates.color === undefined ? null : (updates.color ?? ""),
     p_position: updates.position ?? null,
   });
 
