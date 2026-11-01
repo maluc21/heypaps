@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
-import DashboardHeader from "@/components/blocks/dashboard-header-01";
 
 export const metadata = {
   title: "Panel · Catálogo SaaS",
@@ -24,7 +23,6 @@ export default async function PanelLayout({
 
   return (
     <div className="flex flex-col h-full">
-      <DashboardHeader />
       <main className="flex-1 overflow-auto">{children}</main>
     </div>
   );
