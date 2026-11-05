@@ -27,7 +27,7 @@ export default async function TagsPage() {
     return (
       <PanelShell>
         <div className="p-4">
-          <p className="rounded-xl border bg-card p-6 text-center text-muted-foreground">
+          <p className="rounded-xl border border-border bg-card p-6 text-center text-muted-foreground">
             Todavía no tienes una tienda.{" "}
             <a href="/onboarding" className="underline">
               Crea la primera
