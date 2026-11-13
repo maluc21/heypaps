@@ -186,7 +186,7 @@ export function ProductEditorForm({
   };
 
   return (
-    <div className="p-4 max-w-xl space-y-4">
+    <div className="p-4">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">Editar producto</h2>
         <Link href="/products" className="text-sm text-muted-foreground hover:text-primary">
@@ -194,175 +194,181 @@ export function ProductEditorForm({
         </Link>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{product.name}</CardTitle>
-          <div className="flex gap-2 pt-1">
-            <Badge variant={!available ? "secondary" : "default"}>
-              Estado: {!available ? "No Disponible" : active ? "Activo" : "Oculto"}
-            </Badge>
-            <Badge variant="outline">{product.variants.length} variante(s)</Badge>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Nombre</Label>
-            <Input id="name" value={name} onChange={(e) => setName(e.target.value)} />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="description">Descripción</Label>
-            <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} />
-          </div>
-          {pricingMode === "CUSTOM" ? (
-            <div className="flex items-center gap-3">
-              <label className="flex items-center gap-2 text-sm font-bold">
-                <input
-                  type="radio"
-                  name="show-price"
-                  checked={showPrice}
-                  onChange={() => setShowPrice(true)}
-                />
-                Precio
-              </label>
-              <label className="flex items-center gap-2 text-sm font-bold">
-                <input
-                  type="radio"
-                  name="show-price"
-                  checked={!showPrice}
-                  onChange={() => setShowPrice(false)}
-                />
-                A solicitud
-              </label>
-            </div>
-          ) : pricingMode === "SHOW_ALL" ? (
-            <p className="text-xs text-muted-foreground">
-              Precio visible en todos los productos (configuración global).
-            </p>
-          ) : (
-            <p className="text-xs text-muted-foreground">
-              Precio a solicitud en todos los productos (configuración global).
-            </p>
-          )}
-          <div className="space-y-2">
-            <Label htmlFor="base-price">Precio ({currency})</Label>
-            <Input
-              id="base-price"
-              inputMode="decimal"
-              value={basePrice}
-              onChange={(e) => setBasePrice(e.target.value)}
-              disabled={pricingMode === "REQUEST_ALL" || (pricingMode === "CUSTOM" && !showPrice)}
-              className={
-                pricingMode === "REQUEST_ALL" || (pricingMode === "CUSTOM" && !showPrice)
-                  ? "opacity-50 cursor-not-allowed bg-muted"
-                  : ""
-              }
-            />
-            {pricingMode === "REQUEST_ALL" ? (
-              <p className="text-xs text-muted-foreground">Precio bloqueado por la configuración global de la tienda.</p>
-            ) : null}
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="category">Categoría</Label>
-            <select
-              id="category"
-              value={categoryId}
-              onChange={(e) => void changeCategory(e.target.value)}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-            >
-              <option value="">Sin categoría</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="tag">Etiqueta</Label>
-            <select
-              id="tag"
-              value={tagId}
-              onChange={(e) => void changeTag(e.target.value)}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-            >
-              <option value="">Sin etiqueta</option>
-              {tags.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="flex items-center gap-2">
-            <Switch id="active" checked={active} onCheckedChange={setActive} />
-            <Label htmlFor="active">Visible en catálogo</Label>
-          </div>
-          {!hasVariants && (
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Switch
-                  id="inventory-mode"
-                  checked={inventoryMode === "inventario"}
-                  onCheckedChange={(checked) => setInventoryMode(checked ? "inventario" : "libre")}
-                />
-                <Label htmlFor="inventory-mode">Por Inventario</Label>
+      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>{product.name}</CardTitle>
+              <div className="flex gap-2 pt-1">
+                <Badge variant={!available ? "secondary" : "default"}>
+                  Estado: {!available ? "No Disponible" : active ? "Activo" : "Oculto"}
+                </Badge>
+                <Badge variant="outline">{product.variants.length} variante(s)</Badge>
               </div>
-              {inventoryMode === "inventario" && (
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Nombre</Label>
+                <Input id="name" value={name} onChange={(e) => setName(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="description">Descripción</Label>
+                <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} />
+              </div>
+              {pricingMode === "CUSTOM" ? (
+                <div className="flex items-center gap-3">
+                  <label className="flex items-center gap-2 text-sm font-bold">
+                    <input
+                      type="radio"
+                      name="show-price"
+                      checked={showPrice}
+                      onChange={() => setShowPrice(true)}
+                    />
+                    Precio
+                  </label>
+                  <label className="flex items-center gap-2 text-sm font-bold">
+                    <input
+                      type="radio"
+                      name="show-price"
+                      checked={!showPrice}
+                      onChange={() => setShowPrice(false)}
+                    />
+                    A solicitud
+                  </label>
+                </div>
+              ) : pricingMode === "SHOW_ALL" ? (
+                <p className="text-xs text-muted-foreground">
+                  Precio visible en todos los productos (configuración global).
+                </p>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Precio a solicitud en todos los productos (configuración global).
+                </p>
+              )}
+              <div className="space-y-2">
+                <Label htmlFor="base-price">Precio ({currency})</Label>
+                <Input
+                  id="base-price"
+                  inputMode="decimal"
+                  value={basePrice}
+                  onChange={(e) => setBasePrice(e.target.value)}
+                  disabled={pricingMode === "REQUEST_ALL" || (pricingMode === "CUSTOM" && !showPrice)}
+                  className={
+                    pricingMode === "REQUEST_ALL" || (pricingMode === "CUSTOM" && !showPrice)
+                      ? "opacity-50 cursor-not-allowed bg-muted"
+                      : ""
+                  }
+                />
+                {pricingMode === "REQUEST_ALL" ? (
+                  <p className="text-xs text-muted-foreground">Precio bloqueado por la configuración global de la tienda.</p>
+                ) : null}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="category">Categoría</Label>
+                <select
+                  id="category"
+                  value={categoryId}
+                  onChange={(e) => void changeCategory(e.target.value)}
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                >
+                  <option value="">Sin categoría</option>
+                  {categories.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="tag">Etiqueta</Label>
+                <select
+                  id="tag"
+                  value={tagId}
+                  onChange={(e) => void changeTag(e.target.value)}
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                >
+                  <option value="">Sin etiqueta</option>
+                  {tags.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex items-center gap-2">
+                <Switch id="active" checked={active} onCheckedChange={setActive} />
+                <Label htmlFor="active">Visible en catálogo</Label>
+              </div>
+              {!hasVariants && (
                 <div className="space-y-2">
-                  <Label htmlFor="stock-quantity">Cantidad disponible</Label>
-                  <Input
-                    id="stock-quantity"
-                    inputMode="numeric"
-                    placeholder="Unidades disponibles"
-                    value={stockQuantity}
-                    onChange={(e) => setStockQuantity(e.target.value)}
-                  />
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      id="inventory-mode"
+                      checked={inventoryMode === "inventario"}
+                      onCheckedChange={(checked) => setInventoryMode(checked ? "inventario" : "libre")}
+                    />
+                    <Label htmlFor="inventory-mode">Por Inventario</Label>
+                  </div>
+                  {inventoryMode === "inventario" && (
+                    <div className="space-y-2">
+                      <Label htmlFor="stock-quantity">cantidad disponible</Label>
+                      <Input
+                        id="stock-quantity"
+                        inputMode="numeric"
+                        placeholder="Unidades disponibles"
+                        value={stockQuantity}
+                        onChange={(e) => setStockQuantity(e.target.value)}
+                      />
+                    </div>
+                  )}
+                  {inventoryMode === "libre" && (
+                    <p className="text-xs text-muted-foreground">Sin límite de stock (Libre).</p>
+                  )}
                 </div>
               )}
-              {inventoryMode === "libre" && (
-                <p className="text-xs text-muted-foreground">Sin límite de stock (Libre).</p>
+              {hasVariants && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Switch
+                      id="inventory-mode"
+                      checked={inventoryMode === "inventario"}
+                      disabled
+                    />
+                    <Label htmlFor="inventory-mode">Por Inventario</Label>
+                    <span className="text-sm">Controlado por cada variante</span>
+                  </div>
+                </div>
               )}
-            </div>
-          )}
-          {hasVariants && (
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Switch
-                  id="inventory-mode"
-                  checked={inventoryMode === "inventario"}
-                  disabled
-                />
-                <Label htmlFor="inventory-mode">Por Inventario</Label>
-                <span className="text-sm">Controlado por cada variante</span>
+            </CardContent>
+            <CardFooter className="flex flex-col gap-3">
+              <div className="flex items-center gap-2">
+                <Switch id="available" checked={available} onCheckedChange={setAvailable} disabled={inventoryMode === "inventario" && stockQuantity === "0"} />
+                <Label htmlFor="available">{available ? "Disponible" : "No Disponible"}</Label>
               </div>
-            </div>
-          )}
-        </CardContent>
-        <CardFooter className="flex flex-col gap-3">
-          <div className="flex items-center gap-2">
-            <Switch id="available" checked={available} onCheckedChange={setAvailable} disabled={inventoryMode === "inventario" && stockQuantity === "0"} />
-            <Label htmlFor="available">{available ? "Disponible" : "No Disponible"}</Label>
-          </div>
-          <Button onClick={save} disabled={saving} className="w-full">
-            {saving ? "Guardando…" : "Guardar"}
-          </Button>
-        </CardFooter>
-      </Card>
+              <Button onClick={save} disabled={saving} className="w-full">
+                {saving ? "Guardando…" : "Guardar"}
+              </Button>
+            </CardFooter>
+          </Card>
+        </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Imágenes</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ProductImageManager
-            storeId={product.store_id}
-            productId={product.id}
-            images={images}
-            maxImages={maxImages}
-            onChange={setImages}
-          />
-        </CardContent>
-      </Card>
+        <div className="lg:col-span-1">
+          <Card>
+            <CardHeader>
+              <CardTitle>Imágenes</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ProductImageManager
+                storeId={product.store_id}
+                productId={product.id}
+                images={images}
+                maxImages={maxImages}
+                onChange={setImages}
+              />
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
-  );
+  )
 }
