@@ -62,20 +62,11 @@ export function TopBar() {
 
         <nav
           aria-label="Navegación principal"
-          className="hidden flex-1 items-center justify-center gap-1 md:flex"
+          className="hidden flex-1 items-center justify-center gap-1 lg:flex"
         >
           <NavigationItems pathname={pathname} />
         </nav>
       </div>
-
-      <nav
-        aria-label="Navegación principal"
-        className="border-t px-2 py-1 md:hidden"
-      >
-        <div className="flex gap-1 overflow-x-auto">
-          <NavigationItems pathname={pathname} />
-        </div>
-      </nav>
     </header>
   );
 }

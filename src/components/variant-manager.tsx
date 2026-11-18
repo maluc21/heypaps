@@ -28,7 +28,12 @@ import {
   pairsFromAttributes,
   stockToStorage,
   variantLabel,
+  SIZE_UNITS,
+  WEIGHT_UNITS,
+  type AttributePair,
+  type AttributeTypeKey,
   type DiscountType,
+  type SizeDimensions,
 } from "@/lib/variants";
 
 export type EditableVariant = {
@@ -56,11 +61,16 @@ type Props = {
 const ATTRIBUTE_TYPES = [
   { key: "color", label: "Color" },
   { key: "talla-codigo", label: "Talla (código)" },
+  { key: "peso", label: "Peso" },
+  { key: "tamano", label: "Tamaño" },
 ] as const;
 
-type AttributeTypeKey = (typeof ATTRIBUTE_TYPES)[number]["key"];
-
 const SIZE_CODE_OPTIONS = ["S", "M", "L", "XL", "XXL", "XXXL"];
+const SIZE_DIMENSION_FIELDS = [
+  { key: "height", label: "Alto" },
+  { key: "width", label: "Ancho" },
+  { key: "depth", label: "Profundidad" },
+] as const;
 
 // Base UI renderiza en <SelectValue> la etiqueta del item seleccionado, y
 // solo si el Select recibe la lista de items. Sin esto el trigger muestra el
@@ -74,6 +84,20 @@ const COLOR_ITEMS = COLOR_OPTIONS.map((color) => ({
   label: color,
   value: color,
 }));
+
+const WEIGHT_UNIT_ITEMS = [
+  { label: "g", value: WEIGHT_UNITS[0] },
+  { label: "kg", value: WEIGHT_UNITS[1] },
+  { label: "oz", value: WEIGHT_UNITS[2] },
+  { label: "lb", value: WEIGHT_UNITS[3] },
+];
+
+const SIZE_UNIT_ITEMS = [
+  { label: "mm", value: SIZE_UNITS[0] },
+  { label: "cm", value: SIZE_UNITS[1] },
+  { label: "m", value: SIZE_UNITS[2] },
+  { label: "pulg", value: SIZE_UNITS[3] },
+];
 
 /** Estado inicial del formulario: vacío para crear, o lo guardado para editar. */
 function toFormState(variant: EditableVariant | null): VariantInput {
@@ -91,13 +115,11 @@ function toFormState(variant: EditableVariant | null): VariantInput {
     };
   }
   const pairs = pairsFromAttributes(variant.attributes);
-  const inferredType = (name: string): AttributeTypeKey =>
-    name.toLowerCase() === "color" ? "color" : "talla-codigo";
   return {
     variantId: variant.id,
     attributes:
       pairs.length > 0
-        ? pairs.map((p) => ({ ...p, type: inferredType(p.name) }))
+        ? pairs
         : [{ name: "Color", value: "", type: "color" }],
     sku: variant.sku ?? "",
     price: (variant.price_cents / 100).toFixed(2),
@@ -146,7 +168,7 @@ export function VariantManager({ productId, productVersion, currency, variants, 
       input.variantId,
     );
     if (hidSingle) {
-      toast.success("Variante creada. La presentación única se ocultó porque ahora hay tallas o colores.");
+      toast.success("Variante creada. La presentación única se ocultó porque ya hay opciones.");
     } else {
       toast.success(input.variantId ? "Variante actualizada." : "Variante creada.");
     }
@@ -182,13 +204,13 @@ export function VariantManager({ productId, productVersion, currency, variants, 
       <CardHeader>
         <CardTitle>Variantes (opcional)</CardTitle>
         <CardDescription>
-          Define opciones y características para cada producto.
+          Define tallas, colores, peso o dimensiones para cada producto.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {sorted.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            Sin variantes. Agrega tallas o colores si tu producto las tiene.
+            Sin variantes. Agrega tallas, colores, peso o dimensiones si aplica.
           </p>
         ) : (
           <ul className="space-y-2">
@@ -284,13 +306,19 @@ function VariantForm({
   onSave: (input: VariantInput) => void;
 }) {
   const [form, setForm] = useState<VariantInput>(initial);
-  const [customAttributes, setCustomAttributes] = useState(false);
+  const [customAttributes, setCustomAttributes] = useState(
+    initial.attributes[0]?.type === "libre",
+  );
   const [showPrice, setShowPrice] = useState(initial.variantId !== null);
   const [showDiscount, setShowDiscount] = useState(initial.discountType !== "none");
   const [showSku, setShowSku] = useState(Boolean(initial.sku && initial.sku.trim() !== ""));
 
   // Solo usamos el primer par de atributos (tipo + valor) para esta variante.
-  const pair = form.attributes[0] ?? { name: "", value: "", type: "color" };
+  const pair: AttributePair = form.attributes[0] ?? {
+    name: "",
+    value: "",
+    type: "color",
+  };
 
   // Stock: se valida mientras se escribe, antes de enviar.
   let stockError: string | null = null;
@@ -319,12 +347,22 @@ function VariantForm({
   }
 
   const labelForType = (key: AttributeTypeKey): string =>
-    key === "color" ? "Color" : "Talla";
+    ATTRIBUTE_TYPES.find((attributeType) => attributeType.key === key)?.label ?? "Color";
 
   const setType = (value: AttributeTypeKey) => {
+    const nextAttribute: AttributePair = {
+      name: labelForType(value),
+      value: "",
+      type: value,
+    };
+    if (value === "peso") nextAttribute.unit = "kg";
+    if (value === "tamano") {
+      nextAttribute.unit = "cm";
+      nextAttribute.dimensions = { height: "", width: "", depth: "" };
+    }
     setForm((current) => ({
       ...current,
-      attributes: [{ name: labelForType(value), value: "", type: value }],
+      attributes: [nextAttribute],
     }));
   };
 
@@ -335,12 +373,40 @@ function VariantForm({
     }));
   };
 
+  const setUnit = (unit: string) => {
+    setForm((current) => ({
+      ...current,
+      attributes: [{ ...(current.attributes[0] ?? pair), unit }],
+    }));
+  };
+
+  const setDimension = (key: keyof SizeDimensions, value: string) => {
+    setForm((current) => {
+      const currentPair = current.attributes[0] ?? pair;
+      return {
+        ...current,
+        attributes: [
+          {
+            ...currentPair,
+            dimensions: {
+              height: "",
+              width: "",
+              depth: "",
+              ...currentPair.dimensions,
+              [key]: value,
+            },
+          },
+        ],
+      };
+    });
+  };
+
   const setCustomToggle = (checked: boolean) => {
     setCustomAttributes(checked);
     if (checked) {
       setForm((current) => ({
         ...current,
-        attributes: [{ name: "", value: "", type: "color" }],
+        attributes: [{ name: "", value: "", type: "libre" }],
       }));
     } else {
       setForm((current) => ({
@@ -361,7 +427,7 @@ function VariantForm({
     }
   };
 
-  const options = getValueOptions(pair.type as AttributeTypeKey);
+  const options = getValueOptions(pair.type ?? "color");
   const valueItems = useMemo(
     () => options.map((opt) => ({ label: opt, value: opt })),
     [options],
@@ -395,19 +461,29 @@ function VariantForm({
             <Label htmlFor="variant-custom">Personalizado</Label>
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div
+          className={
+            !customAttributes && pair.type === "tamano"
+              ? "grid grid-cols-1 gap-3"
+              : "grid grid-cols-2 gap-3"
+          }
+        >
           <div className="space-y-2">
             {customAttributes ? (
               <Input
                 id="variant-type"
-                placeholder=""
                 value={pair.name}
-                onChange={(e) => setForm((current) => ({ ...current, attributes: [{ ...pair, name: e.target.value }] }))}
+                onChange={(e) =>
+                  setForm((current) => ({
+                    ...current,
+                    attributes: [{ ...pair, name: e.target.value }],
+                  }))
+                }
               />
             ) : (
               <Select
                 items={ATTRIBUTE_TYPE_ITEMS}
-                value={pair.type}
+                value={pair.type ?? "color"}
                 onValueChange={(value) => {
                   if (value && value !== pair.type) setType(value as AttributeTypeKey);
                 }}
@@ -425,61 +501,146 @@ function VariantForm({
               </Select>
             )}
           </div>
-          <div className="space-y-2">
-            {customAttributes ? (
-              <Input
-                id="variant-value"
-                placeholder=""
-                value={pair.value}
-                onChange={(e) => setValue(e.target.value)}
-              />
-            ) : pair.type === "color" ? (
-              <Select
-                items={COLOR_ITEMS}
-                value={pair.value}
-                onValueChange={(value) => {
-                  if (value) setValue(value);
-                }}
-              >
-                <SelectTrigger id="variant-value" className="w-full">
-                  <SelectValue placeholder="Seleccionar color" />
-                </SelectTrigger>
-                <SelectContent>
-                  {COLOR_OPTIONS.map((color) => (
-                    <SelectItem key={color} value={color}>
-                      <span className="flex items-center gap-2">
-                        <span
-                          className="inline-block h-3 w-3 rounded-full border border-border"
-                          style={{ backgroundColor: COLOR_HEX[color] ?? color.toLowerCase() }}
-                        />
-                        {color}
-                      </span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            ) : (
-              <Select
-                items={valueItems}
-                value={pair.value}
-                onValueChange={(value) => {
-                  if (value) setValue(value);
-                }}
-              >
-                <SelectTrigger id="variant-value" className="w-full">
-                  <SelectValue placeholder="Seleccionar valor" />
-                </SelectTrigger>
-                <SelectContent>
-                  {options.map((opt) => (
-                    <SelectItem key={opt} value={opt}>
-                      {opt}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-          </div>
+          {customAttributes ? (
+            <Input
+              id="variant-value"
+              value={pair.value}
+              onChange={(e) => setValue(e.target.value)}
+            />
+          ) : pair.type === "color" ? (
+            <Select
+              items={COLOR_ITEMS}
+              value={pair.value}
+              onValueChange={(value) => {
+                if (value) setValue(value);
+              }}
+            >
+              <SelectTrigger id="variant-value" className="w-full">
+                <SelectValue placeholder="Seleccionar color" />
+              </SelectTrigger>
+              <SelectContent>
+                {COLOR_OPTIONS.map((color) => (
+                  <SelectItem key={color} value={color}>
+                    <span className="flex items-center gap-2">
+                      <span
+                        className="inline-block h-3 w-3 rounded-full border border-border"
+                        style={{ backgroundColor: COLOR_HEX[color] ?? color.toLowerCase() }}
+                      />
+                      {color}
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : pair.type === "peso" ? (
+            <div className="grid grid-cols-[minmax(0,1fr)_minmax(5rem,auto)] gap-2">
+              <div className="space-y-2">
+                <Label htmlFor="variant-value">Valor</Label>
+                <Input
+                  id="variant-value"
+                  type="number"
+                  inputMode="decimal"
+                  min="0.001"
+                  step="any"
+                  required
+                  placeholder="0.5"
+                  value={pair.value}
+                  onChange={(e) => setValue(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="variant-weight-unit">Unidad</Label>
+                <Select
+                  items={WEIGHT_UNIT_ITEMS}
+                  value={pair.unit ?? "kg"}
+                  onValueChange={(value) => {
+                    if (value) setUnit(value);
+                  }}
+                >
+                  <SelectTrigger id="variant-weight-unit" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {WEIGHT_UNIT_ITEMS.map((unit) => (
+                      <SelectItem key={unit.value} value={unit.value}>
+                        {unit.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          ) : pair.type === "tamano" ? null : (
+            <Select
+              items={valueItems}
+              value={pair.value}
+              onValueChange={(value) => {
+                if (value) setValue(value);
+              }}
+            >
+              <SelectTrigger id="variant-value" className="w-full">
+                <SelectValue placeholder="Seleccionar valor" />
+              </SelectTrigger>
+              <SelectContent>
+                {options.map((opt) => (
+                  <SelectItem key={opt} value={opt}>
+                    {opt}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
+        {!customAttributes && pair.type === "tamano" ? (
+          <div className="space-y-2">
+            <p className="text-sm font-medium">
+              Dimensiones (alto × ancho × profundidad)
+            </p>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {SIZE_DIMENSION_FIELDS.map((dimension) => (
+                <div key={dimension.key} className="space-y-2">
+                  <Label htmlFor={`variant-${dimension.key}`}>
+                    {dimension.label}
+                  </Label>
+                  <Input
+                    id={`variant-${dimension.key}`}
+                    type="number"
+                    inputMode="decimal"
+                    min="0.001"
+                    step="any"
+                    required
+                    placeholder="0"
+                    value={pair.dimensions?.[dimension.key] ?? ""}
+                    onChange={(e) =>
+                      setDimension(dimension.key, e.target.value)
+                    }
+                  />
+                </div>
+              ))}
+              <div className="space-y-2">
+                <Label htmlFor="variant-size-unit">Unidad</Label>
+                <Select
+                  items={SIZE_UNIT_ITEMS}
+                  value={pair.unit ?? "cm"}
+                  onValueChange={(value) => {
+                    if (value) setUnit(value);
+                  }}
+                >
+                  <SelectTrigger id="variant-size-unit" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SIZE_UNIT_ITEMS.map((unit) => (
+                      <SelectItem key={unit.value} value={unit.value}>
+                        {unit.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+        ) : null}
       </div>
 
       {/* Precio toggle */}
