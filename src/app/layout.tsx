@@ -1,17 +1,17 @@
 import type { Metadata } from "next";
 import { connection } from "next/server";
-import { Geist_Mono, Host_Grotesk, Onest } from "next/font/google";
+import { Fredoka, Geist_Mono, Roboto } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 import { getEnv } from "@/lib/env";
 
-const hostGrotesk = Host_Grotesk({
+const fredoka = Fredoka({
   subsets: ["latin"],
   weight: ["500"],
   variable: "--display-family",
 });
 
-const onest = Onest({
+const roboto = Roboto({
   subsets: ["latin"],
   weight: ["400"],
   variable: "--text-family",
@@ -43,7 +43,7 @@ export default async function RootLayout({
   return (
     <html
       lang="es"
-      className={`${hostGrotesk.variable} ${onest.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${fredoka.variable} ${roboto.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col">
