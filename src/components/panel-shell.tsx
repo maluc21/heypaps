@@ -1,12 +1,10 @@
-import { BottomTabBar } from "./bottom-tab-bar";
-import { Sidebar } from "./sidebar";
+import { TopBar } from "./top-bar";
 
 export function PanelShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-background">
-      <Sidebar />
-      <main className="pb-20 sm:ml-64 sm:pb-0">{children}</main>
-      <BottomTabBar />
+      <TopBar />
+      <main className="min-w-0">{children}</main>
     </div>
   );
 }

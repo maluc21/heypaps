@@ -86,7 +86,7 @@ export function ProductImageManager({
   return (
     <div className="space-y-3">
       {images.length > 0 ? (
-        <ul className="grid grid-cols-2 gap-3">
+        <ul className="grid grid-cols-3 gap-3">
           {images.map((filePath, index) => (
             <li
               key={filePath}

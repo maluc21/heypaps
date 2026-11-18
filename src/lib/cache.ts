@@ -96,7 +96,7 @@ export const DEFAULT_PLAN_LIMITS: Record<string, PlanLimits> = {
   free: {
     plan_code: "free",
     max_products: 30,
-    max_images_per_product: 5,
+    max_images_per_product: 6,
     max_storage_bytes: 40 * 1024 * 1024,
     custom_domain: false,
     remove_brand: false,
@@ -104,7 +104,7 @@ export const DEFAULT_PLAN_LIMITS: Record<string, PlanLimits> = {
   pro: {
     plan_code: "pro",
     max_products: 200,
-    max_images_per_product: 8,
+    max_images_per_product: 6,
     max_storage_bytes: 500 * 1024 * 1024,
     custom_domain: true,
     remove_brand: true,
@@ -115,7 +115,7 @@ export async function getPlanLimits(
   planCode: string,
   fetcher?: () => Promise<PlanLimits | null>
 ): Promise<PlanLimits> {
-  const cacheKey = `plan_limits:${planCode}`;
+  const cacheKey = `plan_limits:v2:${planCode}`;
   return cached(cacheKey, 3600, async () => {
     if (fetcher) {
       const fromDb = await fetcher();
