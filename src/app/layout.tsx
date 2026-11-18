@@ -1,14 +1,20 @@
 import type { Metadata } from "next";
 import { connection } from "next/server";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist_Mono, Host_Grotesk, Onest } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 import { getEnv } from "@/lib/env";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const hostGrotesk = Host_Grotesk({
   subsets: ["latin"],
-  display: "swap",
+  weight: ["500"],
+  variable: "--display-family",
+});
+
+const onest = Onest({
+  subsets: ["latin"],
+  weight: ["400"],
+  variable: "--text-family",
 });
 
 const geistMono = Geist_Mono({
@@ -37,7 +43,7 @@ export default async function RootLayout({
   return (
     <html
       lang="es"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${hostGrotesk.variable} ${onest.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col">
