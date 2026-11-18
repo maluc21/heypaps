@@ -40,7 +40,7 @@ export function BottomTabBar() {
               aria-current={isActive ? "page" : undefined}
               className={`flex min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1 py-2 text-xs font-medium transition-colors ${
                 isActive
-                  ? "bg-primary text-primary-foreground"
+                  ? "bg-muted text-foreground"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground"
               }`}
             >

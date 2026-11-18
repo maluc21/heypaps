@@ -189,7 +189,7 @@ export function ProductDetail({ store, storeId, product, productUrl }: Props) {
                         aria-pressed={isSelected}
                         className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${
                           isSelected
-                            ? "border-foreground bg-foreground text-background"
+                            ? "border-foreground bg-muted text-foreground"
                             : "border-border"
                         } disabled:cursor-not-allowed disabled:opacity-40`}
                       >
