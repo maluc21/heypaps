@@ -13,13 +13,14 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ProductTagBadge } from "@/components/product-tag-badge";
 import { deleteUploadedImage, uploadImage } from "@/lib/image-upload";
+import { Trash2 } from "lucide-react";
 
 type Props = {
   storeId: string;
   productId: string;
   images: string[];
   maxImages: number;
-  tag: { name: string; color: string | null } | null;
+  tag: { name: string } | null;
   onChange: (images: string[]) => void;
 };
 
@@ -86,7 +87,7 @@ export function ProductImageManager({
     <div className="space-y-3">
       {images.length > 0 ? (
         <ul className="grid grid-cols-2 gap-3">
-          {images.map((filePath) => (
+          {images.map((filePath, index) => (
             <li
               key={filePath}
               className="relative aspect-square overflow-hidden rounded-lg border border-border"
@@ -98,15 +99,17 @@ export function ProductImageManager({
                 sizes="(min-width: 1024px) 30vw, 45vw"
                 className="object-cover"
               />
-              {tag ? <ProductTagBadge label={tag.name} color={tag.color} /> : null}
+              {tag ? <ProductTagBadge label={tag.name} /> : null}
               <Button
                 type="button"
-                size="sm"
+                size="icon-lg"
                 disabled={busy}
                 onClick={() => handleRemove(filePath)}
-                className="absolute right-1 top-1 h-7 px-2 text-xs bg-white text-red-600 hover:bg-white/90"
+                aria-label={`Eliminar imagen ${index + 1}`}
+                title={`Eliminar imagen ${index + 1}`}
+                className="absolute right-2 top-2 z-10 rounded-md bg-white text-red-600 shadow-sm hover:bg-white/90 hover:text-red-700"
               >
-                Quitar
+                <Trash2 className="size-4" />
               </Button>
             </li>
           ))}

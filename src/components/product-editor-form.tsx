@@ -207,13 +207,13 @@ export function ProductEditorForm({
         <div>
           <Card>
             <CardHeader>
-              <CardTitle>{product.name}</CardTitle>
-              <div className="flex gap-2 pt-1">
+              <CardTitle className="min-w-0 break-words">{product.name}</CardTitle>
+              <CardAction className="flex flex-col items-end gap-1">
                 <Badge variant={!available ? "secondary" : "default"}>
                   Estado: {!available ? "No Disponible" : active ? "Activo" : "Oculto"}
                 </Badge>
                 <Badge variant="outline">{product.variants.length} variante(s)</Badge>
-              </div>
+              </CardAction>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">

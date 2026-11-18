@@ -72,9 +72,7 @@ export function ProductCard({ storeSlug, product, currency, pricingMode = "SHOW_
           <ProductPlaceholder name={product.name} />
         )}
         <StatusBadge status={product.status} />
-        {product.tag ? (
-          <ProductTagBadge label={product.tag} color={product.tag_color} />
-        ) : null}
+        {product.tag ? <ProductTagBadge label={product.tag} /> : null}
       </div>
 
       <div className="flex flex-1 flex-col gap-1 p-3">
