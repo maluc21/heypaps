@@ -301,7 +301,7 @@ export function ProductsTable({
                 </thead>
                 <tbody>
                   {filtered.map((p) => (
-                    <tr key={p.id} className="border-b hover:bg-muted/30">
+                    <tr key={p.id} className="border-b hover:bg-[#99f299]">
                       <td className="p-3">
                         <input
                           type="checkbox"

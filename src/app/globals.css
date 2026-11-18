@@ -208,5 +208,6 @@
   }
   html {
     @apply font-sans;
+    font-size: 106.25%;
   }
 }
