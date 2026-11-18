@@ -13,7 +13,14 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ProductImageManager } from "@/components/product-image-manager";
 import { DollarSign, MessageCircle } from "lucide-react";
@@ -231,7 +238,7 @@ export function ProductEditorForm({
                       onChange={() => setShowPrice(true)}
                       className="peer sr-only"
                     />
-                    <span className="flex min-h-21 items-center gap-2 rounded-xl border border-border p-3 transition-colors peer-checked:border-primary peer-checked:bg-primary/5 peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-focus-visible:ring-offset-2">
+                    <span className="flex min-h-14 items-center gap-2 rounded-xl border border-border p-3 transition-colors peer-checked:border-primary peer-checked:bg-primary/5 peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-focus-visible:ring-offset-2">
                       <DollarSign
                         className="size-5 shrink-0 text-muted-foreground"
                         aria-hidden="true"
@@ -266,7 +273,7 @@ export function ProductEditorForm({
                       onChange={() => setShowPrice(false)}
                       className="peer sr-only"
                     />
-                    <span className="flex min-h-21 items-center gap-2 rounded-xl border border-border p-3 transition-colors peer-checked:border-primary peer-checked:bg-primary/5 peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-focus-visible:ring-offset-2">
+                    <span className="flex min-h-14 items-center gap-2 rounded-xl border border-border p-3 transition-colors peer-checked:border-primary peer-checked:bg-primary/5 peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-focus-visible:ring-offset-2">
                       <MessageCircle
                         className="size-5 shrink-0 text-muted-foreground"
                         aria-hidden="true"
@@ -414,6 +421,11 @@ export function ProductEditorForm({
           <Card>
             <CardHeader>
               <CardTitle>Imágenes</CardTitle>
+              <CardAction>
+                <Badge variant="outline">
+                  {images.length}/{maxImages}
+                </Badge>
+              </CardAction>
             </CardHeader>
             <CardContent>
               <ProductImageManager

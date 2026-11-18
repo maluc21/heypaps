@@ -140,7 +140,7 @@
   --accent: var(--base-50);
   --accent-foreground: var(--base-800);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: var(--base-200);
+  --border: var(--base-300);
   --input: var(--base-300);
   --ring: var(--primary-300);
   --chart-1: var(--primary-300);

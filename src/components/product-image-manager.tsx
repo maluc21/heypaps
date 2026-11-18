@@ -11,7 +11,6 @@ import { useRef, useState } from "react";
 import Image from "next/image";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { ProductTagBadge } from "@/components/product-tag-badge";
 import { deleteUploadedImage, uploadImage } from "@/lib/image-upload";
 
@@ -85,13 +84,6 @@ export function ProductImageManager({
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-2">
-        <p className="text-sm font-medium">Imágenes</p>
-        <Badge variant="outline">
-          {images.length}/{maxImages}
-        </Badge>
-      </div>
-
       {images.length > 0 ? (
         <ul className="grid grid-cols-2 gap-3">
           {images.map((filePath) => (
