@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { connection } from "next/server";
 import { redirect } from "next/navigation";
+import { PackagePlus } from "lucide-react";
 import { createServerClient } from "@/lib/supabase/server";
 import { getCurrentStore } from "@/lib/store-context";
 import { getPlanLimits } from "@/lib/cache";
@@ -100,7 +101,12 @@ export default async function PanelPage() {
                 <span>{formatBytes(used)}</span>
               </div>
 
-              <Button render={<Link href="/products/nuevo" />} className="w-full">
+              <Button
+                render={<Link href="/products/nuevo" />}
+                size="lg"
+                className="w-full justify-center gap-2 font-semibold shadow-sm"
+              >
+                <PackagePlus className="size-5" aria-hidden="true" />
                 Nuevo producto
               </Button>
 
