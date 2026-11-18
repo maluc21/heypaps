@@ -70,5 +70,9 @@ export async function bulkUpdateProducts(
     return { error: error.message ?? "La acción masiva falló." };
   }
 
+  await Promise.all(
+    [...new Set(ids)].map((productId) => invalidateProductCatalog(supabase, productId)),
+  );
+
   return { count: Number(data) };
 }

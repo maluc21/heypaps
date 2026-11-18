@@ -51,6 +51,7 @@ export default async function ProductsPage() {
     supabase
       .from("products")
       .select("*, variants(*)")
+      .is("deleted_at", null)
       .order("position", { ascending: true }),
     supabase
       .from("categories")
@@ -67,7 +68,6 @@ export default async function ProductsPage() {
   return (
     <PanelShell>
       <div className="space-y-4 p-4">
-        <h1 className="text-lg font-semibold">Productos</h1>
         <div className="hidden sm:block">
           <ProductsTable
             initialProducts={(products ?? []) as Product[]}
@@ -83,23 +83,29 @@ export default async function ProductsPage() {
                 id: string;
                 name: string;
                 slug: string;
+                description: string | null;
                 price_cents: number | null;
                 active: boolean;
+                paused: boolean;
                 category_id: string | null;
-                image_url: string | null;
+                tag_id: string | null;
                 version: number;
               };
               return {
                 id: row.id,
                 name: row.name,
                 slug: row.slug,
+                description: row.description,
                 price_cents: row.price_cents,
                 active: row.active,
+                paused: row.paused,
                 category_id: row.category_id,
-                image_url: row.image_url,
+                tag_id: row.tag_id,
                 version: row.version,
               };
             })}
+            categories={categories ?? []}
+            tags={tags ?? []}
           />
         </div>
       </div>

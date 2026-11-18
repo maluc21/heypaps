@@ -4,11 +4,12 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { formatMoney } from "@/lib/utils";
-import { bulkUpdateProducts, updateProduct } from "@/lib/actions/product";
+import { bulkUpdateProducts } from "@/lib/actions/product";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Trash2 } from "lucide-react";
 
 export type Variant = {
   id: string;
@@ -62,6 +63,7 @@ export function ProductsTable({
   const [categoryId, setCategoryId] = useState("");
   const [tagId, setTagId] = useState("");
   const [status, setStatus] = useState<StatusFilter>("all");
+  const [deleting, setDeleting] = useState(false);
 
   /**
    * Recarga la lista desde el servidor.
@@ -112,20 +114,14 @@ export function ProductsTable({
   const hasFilters =
     query.trim() !== "" || categoryId !== "" || tagId !== "" || status !== "all";
 
-  const toggleActive = async (id: string, active: boolean, version: number) => {
-    const res = await updateProduct(id, version, { active });
-    if (res.error === "CONFLICT") {
-      toast.error("El producto cambió en otra pestaña. Recarga la página.");
-      await reload();
-      return;
-    }
-    if (res.error) {
-      toast.error(res.error);
-      return;
-    }
-    toast.success("Producto actualizado.");
-    await reload();
-  };
+  const categoryNames = useMemo(
+    () => new Map(categories.map((category) => [category.id, category.name])),
+    [categories],
+  );
+  const tagNames = useMemo(
+    () => new Map(tags.map((tag) => [tag.id, tag.name])),
+    [tags],
+  );
 
   const handleBulk = async (action: string) => {
     const ids = Array.from(selected);
@@ -141,6 +137,29 @@ export function ProductsTable({
     toast.success(`${res.count} producto(s) actualizado(s).`);
     setSelected(new Set());
     await reload();
+  };
+
+  const handleDelete = async (product: Product) => {
+    if (deleting || !window.confirm(`¿Eliminar "${product.name}" del catálogo?`)) return;
+
+    setDeleting(true);
+    try {
+      const res = await bulkUpdateProducts([product.id], "archive");
+      if (res.error) {
+        toast.error(res.error);
+        return;
+      }
+
+      setSelected((current) => {
+        const next = new Set(current);
+        next.delete(product.id);
+        return next;
+      });
+      toast.success("Producto eliminado del catálogo.");
+      await reload();
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const toggleSelect = (id: string) => {
@@ -259,8 +278,8 @@ export function ProductsTable({
             </div>
           ) : null}
 
-          <div className="overflow-x-auto border rounded-xl">
-              <table className="w-full text-sm">
+          <div className="overflow-x-auto rounded-xl border">
+              <table className="w-full min-w-[800px] text-sm">
                 <thead>
                   <tr className="border-b bg-muted/40">
                     <th className="p-3 text-left w-10">
@@ -273,9 +292,11 @@ export function ProductsTable({
                       />
                     </th>
                     <th className="text-left p-3">Producto</th>
+                    <th className="text-left p-3">Categoría</th>
+                    <th className="text-left p-3">Etiqueta</th>
                     <th className="text-left p-3">Estado</th>
                     <th className="text-right p-3">Precio</th>
-                    <th className="text-right p-3">Acciones</th>
+                    <th className="text-center p-3">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -291,9 +312,16 @@ export function ProductsTable({
                         />
                       </td>
                       <td className="p-3">
-                        <div className="font-medium">{p.name}</div>
+                        <Link
+                          href={`/products/${p.slug}`}
+                          className="font-medium hover:text-primary hover:underline underline-offset-4"
+                        >
+                          {p.name}
+                        </Link>
                         <div className="text-xs text-muted-foreground">{p.slug}</div>
                       </td>
+                      <td className="p-3">{categoryNames.get(p.category_id ?? "") ?? "—"}</td>
+                      <td className="p-3">{tagNames.get(p.tag_id ?? "") ?? "—"}</td>
                       <td className="p-3">
                         <Badge variant={statusOf(p) === "Disponible" ? "default" : "secondary"}>
                           {statusOf(p)}
@@ -302,20 +330,17 @@ export function ProductsTable({
                       <td className="text-right p-3">
                         {priceFrom(p) == null ? "—" : formatMoney(priceFrom(p)!, currency)}
                       </td>
-                      <td className="text-right p-3 space-x-2">
+                      <td className="p-3 text-center">
                         <Button
-                          size="sm"
-                          onClick={() => toggleActive(p.id, !p.active, p.version)}
-                          variant={p.active ? "destructive" : "default"}
+                          size="icon"
+                          variant="destructive"
+                          disabled={deleting}
+                          onClick={() => void handleDelete(p)}
+                          aria-label={`Eliminar ${p.name} del catálogo`}
+                          title={`Eliminar ${p.name} del catálogo`}
                         >
-                          {p.active ? "Ocultar" : "Mostrar"}
+                          <Trash2 className="h-4 w-4" />
                         </Button>
-                        <Link
-                          href={`/products/${p.slug}`}
-                          className="text-sm text-muted-foreground hover:text-primary underline-offset-4"
-                        >
-                          Editar
-                        </Link>
                       </td>
                     </tr>
                   ))}
