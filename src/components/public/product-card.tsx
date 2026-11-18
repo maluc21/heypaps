@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { formatMoney } from "@/lib/utils";
+import { ProductTagBadge } from "@/components/product-tag-badge";
 import type { PublicProductCard } from "@/lib/catalog";
 
 /** Chips de estatus que el comprador puede ver en la card (plan §4.4). */
@@ -71,21 +72,12 @@ export function ProductCard({ storeSlug, product, currency, pricingMode = "SHOW_
           <ProductPlaceholder name={product.name} />
         )}
         <StatusBadge status={product.status} />
+        {product.tag ? (
+          <ProductTagBadge label={product.tag} color={product.tag_color} />
+        ) : null}
       </div>
 
       <div className="flex flex-1 flex-col gap-1 p-3">
-        {product.tag ? (
-          <span
-            className="w-fit rounded-full px-2 py-0.5 text-xs font-medium"
-            style={
-              product.tag_color
-                ? { color: product.tag_color, backgroundColor: `${product.tag_color}1a` }
-                : undefined
-            }
-          >
-            {product.tag}
-          </span>
-        ) : null}
         <h3 className="line-clamp-2 text-sm font-medium leading-snug">{product.name}</h3>
         {canShowPrice && product.price_from !== null ? (
           <p className="mt-auto pt-1 text-base font-semibold">

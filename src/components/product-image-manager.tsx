@@ -12,6 +12,7 @@ import Image from "next/image";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { ProductTagBadge } from "@/components/product-tag-badge";
 import { deleteUploadedImage, uploadImage } from "@/lib/image-upload";
 
 type Props = {
@@ -19,6 +20,7 @@ type Props = {
   productId: string;
   images: string[];
   maxImages: number;
+  tag: { name: string; color: string | null } | null;
   onChange: (images: string[]) => void;
 };
 
@@ -27,6 +29,7 @@ export function ProductImageManager({
   productId,
   images,
   maxImages,
+  tag,
   onChange,
 }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -103,6 +106,7 @@ export function ProductImageManager({
                 sizes="(min-width: 1024px) 30vw, 45vw"
                 className="object-cover"
               />
+              {tag ? <ProductTagBadge label={tag.name} color={tag.color} /> : null}
               <Button
                 type="button"
                 size="sm"

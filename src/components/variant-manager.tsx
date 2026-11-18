@@ -182,7 +182,7 @@ export function VariantManager({ productId, productVersion, currency, variants, 
       <CardHeader>
         <CardTitle>Variantes (opcional)</CardTitle>
         <CardDescription>
-          Tallas, colores o presentaciones. Cada combinación tiene su precio y stock.
+          Define opciones y características para cada producto.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">

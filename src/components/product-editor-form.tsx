@@ -89,6 +89,7 @@ export function ProductEditorForm({
   const [saving, setSaving] = useState(false);
 
   const hasVariants = product.variants.length > 0;
+  const selectedTag = tags.find((tag) => tag.id === tagId) ?? null;
   const baseVariant = product.variants.find((v) => Object.keys(v.attributes ?? {}).length === 0) ?? null;
   const [basePrice, setBasePrice] = useState(
     baseVariant
@@ -195,8 +196,8 @@ export function ProductEditorForm({
         </Link>
       </div>
 
-      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-5">
-        <div className="xl:col-span-2">
+      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div>
           <Card>
             <CardHeader>
               <CardTitle>{product.name}</CardTitle>
@@ -230,7 +231,7 @@ export function ProductEditorForm({
                       onChange={() => setShowPrice(true)}
                       className="peer sr-only"
                     />
-                    <span className="flex min-h-[84px] items-center gap-2 rounded-xl border border-border p-3 transition-colors peer-checked:border-primary peer-checked:bg-primary/5 peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-focus-visible:ring-offset-2">
+                    <span className="flex min-h-21 items-center gap-2 rounded-xl border border-border p-3 transition-colors peer-checked:border-primary peer-checked:bg-primary/5 peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-focus-visible:ring-offset-2">
                       <DollarSign
                         className="size-5 shrink-0 text-muted-foreground"
                         aria-hidden="true"
@@ -240,7 +241,7 @@ export function ProductEditorForm({
                           Mostrar Precio
                         </span>
                         <span className="mt-1 block text-xs leading-snug text-muted-foreground">
-                          Visible en el catálogo
+                          Valor publicado
                         </span>
                       </span>
                       <span
@@ -265,7 +266,7 @@ export function ProductEditorForm({
                       onChange={() => setShowPrice(false)}
                       className="peer sr-only"
                     />
-                    <span className="flex min-h-[84px] items-center gap-2 rounded-xl border border-border p-3 transition-colors peer-checked:border-primary peer-checked:bg-primary/5 peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-focus-visible:ring-offset-2">
+                    <span className="flex min-h-21 items-center gap-2 rounded-xl border border-border p-3 transition-colors peer-checked:border-primary peer-checked:bg-primary/5 peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-focus-visible:ring-offset-2">
                       <MessageCircle
                         className="size-5 shrink-0 text-muted-foreground"
                         aria-hidden="true"
@@ -275,7 +276,7 @@ export function ProductEditorForm({
                           Sin Precio
                         </span>
                         <span className="mt-1 block text-xs leading-snug text-muted-foreground">
-                          Se muestra “A solicitud”
+                          A solicitud
                         </span>
                       </span>
                       <span
@@ -409,7 +410,7 @@ export function ProductEditorForm({
           </Card>
         </div>
 
-        <div className="xl:col-span-3">
+        <div>
           <Card>
             <CardHeader>
               <CardTitle>Imágenes</CardTitle>
@@ -420,6 +421,7 @@ export function ProductEditorForm({
                 productId={product.id}
                 images={images}
                 maxImages={maxImages}
+                tag={selectedTag}
                 onChange={setImages}
               />
             </CardContent>

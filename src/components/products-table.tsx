@@ -279,7 +279,7 @@ export function ProductsTable({
           ) : null}
 
           <div className="overflow-x-auto rounded-xl border">
-              <table className="w-full min-w-[800px] text-sm">
+              <table className="w-full min-w-200 text-sm">
                 <thead>
                   <tr className="border-b bg-muted/40">
                     <th className="p-3 text-left w-10">

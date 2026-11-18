@@ -159,7 +159,7 @@ export function ProductListMobile({
             <Button
               variant="ghost"
               size="sm"
-              className="min-h-[40px]"
+              className="min-h-10"
               onClick={() => {
                 setQuery("");
                 setCategoryId("");
@@ -196,14 +196,14 @@ export function ProductListMobile({
                     variant={product.active ? "outline" : "default"}
                     disabled={loading === product.id}
                     onClick={() => handleToggle(product)}
-                    className="min-h-[44px]"
+                    className="min-h-11"
                   >
                     {product.active ? "Desactivar" : "Activar"}
                   </Button>
                   <Button
                     size="sm"
                     variant="ghost"
-                    className="min-h-[44px] px-3"
+                    className="min-h-11 px-3"
                     render={<Link href={`/products/${product.slug}`} />}
                   >
                     <Edit className="h-4 w-4" />
