@@ -33,7 +33,7 @@ function NavigationItems({ pathname }: { pathname: string | null }) {
         aria-current={isActive ? "page" : undefined}
         className={`flex shrink-0 items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
           isActive
-            ? "bg-primary text-primary-foreground hover:bg-primary/90"
+            ? "bg-muted text-foreground"
             : "text-muted-foreground hover:bg-muted hover:text-foreground"
         }`}
       >
