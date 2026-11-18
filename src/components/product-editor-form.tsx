@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ProductImageManager } from "@/components/product-image-manager";
+import { DollarSign, MessageCircle } from "lucide-react";
 
 type Product = {
   id: string;
@@ -194,8 +195,8 @@ export function ProductEditorForm({
         </Link>
       </div>
 
-      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-5">
-        <div className="lg:col-span-2">
+      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-5">
+        <div className="xl:col-span-2">
           <Card>
             <CardHeader>
               <CardTitle>{product.name}</CardTitle>
@@ -216,24 +217,80 @@ export function ProductEditorForm({
                 <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} />
               </div>
               {pricingMode === "CUSTOM" ? (
-                <div className="flex items-center gap-3">
-                  <label className="flex items-center gap-2 text-sm">
+                <div
+                  role="radiogroup"
+                  aria-label="Visibilidad del precio"
+                  className="grid grid-cols-2 gap-2"
+                >
+                  <label className="min-w-0 cursor-pointer">
                     <input
                       type="radio"
                       name="show-price"
                       checked={showPrice}
                       onChange={() => setShowPrice(true)}
+                      className="peer sr-only"
                     />
-                    Precio
+                    <span className="flex min-h-[84px] items-center gap-2 rounded-xl border border-border p-3 transition-colors peer-checked:border-primary peer-checked:bg-primary/5 peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-focus-visible:ring-offset-2">
+                      <DollarSign
+                        className="size-5 shrink-0 text-muted-foreground"
+                        aria-hidden="true"
+                      />
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-sm font-semibold leading-tight">
+                          Mostrar Precio
+                        </span>
+                        <span className="mt-1 block text-xs leading-snug text-muted-foreground">
+                          Visible en el catálogo
+                        </span>
+                      </span>
+                      <span
+                        aria-hidden="true"
+                        className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${
+                          showPrice ? "bg-primary" : "bg-muted"
+                        }`}
+                      >
+                        <span
+                          className={`absolute top-0.5 size-4 rounded-full bg-white shadow transition-transform ${
+                            showPrice ? "translate-x-4" : "translate-x-0.5"
+                          }`}
+                        />
+                      </span>
+                    </span>
                   </label>
-                  <label className="flex items-center gap-2 text-sm">
+                  <label className="min-w-0 cursor-pointer">
                     <input
                       type="radio"
                       name="show-price"
                       checked={!showPrice}
                       onChange={() => setShowPrice(false)}
+                      className="peer sr-only"
                     />
-                    A solicitud
+                    <span className="flex min-h-[84px] items-center gap-2 rounded-xl border border-border p-3 transition-colors peer-checked:border-primary peer-checked:bg-primary/5 peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-focus-visible:ring-offset-2">
+                      <MessageCircle
+                        className="size-5 shrink-0 text-muted-foreground"
+                        aria-hidden="true"
+                      />
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-sm font-semibold leading-tight">
+                          Sin Precio
+                        </span>
+                        <span className="mt-1 block text-xs leading-snug text-muted-foreground">
+                          Se muestra “A solicitud”
+                        </span>
+                      </span>
+                      <span
+                        aria-hidden="true"
+                        className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${
+                          !showPrice ? "bg-primary" : "bg-muted"
+                        }`}
+                      >
+                        <span
+                          className={`absolute top-0.5 size-4 rounded-full bg-white shadow transition-transform ${
+                            !showPrice ? "translate-x-4" : "translate-x-0.5"
+                          }`}
+                        />
+                      </span>
+                    </span>
                   </label>
                 </div>
               ) : pricingMode === "SHOW_ALL" ? (
@@ -352,7 +409,7 @@ export function ProductEditorForm({
           </Card>
         </div>
 
-        <div className="lg:col-span-3">
+        <div className="xl:col-span-3">
           <Card>
             <CardHeader>
               <CardTitle>Imágenes</CardTitle>
