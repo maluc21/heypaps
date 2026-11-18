@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { createProduct } from "@/lib/actions/product-create";
 
 export type ProductOption = {
@@ -97,9 +97,6 @@ export function NewProductForm({
       <Card>
         <CardHeader>
           <CardTitle>Detalles</CardTitle>
-          <CardDescription>
-            {currentProducts} de {maxProducts} productos usados.
-          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
