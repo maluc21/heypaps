@@ -62,6 +62,8 @@ export default async function PanelPage() {
 
   const plan = await getPlanLimits(store.plan_code);
   const used = Number(storage?.bytes_used ?? 0);
+  const productUsage = getUsagePercent(productCount ?? 0, plan.max_products);
+  const storageUsage = getUsagePercent(used, plan.max_storage_bytes);
   const isPublished = store.status === "published";
 
   return (
@@ -77,21 +79,23 @@ export default async function PanelPage() {
         <Card>
           <CardHeader>
             <CardTitle>Tu catálogo</CardTitle>
-            <CardDescription>
-              {isPublished
-                ? "Comparte tu link por WhatsApp con tus clientes."
-                : "Mientras esté en borrador, tu catálogo no es visible."}
-            </CardDescription>
+            {!isPublished ? (
+              <CardDescription>
+                Mientras esté en borrador, tu catálogo no es visible.
+              </CardDescription>
+            ) : null}
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="flex items-center justify-between text-sm">
+            <div className="grid grid-cols-[auto_minmax(2rem,1fr)_auto] items-center gap-3 text-sm">
               <span className="text-muted-foreground">Productos</span>
+              <UsageProgress value={productUsage} label="Uso de productos" />
               <span>
                 {productCount ?? 0} de {plan.max_products}
               </span>
             </div>
-            <div className="flex items-center justify-between text-sm">
+            <div className="grid grid-cols-[auto_minmax(2rem,1fr)_auto] items-center gap-3 text-sm">
               <span className="text-muted-foreground">Almacenamiento</span>
+              <UsageProgress value={storageUsage} label="Uso de almacenamiento" />
               <span>{formatBytes(used)}</span>
             </div>
 
@@ -113,20 +117,43 @@ export default async function PanelPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Enlace público</CardTitle>
-            <CardDescription>Donde te encuentran tus clientes.</CardDescription>
+            <CardTitle>Link público</CardTitle>
+            <CardDescription>Enlace directo al catálogo</CardDescription>
           </CardHeader>
           <CardContent>
             <p className="break-all rounded-lg bg-muted px-3 py-2 font-mono text-xs">
               /s/{store.slug}
             </p>
             <Button render={<Link href="/ajustes" />} variant="outline" className="mt-3 w-full">
-              Compartir y publicar
+              Compartir
             </Button>
           </CardContent>
         </Card>
       </div>
     </PanelShell>
+  );
+}
+
+function getUsagePercent(used: number, limit: number): number {
+  if (limit <= 0) return 0;
+  return Math.min(100, Math.max(0, Math.round((used / limit) * 100)));
+}
+
+function UsageProgress({ value, label }: { value: number; label: string }) {
+  return (
+    <div
+      role="progressbar"
+      aria-label={label}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={value}
+      className="h-2 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700"
+    >
+      <div
+        className="h-full rounded-full bg-black transition-[width] dark:bg-gray-100"
+        style={{ width: `${value}%` }}
+      />
+    </div>
   );
 }
 

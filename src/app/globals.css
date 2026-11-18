@@ -135,7 +135,7 @@
   --primary-foreground: var(--color-black);
   --secondary: var(--secondary-50);
   --secondary-foreground: var(--color-black);
-  --muted: var(--base-50);
+  --muted: #fafafa;
   --muted-foreground: var(--base-600);
   --accent: var(--base-50);
   --accent-foreground: var(--base-800);
