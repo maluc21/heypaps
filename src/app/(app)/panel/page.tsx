@@ -76,59 +76,61 @@ export default async function PanelPage() {
           </Badge>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Tu catálogo</CardTitle>
-            {!isPublished ? (
-              <CardDescription>
-                Mientras esté en borrador, tu catálogo no es visible.
-              </CardDescription>
-            ) : null}
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="grid grid-cols-[auto_minmax(2rem,1fr)_auto] items-center gap-3 text-sm">
-              <span className="text-muted-foreground">Productos</span>
-              <UsageProgress value={productUsage} label="Uso de productos" />
-              <span>
-                {productCount ?? 0} de {plan.max_products}
-              </span>
-            </div>
-            <div className="grid grid-cols-[auto_minmax(2rem,1fr)_auto] items-center gap-3 text-sm">
-              <span className="text-muted-foreground">Almacenamiento</span>
-              <UsageProgress value={storageUsage} label="Uso de almacenamiento" />
-              <span>{formatBytes(used)}</span>
-            </div>
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>Tu catálogo</CardTitle>
+              {!isPublished ? (
+                <CardDescription>
+                  Mientras esté en borrador, tu catálogo no es visible.
+                </CardDescription>
+              ) : null}
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="grid grid-cols-[auto_minmax(2rem,1fr)_auto] items-center gap-3 text-sm">
+                <span className="text-muted-foreground">Productos</span>
+                <UsageProgress value={productUsage} label="Uso de productos" />
+                <span>
+                  {productCount ?? 0} de {plan.max_products}
+                </span>
+              </div>
+              <div className="grid grid-cols-[auto_minmax(2rem,1fr)_auto] items-center gap-3 text-sm">
+                <span className="text-muted-foreground">Almacenamiento</span>
+                <UsageProgress value={storageUsage} label="Uso de almacenamiento" />
+                <span>{formatBytes(used)}</span>
+              </div>
 
-            <Button render={<Link href="/products/nuevo" />} className="w-full">
-              Nuevo producto
-            </Button>
-
-            {productCount === 0 ? (
-              <p className="rounded-lg border border-dashed border-border p-4 text-center text-sm text-muted-foreground">
-                Tu catálogo está vacío. Crea tu primer producto para compartir tu link.
-              </p>
-            ) : (
-              <Button render={<Link href="/products" />} variant="outline" className="w-full">
-                Ver productos
+              <Button render={<Link href="/products/nuevo" />} className="w-full">
+                Nuevo producto
               </Button>
-            )}
-          </CardContent>
-        </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Link público</CardTitle>
-            <CardDescription>Enlace directo al catálogo</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="break-all rounded-lg bg-muted px-3 py-2 font-mono text-xs">
-              /s/{store.slug}
-            </p>
-            <Button render={<Link href="/ajustes" />} variant="outline" className="mt-3 w-full">
-              Compartir
-            </Button>
-          </CardContent>
-        </Card>
+              {productCount === 0 ? (
+                <p className="rounded-lg border border-dashed border-border p-4 text-center text-sm text-muted-foreground">
+                  Tu catálogo está vacío. Crea tu primer producto para compartir tu link.
+                </p>
+              ) : (
+                <Button render={<Link href="/products" />} variant="outline" className="w-full">
+                  Ver productos
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Link público</CardTitle>
+              <CardDescription>Enlace directo al catálogo</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="break-all rounded-lg bg-muted px-3 py-2 font-mono text-xs">
+                /s/{store.slug}
+              </p>
+              <Button render={<Link href="/ajustes" />} variant="outline" className="mt-3 w-full">
+                Compartir
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </PanelShell>
   );
