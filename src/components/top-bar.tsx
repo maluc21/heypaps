@@ -49,7 +49,7 @@ export function TopBar() {
 
   return (
     <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-      <div className="mx-auto flex h-16 items-center gap-6 px-4 sm:px-6">
+      <div className="mx-auto grid h-16 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center px-4 sm:px-6">
         <Link href="/panel" className="flex shrink-0 items-center gap-2.5">
           <span className="grid size-9 place-items-center rounded-xl bg-primary text-primary-foreground">
             <Store className="size-5" />
@@ -62,7 +62,7 @@ export function TopBar() {
 
         <nav
           aria-label="Navegación principal"
-          className="hidden flex-1 items-center justify-center gap-1 lg:flex"
+          className="hidden items-center justify-center gap-1 lg:flex"
         >
           <NavigationItems pathname={pathname} />
         </nav>
