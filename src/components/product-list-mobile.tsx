@@ -101,7 +101,7 @@ export function ProductListMobile({
         />
         <div className="grid min-w-0 grid-cols-1 gap-3">
           <label className="min-w-0 space-y-1 text-sm">
-            <span className="text-muted-foreground">Categoría</span>
+            <span className="font-semibold text-muted-foreground">Categoría</span>
             <select
               id="mobile-product-category"
               aria-label="Filtrar por categoría"
@@ -118,7 +118,7 @@ export function ProductListMobile({
             </select>
           </label>
           <label className="min-w-0 space-y-1 text-sm">
-            <span className="text-muted-foreground">Etiqueta</span>
+            <span className="font-semibold text-muted-foreground">Etiqueta</span>
             <select
               id="mobile-product-tag"
               aria-label="Filtrar por etiqueta"
@@ -135,7 +135,7 @@ export function ProductListMobile({
             </select>
           </label>
           <label className="min-w-0 space-y-1 text-sm">
-            <span className="text-muted-foreground">Estado</span>
+            <span className="font-semibold text-muted-foreground">Estado</span>
             <select
               id="mobile-product-status"
               aria-label="Filtrar por estado"

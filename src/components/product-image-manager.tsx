@@ -90,7 +90,7 @@ export function ProductImageManager({
       </div>
 
       {images.length > 0 ? (
-        <ul className="grid grid-cols-3 gap-2">
+        <ul className="grid grid-cols-2 gap-3">
           {images.map((filePath) => (
             <li
               key={filePath}
@@ -100,7 +100,7 @@ export function ProductImageManager({
                 src={filePath}
                 alt=""
                 fill
-                sizes="120px"
+                sizes="(min-width: 1024px) 30vw, 45vw"
                 className="object-cover"
               />
               <Button
@@ -142,7 +142,7 @@ export function ProductImageManager({
               inputRef.current?.click();
             }
           }}
-          className="relative aspect-square w-full max-w-[200px] overflow-hidden rounded-lg border border-dashed border-border flex items-center justify-center cursor-pointer hover:bg-muted/50"
+          className="relative aspect-square w-full overflow-hidden rounded-lg border border-dashed border-border flex items-center justify-center cursor-pointer hover:bg-muted/50"
         >
           <span className="text-3xl text-muted-foreground">+</span>
         </div>

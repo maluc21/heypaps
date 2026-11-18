@@ -194,7 +194,7 @@ export function ProductEditorForm({
         </Link>
       </div>
 
-      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
+      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-5">
         <div className="lg:col-span-2">
           <Card>
             <CardHeader>
@@ -352,7 +352,7 @@ export function ProductEditorForm({
           </Card>
         </div>
 
-        <div className="lg:col-span-1">
+        <div className="lg:col-span-3">
           <Card>
             <CardHeader>
               <CardTitle>Imágenes</CardTitle>
