@@ -217,7 +217,7 @@ export function ProductEditorForm({
               </div>
               {pricingMode === "CUSTOM" ? (
                 <div className="flex items-center gap-3">
-                  <label className="flex items-center gap-2 text-sm font-bold">
+                  <label className="flex items-center gap-2 text-sm">
                     <input
                       type="radio"
                       name="show-price"
@@ -226,7 +226,7 @@ export function ProductEditorForm({
                     />
                     Precio
                   </label>
-                  <label className="flex items-center gap-2 text-sm font-bold">
+                  <label className="flex items-center gap-2 text-sm">
                     <input
                       type="radio"
                       name="show-price"

@@ -149,7 +149,7 @@ export function TagManager({ storeId, tags }: Props) {
                 {tag.name}
               </span>
 
-              <label className="flex items-center gap-1 font-bold">
+              <label className="flex items-center gap-1">
                 <span className="sr-only">Color de {tag.name}</span>
                 <input
                   type="color"

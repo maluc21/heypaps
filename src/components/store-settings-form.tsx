@@ -462,7 +462,7 @@ export function StoreSettingsForm({ store, role, plan, usage }: Props) {
 
           <div className="space-y-3 pt-2">
             <Label>Visibilidad de precios</Label>
-            <label className="flex items-center gap-2 text-sm font-bold">
+            <label className="flex items-center gap-2 text-sm">
               <input
                 type="radio"
                 name="pricing-mode"
@@ -476,7 +476,7 @@ export function StoreSettingsForm({ store, role, plan, usage }: Props) {
               />
               Mostrar precio en todos los productos
             </label>
-            <label className="flex items-center gap-2 text-sm font-bold">
+            <label className="flex items-center gap-2 text-sm">
               <input
                 type="radio"
                 name="pricing-mode"
@@ -490,7 +490,7 @@ export function StoreSettingsForm({ store, role, plan, usage }: Props) {
               />
               Precio a solicitud en todos los productos
             </label>
-            <label className="flex items-center gap-2 text-sm font-bold">
+            <label className="flex items-center gap-2 text-sm">
               <input
                 type="radio"
                 name="pricing-mode"
