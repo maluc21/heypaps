@@ -169,7 +169,6 @@
   --surface-tertiary-foreground: oklch(21.03% 0.0015 253.83);
   --warning: oklch(78.19% 0.1590 72.33);
   --warning-foreground: oklch(21.03% 0.0059 72.33);
-}
 
 /* Border Radius */
 --radius: 0.25rem;
