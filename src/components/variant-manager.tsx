@@ -185,7 +185,7 @@ export function VariantManager({ productId, productVersion, currency, variants, 
     <Card>
       <CardHeader>
         <CardTitle>Variantes</CardTitle>
-        <CardDescription>
+        <CardDescription className="text-xs sm:text-sm">
           Color, talla, peso, tamaño, personalizado
         </CardDescription>
       </CardHeader>
@@ -203,13 +203,17 @@ export function VariantManager({ productId, productVersion, currency, variants, 
                       Variante {index + 1}
                     </p>
                     <Badge
-                      className="sm:hidden"
+                      className={
+                        variant.active
+                          ? "sm:hidden bg-[#80EF80]"
+                          : "sm:hidden"
+                      }
                       variant={variant.active ? "default" : "secondary"}
                     >
                       {variant.active ? "Activa" : "Inactiva"}
                     </Badge>
                   </div>
-                  <p className="truncate text-sm font-medium">
+                  <p className="truncate text-sm font-bold">
                     {variantLabel(variant.attributes)}
                   </p>
                   <p className="text-xs text-muted-foreground">
@@ -228,9 +232,20 @@ export function VariantManager({ productId, productVersion, currency, variants, 
                       </>
                     ) : null}
                   </p>
+                  {variant.sku?.trim() ? (
+                    <Badge variant="secondary" className="mt-1 max-w-full">
+                      <span className="truncate">
+                        Código propio: {variant.sku.trim()}
+                      </span>
+                    </Badge>
+                  ) : null}
                 </div>
                 <Badge
-                  className="hidden sm:inline-flex"
+                  className={
+                    variant.active
+                      ? "hidden sm:inline-flex bg-[#80EF80]"
+                      : "hidden sm:inline-flex"
+                  }
                   variant={variant.active ? "default" : "secondary"}
                 >
                   {variant.active ? "Activa" : "Inactiva"}
