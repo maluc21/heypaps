@@ -28,10 +28,13 @@ export type CurrentStore = {
  * Tienda actual del usuario, o null si todavía no tiene ninguna.
  * `userId` se recibe para no repetir la llamada a getUser en cada pantalla.
  */
-export async function getCurrentStore(userId: string): Promise<CurrentStore | null> {
-  const supabase = await createServerClient();
+export async function getCurrentStore(
+  userId: string,
+  supabase?: Awaited<ReturnType<typeof createServerClient>>,
+): Promise<CurrentStore | null> {
+  const client = supabase ?? await createServerClient();
 
-  const { data: membership } = await supabase
+  const { data: membership } = await client
     .from("store_members")
     .select("store_id, role")
     .eq("user_id", userId)
@@ -41,7 +44,7 @@ export async function getCurrentStore(userId: string): Promise<CurrentStore | nu
 
   if (!membership) return null;
 
-  const { data: store } = await supabase
+  const { data: store } = await client
     .from("stores")
     .select("*")
     .eq("id", membership.store_id)

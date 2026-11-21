@@ -44,19 +44,19 @@ function NavigationItems({ pathname }: { pathname: string | null }) {
   });
 }
 
-export function TopBar() {
+export function TopBar({ storeName }: { storeName: string }) {
   const pathname = usePathname();
 
   return (
     <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
       <div className="mx-auto grid h-16 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center px-4 sm:px-6">
-        <Link href="/panel" className="flex shrink-0 items-center gap-2.5">
+        <Link href="/panel" className="flex min-w-0 items-center gap-2.5">
           <span className="grid size-9 place-items-center rounded-xl bg-primary text-primary-foreground">
             <Store className="size-5" />
           </span>
-          <span className="flex flex-col">
-            <span className="text-base font-semibold leading-tight">Catálogo</span>
-            <span className="text-xs leading-tight text-muted-foreground">Panel de administración</span>
+          <span className="flex min-w-0 flex-col">
+            <span className="truncate text-base font-semibold leading-tight">{storeName}</span>
+            <span className="text-xs leading-tight text-muted-foreground">Catálogo comercial</span>
           </span>
         </Link>
 

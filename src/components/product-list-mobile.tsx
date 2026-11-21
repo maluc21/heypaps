@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { updateProduct } from "@/lib/actions/product";
-import { Edit } from "lucide-react";
+import { Edit, Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 type FilterOption = {
@@ -43,6 +43,7 @@ export function ProductListMobile({
   const [categoryId, setCategoryId] = useState("");
   const [tagId, setTagId] = useState("");
   const [status, setStatus] = useState<StatusFilter>("all");
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const router = useRouter();
 
   const filteredProducts = useMemo(() => {
@@ -89,7 +90,22 @@ export function ProductListMobile({
 
   return (
     <div className="space-y-4">
-      <div className="space-y-3">
+      <header className="flex items-center justify-between gap-3">
+        <h2 className="text-lg font-semibold">Productos</h2>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          aria-label={filtersOpen ? "Ocultar búsqueda y filtros" : "Mostrar búsqueda y filtros"}
+          aria-expanded={filtersOpen}
+          aria-controls="mobile-product-filters"
+          onClick={() => setFiltersOpen((open) => !open)}
+        >
+          <Search aria-hidden="true" />
+        </Button>
+      </header>
+
+      <div id="mobile-product-filters" hidden={!filtersOpen} className="space-y-3">
         <Input
           id="mobile-product-search"
           className="h-11 w-full min-w-0"

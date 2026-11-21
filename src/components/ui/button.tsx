@@ -7,16 +7,16 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-[#004b23] hover:bg-primary/80",
+        default: "bg-primary text-primary-foreground hover:bg-primary/80",
         outline:
-          "border-border bg-background text-[#004b23] hover:bg-muted hover:text-[#004b23] aria-expanded:bg-muted aria-expanded:text-[#004b23] dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
+          "border-border bg-background text-primary-foreground hover:bg-primary hover:text-primary-foreground aria-expanded:bg-primary aria-expanded:text-primary-foreground dark:border-input dark:bg-input/30 dark:hover:bg-primary",
         secondary:
-          "bg-secondary text-[#004b23] hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)] aria-expanded:bg-secondary aria-expanded:text-[#004b23]",
+          "bg-secondary text-primary-foreground hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)] aria-expanded:bg-secondary aria-expanded:text-primary-foreground",
         ghost:
-          "text-[#004b23] hover:bg-muted hover:text-[#004b23] aria-expanded:bg-muted aria-expanded:text-[#004b23] dark:hover:bg-muted/50",
+          "text-primary-foreground hover:bg-primary hover:text-primary-foreground aria-expanded:bg-primary aria-expanded:text-primary-foreground dark:hover:bg-primary",
         destructive:
-          "bg-destructive/10 text-[#004b23] hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
-        link: "text-[#004b23] underline-offset-4 hover:underline",
+          "bg-destructive/10 text-primary-foreground hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
+        link: "text-primary-foreground underline-offset-4 hover:bg-primary hover:text-primary-foreground hover:underline",
       },
       size: {
         default:
