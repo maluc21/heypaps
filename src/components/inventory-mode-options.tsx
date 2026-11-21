@@ -15,7 +15,7 @@ const options: Array<{
   {
     value: "global",
     title: "Con inventario global",
-    description: "Una cantidad para todo el producto, sin variantes.",
+    description: "Una cantidad compartida para todo el producto.",
   },
   {
     value: "variants",

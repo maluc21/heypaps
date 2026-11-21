@@ -79,10 +79,13 @@ export function ProductEditorForm({
   pricingMode = "SHOW_ALL",
 }: ProductEditorFormProps) {
   const router = useRouter();
-  const variantCount = product.variants.filter(
+  const attributedVariants = product.variants.filter(
     (variant) => Object.keys(variant.attributes ?? {}).length > 0,
-  ).length;
-  const hasVariants = variantCount > 0;
+  );
+  const hasVariants = attributedVariants.length > 0;
+  const hasVariantInventory = attributedVariants.some(
+    (variant) => variant.stock !== null,
+  );
   const baseVariant =
     product.variants.find(
       (variant) => Object.keys(variant.attributes ?? {}).length === 0,
@@ -97,7 +100,11 @@ export function ProductEditorForm({
   const [categoryId, setCategoryId] = useState<string>(product.category_id ?? "");
   const [tagId, setTagId] = useState<string>(product.tag_id ?? "");
   const [inventoryMode, setInventoryMode] = useState<InventoryMode>(
-    hasVariants ? "variants" : baseVariant?.stock == null ? "none" : "global",
+    hasVariantInventory
+      ? "variants"
+      : baseVariant?.stock == null
+        ? "none"
+        : "global",
   );
   const [stockQuantity, setStockQuantity] = useState(
     baseVariant?.stock == null ? "" : String(baseVariant.stock),
@@ -115,7 +122,7 @@ export function ProductEditorForm({
 
   const save = async () => {
     let baseStock = baseVariant?.stock ?? null;
-    if (!hasVariants) {
+    if (!hasVariantInventory) {
       try {
         baseStock = stockToStorage(stockQuantity, inventoryMode !== "global");
       } catch (error) {
@@ -147,7 +154,7 @@ export function ProductEditorForm({
       basePriceCents > 0 &&
       (!baseVariant ||
         basePriceCents !== baseVariant.price_cents ||
-        (!hasVariants && baseStock !== baseVariant.stock));
+        (!hasVariantInventory && baseStock !== baseVariant.stock));
 
     if (shouldSaveBase) {
       const discountValue =
@@ -386,12 +393,16 @@ export function ProductEditorForm({
                   ))}
                 </select>
               </div>
-              {!hasVariants && (
+              {!hasVariantInventory && (
                 <InventoryModeOptions
                   idPrefix="product-inventory-mode"
                   value={inventoryMode}
                   onChange={setInventoryMode}
-                  variantDescription="Agrega variantes para asignar stock a cada una."
+                  variantDescription={
+                    hasVariants
+                      ? "Asigna stock a las variantes existentes."
+                      : "Agrega variantes para asignar stock a cada una."
+                  }
                 >
                   {inventoryMode === "global" ? (
                     <div className="space-y-2">
@@ -413,7 +424,7 @@ export function ProductEditorForm({
                   ) : null}
                 </InventoryModeOptions>
               )}
-              {hasVariants && (
+              {hasVariantInventory && (
                 <div className="space-y-2">
                   <div className="rounded-xl border border-border bg-muted/40 p-3">
                     <p className="text-sm font-semibold">Inventario por variantes</p>
