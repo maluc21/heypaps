@@ -400,7 +400,6 @@ export function ProductEditorForm({
                       <Input
                         id="stock-quantity"
                         inputMode="numeric"
-                        placeholder="Unidades disponibles"
                         value={stockQuantity}
                         onChange={(e) => setStockQuantity(e.target.value)}
                       />

@@ -196,7 +196,6 @@ export function NewProductForm({
                 <Input
                   id="new-stock-quantity"
                   inputMode="numeric"
-                  placeholder="Unidades disponibles"
                   value={stockQuantity}
                   onChange={(e) => setStockQuantity(e.target.value)}
                 />

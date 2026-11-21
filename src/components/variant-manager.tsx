@@ -712,7 +712,7 @@ function VariantForm({
             <Label htmlFor="variant-show-discount">Descuento</Label>
           </div>
           {showDiscount ? (
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="variant-discount-type">Tipo</Label>
                 <select
@@ -724,7 +724,7 @@ function VariantForm({
                   className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 >
                   <option value="percent">Porcentaje (%)</option>
-                  <option value="fixed">Monto fijo</option>
+                  <option value="fixed">Fijo</option>
                 </select>
               </div>
               <div className="space-y-2">
@@ -769,7 +769,6 @@ function VariantForm({
                   <Input
                     id="variant-stock"
                     inputMode="numeric"
-                    placeholder="Unidades disponibles"
                     aria-invalid={stockError !== null}
                     aria-describedby={stockError ? "variant-stock-error" : undefined}
                     value={form.stock}
@@ -781,7 +780,6 @@ function VariantForm({
                   <Input
                     id="variant-stock-unit"
                     maxLength={40}
-                    placeholder="bolsas"
                     value={form.stockUnit}
                     onChange={(e) => setForm({ ...form, stockUnit: e.target.value })}
                     aria-describedby="variant-stock-unit-hint"
@@ -821,7 +819,7 @@ function VariantForm({
                 onChange={(e) => setForm({ ...form, sku: e.target.value })}
               />
               <p className="text-xs text-muted-foreground">
-                Si posee un código identificativo propio, puede ingresarlo.
+                Si posee un código identificativo externo existente.
               </p>
             </div>
           ) : null}
