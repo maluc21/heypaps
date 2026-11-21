@@ -17,11 +17,11 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { deleteVariant, saveVariant, type VariantInput } from "@/lib/actions/variant";
 import { COLOR_OPTIONS } from "@/lib/colors";
 import { parseAmountToCents } from "@/lib/money";
 import { formatMoney } from "@/lib/utils";
+import { Pencil, Trash2 } from "lucide-react";
 import {
   attributesFromPairs,
   hidesSinglePresentation,
@@ -73,20 +73,6 @@ const SIZE_DIMENSION_FIELDS = [
   { key: "width", label: "Ancho" },
   { key: "depth", label: "Profundidad" },
 ] as const;
-
-const WEIGHT_UNIT_ITEMS = [
-  { label: "g", value: WEIGHT_UNITS[0] },
-  { label: "kg", value: WEIGHT_UNITS[1] },
-  { label: "oz", value: WEIGHT_UNITS[2] },
-  { label: "lb", value: WEIGHT_UNITS[3] },
-];
-
-const SIZE_UNIT_ITEMS = [
-  { label: "mm", value: SIZE_UNITS[0] },
-  { label: "cm", value: SIZE_UNITS[1] },
-  { label: "m", value: SIZE_UNITS[2] },
-  { label: "pulg", value: SIZE_UNITS[3] },
-];
 
 /** Estado inicial del formulario: vacío para crear, o lo guardado para editar. */
 function toFormState(variant: EditableVariant | null): VariantInput {
@@ -209,12 +195,20 @@ export function VariantManager({ productId, productVersion, currency, variants, 
             {sorted.map((variant, index) => (
               <li
                 key={variant.id}
-                className="flex items-center gap-2 rounded-lg border border-border p-3"
+                className="flex flex-col gap-2 rounded-lg border border-border p-3 sm:flex-row sm:items-center"
               >
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs font-semibold text-muted-foreground">
-                    Variante {index + 1}
-                  </p>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-xs font-semibold text-muted-foreground">
+                      Variante {index + 1}
+                    </p>
+                    <Badge
+                      className="sm:hidden"
+                      variant={variant.active ? "default" : "secondary"}
+                    >
+                      {variant.active ? "Activa" : "Inactiva"}
+                    </Badge>
+                  </div>
                   <p className="truncate text-sm font-medium">
                     {variantLabel(variant.attributes)}
                   </p>
@@ -233,27 +227,36 @@ export function VariantManager({ productId, productVersion, currency, variants, 
                         : "Agotado"}
                   </p>
                 </div>
-                <Badge variant={variant.active ? "default" : "secondary"}>
+                <Badge
+                  className="hidden sm:inline-flex"
+                  variant={variant.active ? "default" : "secondary"}
+                >
                   {variant.active ? "Activa" : "Inactiva"}
                 </Badge>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  disabled={busy}
-                  onClick={() => setEditing(toFormState(variant))}
-                  aria-label={`Editar ${variantLabel(variant.attributes)}`}
-                >
-                  Editar
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  disabled={busy}
-                  onClick={() => void handleDelete(variant)}
-                  aria-label={`Eliminar ${variantLabel(variant.attributes)}`}
-                >
-                  Eliminar
-                </Button>
+                <div className="flex w-full items-center justify-end gap-1 sm:w-auto">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-auto min-w-14 flex-col gap-0.5 px-2 py-1 text-[10px] leading-tight sm:h-9 sm:min-w-0 sm:flex-row sm:gap-1.5 sm:px-3 sm:py-2 sm:text-sm"
+                    disabled={busy}
+                    onClick={() => setEditing(toFormState(variant))}
+                    aria-label={`Editar ${variantLabel(variant.attributes)}`}
+                  >
+                    <Pencil className="size-4" aria-hidden="true" />
+                    <span>Editar</span>
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-auto min-w-14 flex-col gap-0.5 px-2 py-1 text-[10px] leading-tight sm:h-9 sm:min-w-0 sm:flex-row sm:gap-1.5 sm:px-3 sm:py-2 sm:text-sm"
+                    disabled={busy}
+                    onClick={() => void handleDelete(variant)}
+                    aria-label={`Eliminar ${variantLabel(variant.attributes)}`}
+                  >
+                    <Trash2 className="size-4" aria-hidden="true" />
+                    <span>Eliminar</span>
+                  </Button>
+                </div>
               </li>
             ))}
           </ul>
@@ -480,7 +483,6 @@ function VariantForm({
                 <Input
                   id="variant-custom-type"
                   value={pair.name}
-                  placeholder="Ej. Material"
                   onChange={(e) =>
                     setForm((current) => ({
                       ...current,
@@ -535,24 +537,18 @@ function VariantForm({
               </div>
               <div className="space-y-2">
                 <Label htmlFor="variant-weight-unit">Unidad</Label>
-                <Select
-                  items={WEIGHT_UNIT_ITEMS}
+                <select
+                  id="variant-weight-unit"
                   value={pair.unit ?? "kg"}
-                  onValueChange={(value) => {
-                    if (value) setUnit(value);
-                  }}
+                  onChange={(event) => setUnit(event.target.value)}
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 >
-                  <SelectTrigger id="variant-weight-unit" className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {WEIGHT_UNIT_ITEMS.map((unit) => (
-                      <SelectItem key={unit.value} value={unit.value}>
-                        {unit.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  {WEIGHT_UNITS.map((unit) => (
+                    <option key={unit} value={unit}>
+                      {unit}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
           ) : pair.type === "tamano" ? null : (
@@ -601,24 +597,18 @@ function VariantForm({
               ))}
               <div className="space-y-2">
                 <Label htmlFor="variant-size-unit">Unidad</Label>
-                <Select
-                  items={SIZE_UNIT_ITEMS}
+                <select
+                  id="variant-size-unit"
                   value={pair.unit ?? "cm"}
-                  onValueChange={(value) => {
-                    if (value) setUnit(value);
-                  }}
+                  onChange={(event) => setUnit(event.target.value)}
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 >
-                  <SelectTrigger id="variant-size-unit" className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {SIZE_UNIT_ITEMS.map((unit) => (
-                      <SelectItem key={unit.value} value={unit.value}>
-                        {unit.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  {SIZE_UNITS.map((unit) => (
+                    <option key={unit} value={unit}>
+                      {unit}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
           </div>
