@@ -24,6 +24,11 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { ProductImageManager } from "@/components/product-image-manager";
 import { VariantManager, type EditableVariant } from "@/components/variant-manager";
+import {
+  InventoryModeOptions,
+  type InventoryMode,
+} from "@/components/inventory-mode-options";
+import { stockToStorage } from "@/lib/variants";
 import { ArrowLeft, DollarSign, MessageCircle } from "lucide-react";
 
 type Product = {
@@ -73,6 +78,14 @@ export function ProductEditorForm({
   pricingMode = "SHOW_ALL",
 }: ProductEditorFormProps) {
   const router = useRouter();
+  const variantCount = product.variants.filter(
+    (variant) => Object.keys(variant.attributes ?? {}).length > 0,
+  ).length;
+  const hasVariants = variantCount > 0;
+  const baseVariant =
+    product.variants.find(
+      (variant) => Object.keys(variant.attributes ?? {}).length === 0,
+    ) ?? null;
   const [name, setName] = useState(product.name);
   const [description, setDescription] = useState(product.description ?? "");
   const [active, setActive] = useState(product.active);
@@ -81,13 +94,15 @@ export function ProductEditorForm({
   const [images, setImages] = useState<string[]>(product.images ?? []);
   const [categoryId, setCategoryId] = useState<string>(product.category_id ?? "");
   const [tagId, setTagId] = useState<string>(product.tag_id ?? "");
-  const [inventoryMode, setInventoryMode] = useState<"inventario" | "libre">("libre");
-  const [stockQuantity, setStockQuantity] = useState("");
+  const [inventoryMode, setInventoryMode] = useState<InventoryMode>(
+    hasVariants ? "variants" : baseVariant?.stock == null ? "none" : "global",
+  );
+  const [stockQuantity, setStockQuantity] = useState(
+    baseVariant?.stock == null ? "" : String(baseVariant.stock),
+  );
   const [saving, setSaving] = useState(false);
 
-  const hasVariants = product.variants.length > 0;
   const selectedTag = tags.find((tag) => tag.id === tagId) ?? null;
-  const baseVariant = product.variants.find((v) => Object.keys(v.attributes ?? {}).length === 0) ?? null;
   const [basePrice, setBasePrice] = useState(
     baseVariant
       ? (baseVariant.price_cents / 100).toFixed(2)
@@ -97,6 +112,16 @@ export function ProductEditorForm({
   );
 
   const save = async () => {
+    let baseStock = baseVariant?.stock ?? null;
+    if (!hasVariants) {
+      try {
+        baseStock = stockToStorage(stockQuantity, inventoryMode !== "global");
+      } catch (error) {
+        toast.error((error as Error).message);
+        return;
+      }
+    }
+
     setSaving(true);
     const res = await updateProduct(product.id, product.version, {
       name,
@@ -113,47 +138,43 @@ export function ProductEditorForm({
     }
     if (res.error) { toast.error(res.error); setSaving(false); return; }
 
-    // Actualiza o crea la variante base (precio base) si cambió/indicó.
-    const newCents = Math.round(Number(basePrice) * 100);
-    if (!Number.isNaN(newCents) && newCents > 0) {
-      if (baseVariant) {
-        if (newCents !== baseVariant.price_cents) {
-          const discountValue =
-            baseVariant.discount_type === "fixed"
-              ? (baseVariant.discount_value / 100).toFixed(2)
-              : String(baseVariant.discount_value);
-          const vr = await saveVariant(product.id, product.version, {
-            variantId: baseVariant.id,
-            attributes: [],
-            sku: baseVariant.sku ?? "",
-            price: basePrice,
-            discountType: baseVariant.discount_type as "none" | "percent" | "fixed",
-            discountValue,
-            madeToOrder: baseVariant.stock === null,
-            stock: baseVariant.stock === null ? "" : String(baseVariant.stock),
-            stockUnit: "",
-            active: baseVariant.active,
-          });
-          if (vr.error && vr.error !== "CONFLICT") {
-            toast.error(vr.error);
-          }
-        }
-      } else {
-        const vr = await saveVariant(product.id, product.version, {
-          variantId: null,
-          attributes: [],
-          sku: "",
-          price: basePrice,
-          discountType: "none",
-          discountValue: "",
-          madeToOrder: true,
-          stock: "",
-          stockUnit: "",
-          active: true,
-        });
-        if (vr.error && vr.error !== "CONFLICT") {
-          toast.error(vr.error);
-        }
+    const enteredPriceCents = Math.round(Number(basePrice) * 100);
+    const basePriceCents =
+      enteredPriceCents > 0 ? enteredPriceCents : baseVariant?.price_cents ?? 0;
+    const shouldSaveBase =
+      basePriceCents > 0 &&
+      (!baseVariant ||
+        basePriceCents !== baseVariant.price_cents ||
+        (!hasVariants && baseStock !== baseVariant.stock));
+
+    if (shouldSaveBase) {
+      const discountValue =
+        baseVariant?.discount_type === "fixed"
+          ? (baseVariant.discount_value / 100).toFixed(2)
+          : String(baseVariant?.discount_value ?? 0);
+      const vr = await saveVariant(product.id, product.version + 1, {
+        variantId: baseVariant?.id ?? null,
+        attributes: [],
+        sku: baseVariant?.sku ?? "",
+        price:
+          enteredPriceCents > 0
+            ? basePrice
+            : ((baseVariant?.price_cents ?? 0) / 100).toFixed(2),
+        discountType: baseVariant?.discount_type ?? "none",
+        discountValue,
+        madeToOrder: baseStock === null,
+        stock: baseStock === null ? "" : String(baseStock),
+        stockUnit: baseVariant?.stock_unit ?? "",
+        active: baseVariant?.active ?? true,
+      });
+      if (vr.error) {
+        toast.error(
+          vr.error === "CONFLICT"
+            ? "El producto cambió en otra pestaña. Recarga."
+            : vr.error,
+        );
+        setSaving(false);
+        return;
       }
     }
 
@@ -187,17 +208,17 @@ export function ProductEditorForm({
   };
 
   return (
-    <div className="p-4">
+    <div>
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <div className="space-y-1 lg:col-start-1 lg:row-start-1">
-          <h2 className="text-base font-semibold">Editar producto</h2>
+        <div className="space-y-0.5 lg:col-start-1 lg:row-start-1">
           <Link
             href="/products"
-            className="inline-flex min-h-9 items-center gap-1.5 text-xs text-muted-foreground hover:text-primary"
+            className="inline-flex min-h-8 items-center gap-1.5 text-xs text-muted-foreground hover:text-primary"
           >
             <ArrowLeft className="size-4" aria-hidden="true" />
-            Volver a productos
+            Regresar
           </Link>
+          <h2 className="text-base font-semibold leading-tight">Editar producto</h2>
         </div>
 
         <div className="space-y-4 lg:col-start-1 lg:row-start-2">
@@ -211,10 +232,12 @@ export function ProductEditorForm({
                     id="available"
                     checked={available}
                     onCheckedChange={setAvailable}
-                    disabled={inventoryMode === "inventario" && stockQuantity === "0"}
+                    disabled={!hasVariants && inventoryMode === "global" && stockQuantity === "0"}
                   />
                 </div>
-                <Badge variant="outline">{product.variants.length} variante(s)</Badge>
+                <Badge variant="outline">
+                  {variantCount} {variantCount === 1 ? "variante" : "variantes"}
+                </Badge>
               </CardAction>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -230,7 +253,7 @@ export function ProductEditorForm({
                 <div
                   role="radiogroup"
                   aria-label="Visibilidad del precio"
-                  className="grid grid-cols-2 gap-2"
+                  className="grid grid-cols-1 gap-2 sm:grid-cols-2"
                 >
                   <label className="min-w-0 cursor-pointer">
                     <input
@@ -246,7 +269,7 @@ export function ProductEditorForm({
                         aria-hidden="true"
                       />
                       <span className="min-w-0 flex-1">
-                        <span className="block text-sm font-semibold leading-tight">
+                        <span className="block whitespace-nowrap text-sm font-semibold leading-tight">
                           Mostrar Precio
                         </span>
                       </span>
@@ -278,7 +301,7 @@ export function ProductEditorForm({
                         aria-hidden="true"
                       />
                       <span className="min-w-0 flex-1">
-                        <span className="block text-sm font-semibold leading-tight">
+                        <span className="block whitespace-nowrap text-sm font-semibold leading-tight">
                           Sin Precio
                         </span>
                       </span>
@@ -362,17 +385,15 @@ export function ProductEditorForm({
               </div>
               {!hasVariants && (
                 <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Switch
-                      id="inventory-mode"
-                      checked={inventoryMode === "inventario"}
-                      onCheckedChange={(checked) => setInventoryMode(checked ? "inventario" : "libre")}
-                    />
-                    <Label htmlFor="inventory-mode">Por Inventario</Label>
-                  </div>
-                  {inventoryMode === "inventario" && (
+                  <InventoryModeOptions
+                    idPrefix="product-inventory-mode"
+                    value={inventoryMode}
+                    onChange={setInventoryMode}
+                    variantDescription="Agrega variantes en la sección Variantes para asignar stock a cada una."
+                  />
+                  {inventoryMode === "global" && (
                     <div className="space-y-2">
-                      <Label htmlFor="stock-quantity">cantidad disponible</Label>
+                      <Label htmlFor="stock-quantity">Cantidad disponible</Label>
                       <Input
                         id="stock-quantity"
                         inputMode="numeric"
@@ -382,21 +403,23 @@ export function ProductEditorForm({
                       />
                     </div>
                   )}
-                  {inventoryMode === "libre" && (
-                    <p className="text-xs text-muted-foreground">Sin límite de stock (Libre).</p>
+                  {inventoryMode === "variants" && (
+                    <a
+                      href="#variant-manager"
+                      className="inline-flex min-h-9 items-center text-sm font-medium text-primary underline-offset-4 hover:underline"
+                    >
+                      Ir a Variantes
+                    </a>
                   )}
                 </div>
               )}
               {hasVariants && (
                 <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Switch
-                      id="inventory-mode"
-                      checked={inventoryMode === "inventario"}
-                      disabled
-                    />
-                    <Label htmlFor="inventory-mode">Por Inventario</Label>
-                    <span className="text-sm">Controlado por cada variante</span>
+                  <div className="rounded-xl border border-border bg-muted/40 p-3">
+                    <p className="text-sm font-semibold">Inventario por variantes</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Configura la cantidad disponible en cada variante.
+                    </p>
                   </div>
                 </div>
               )}
@@ -407,13 +430,15 @@ export function ProductEditorForm({
               </Button>
             </CardFooter>
           </Card>
-          <VariantManager
-            productId={product.id}
-            productVersion={product.version}
-            currency={currency}
-            variants={product.variants}
-            pricingMode={pricingMode}
-          />
+          <div id="variant-manager" className="scroll-mt-20">
+            <VariantManager
+              productId={product.id}
+              productVersion={product.version}
+              currency={currency}
+              variants={product.variants}
+              pricingMode={pricingMode}
+            />
+          </div>
         </div>
 
         <div className="lg:col-start-2 lg:row-start-2">

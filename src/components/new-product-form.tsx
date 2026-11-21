@@ -14,8 +14,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  InventoryModeOptions,
+  type InventoryMode,
+} from "@/components/inventory-mode-options";
 import { createProduct } from "@/lib/actions/product-create";
 
 export type ProductOption = {
@@ -48,7 +51,7 @@ export function NewProductForm({
   const [price, setPrice] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [tagId, setTagId] = useState("");
-  const [inventoryMode, setInventoryMode] = useState<"inventario" | "libre">("libre");
+  const [inventoryMode, setInventoryMode] = useState<InventoryMode>("none");
   const [stockQuantity, setStockQuantity] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -69,8 +72,8 @@ export function NewProductForm({
       price: pricingMode === "REQUEST_ALL" ? price || "0" : price,
       categoryId: categoryId || null,
       tagId: tagId || null,
-      stock: inventoryMode === "inventario" ? stockQuantity : undefined,
-      madeToOrder: inventoryMode === "libre",
+      stock: inventoryMode === "global" ? stockQuantity : undefined,
+      madeToOrder: inventoryMode !== "global",
     });
     setSaving(false);
 
@@ -78,8 +81,16 @@ export function NewProductForm({
       toast.error(res.error);
       return;
     }
-    toast.success("Producto creado. Añade sus fotos.");
-    router.push(`/products/${res.slug}`);
+    toast.success(
+      inventoryMode === "variants"
+        ? "Producto creado. Agrega variantes para asignar inventario a cada una."
+        : "Producto creado. Añade sus fotos.",
+    );
+    router.push(
+      inventoryMode === "variants"
+        ? `/products/${res.slug}#variant-manager`
+        : `/products/${res.slug}`,
+    );
   };
 
   return (
@@ -174,16 +185,13 @@ export function NewProductForm({
           </div>
 
           <div className="space-y-2">
-            <Label>Gestión de stock</Label>
-            <div className="flex items-center gap-2">
-              <Switch
-                id="new-inventory-mode"
-                checked={inventoryMode === "inventario"}
-                onCheckedChange={(checked) => setInventoryMode(checked ? "inventario" : "libre")}
-              />
-              <Label htmlFor="new-inventory-mode">Por Inventario</Label>
-            </div>
-            {inventoryMode === "inventario" && (
+            <InventoryModeOptions
+              idPrefix="new-inventory-mode"
+              value={inventoryMode}
+              onChange={setInventoryMode}
+              variantDescription="Después de crear el producto, agrega variantes para asignar stock a cada una."
+            />
+            {inventoryMode === "global" && (
               <div className="space-y-2">
                 <Label htmlFor="new-stock-quantity">Cantidad disponible</Label>
                 <Input
@@ -194,9 +202,6 @@ export function NewProductForm({
                   onChange={(e) => setStockQuantity(e.target.value)}
                 />
               </div>
-            )}
-            {inventoryMode === "libre" && (
-              <p className="text-xs text-muted-foreground">Sin límite de stock (Libre).</p>
             )}
           </div>
         </CardContent>

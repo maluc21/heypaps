@@ -772,7 +772,7 @@ function VariantForm({
           ) : null}
         </div>
 
-        {/* Por Inventario toggle + stock */}
+        {/* Controla si la variante tiene inventario */}
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <Switch
@@ -780,7 +780,7 @@ function VariantForm({
               checked={!form.madeToOrder}
               onCheckedChange={(checked) => setForm({ ...form, madeToOrder: !checked })}
             />
-            <Label htmlFor="variant-inventory-mode">Por Inventario</Label>
+            <Label htmlFor="variant-inventory-mode">Con Inventario</Label>
           </div>
           {!form.madeToOrder ? (
             <div className="space-y-2">

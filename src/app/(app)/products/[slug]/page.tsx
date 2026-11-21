@@ -76,7 +76,7 @@ export default async function ProductEditorPage({
 
   return (
     <PanelShell>
-      <div className="p-4 space-y-4">
+      <div className="space-y-4 px-3 py-2 sm:p-4">
         <ProductEditorForm
           product={product}
           maxImages={planLimits.max_images_per_product}
