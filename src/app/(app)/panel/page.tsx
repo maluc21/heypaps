@@ -7,7 +7,14 @@ import { getCurrentStore } from "@/lib/store-context";
 import { getPlanLimits } from "@/lib/cache";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { PanelShell } from "@/components/panel-shell";
 
 export const metadata = {
@@ -70,17 +77,15 @@ export default async function PanelPage() {
   return (
     <PanelShell>
       <div className="space-y-4 p-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">{store.name}</h2>
-          <Badge variant={isPublished ? "default" : "secondary"}>
-            {isPublished ? "Publicado" : "Borrador"}
-          </Badge>
-        </div>
-
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <Card>
             <CardHeader>
               <CardTitle>Tu catálogo</CardTitle>
+              <CardAction>
+                <Badge variant={isPublished ? "default" : "secondary"}>
+                  {isPublished ? "Publicado" : "Borrador"}
+                </Badge>
+              </CardAction>
               {!isPublished ? (
                 <CardDescription>
                   Mientras esté en borrador, tu catálogo no es visible.
