@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Trash2 } from "lucide-react";
+import { PackagePlus, Trash2 } from "lucide-react";
 
 export type Variant = {
   id: string;
@@ -185,7 +185,12 @@ export function ProductsTable({
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">Productos</h2>
         <div className="flex gap-2">
-          <Button render={<Link href="/products/nuevo" />} nativeButton={false} size="sm">
+          <Button
+            render={<Link href="/products/nuevo" />}
+            size="lg"
+            className="justify-center gap-2 font-semibold shadow-sm"
+          >
+            <PackagePlus className="size-5" aria-hidden="true" />
             Nuevo producto
           </Button>
         </div>
@@ -294,14 +299,14 @@ export function ProductsTable({
                     <th className="text-left p-3">Producto</th>
                     <th className="text-left p-3">Categoría</th>
                     <th className="text-left p-3">Etiqueta</th>
-                    <th className="text-left p-3">Estado</th>
                     <th className="text-right p-3">Precio</th>
+                    <th className="text-left p-3">Estado</th>
                     <th className="text-center p-3">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filtered.map((p) => (
-                    <tr key={p.id} className="border-b hover:bg-[#99f299]">
+                    <tr key={p.id} className="border-b hover:bg-muted/40">
                       <td className="p-3">
                         <input
                           type="checkbox"
@@ -318,17 +323,16 @@ export function ProductsTable({
                         >
                           {p.name}
                         </Link>
-                        <div className="text-xs text-muted-foreground">{p.slug}</div>
                       </td>
                       <td className="p-3">{categoryNames.get(p.category_id ?? "") ?? "—"}</td>
                       <td className="p-3">{tagNames.get(p.tag_id ?? "") ?? "—"}</td>
+                      <td className="text-right p-3">
+                        {priceFrom(p) == null ? "—" : formatMoney(priceFrom(p)!, currency)}
+                      </td>
                       <td className="p-3">
                         <Badge variant={statusOf(p) === "Disponible" ? "default" : "secondary"}>
                           {statusOf(p)}
                         </Badge>
-                      </td>
-                      <td className="text-right p-3">
-                        {priceFrom(p) == null ? "—" : formatMoney(priceFrom(p)!, currency)}
                       </td>
                       <td className="p-3 text-center">
                         <Button

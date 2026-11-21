@@ -23,7 +23,8 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ProductImageManager } from "@/components/product-image-manager";
-import { DollarSign, MessageCircle } from "lucide-react";
+import { VariantManager, type EditableVariant } from "@/components/variant-manager";
+import { ArrowLeft, DollarSign, MessageCircle } from "lucide-react";
 
 type Product = {
   id: string;
@@ -40,18 +41,7 @@ type Product = {
   images: string[];
   category_id: string | null;
   tag_id: string | null;
-  variants: Array<{
-    id: string;
-    attributes: Record<string, unknown>;
-    price_cents: number;
-    final_price_cents: number;
-    stock: number | null;
-    active: boolean;
-    position: number;
-    sku: string | null;
-    discount_type: string;
-    discount_value: number;
-  }>;
+  variants: EditableVariant[];
 };
 
 type CategoryOption = {
@@ -196,22 +186,32 @@ export function ProductEditorForm({
 
   return (
     <div className="p-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Editar producto</h2>
-        <Link href="/products" className="text-sm text-muted-foreground hover:text-primary">
-          Volver
-        </Link>
-      </div>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div className="space-y-1 lg:col-start-1 lg:row-start-1">
+          <h2 className="text-base font-semibold">Editar producto</h2>
+          <Link
+            href="/products"
+            className="inline-flex min-h-9 items-center gap-1.5 text-sm text-muted-foreground hover:text-primary"
+          >
+            <ArrowLeft className="size-4" aria-hidden="true" />
+            Volver a productos
+          </Link>
+        </div>
 
-      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <div>
+        <div className="space-y-4 lg:col-start-1 lg:row-start-2">
           <Card>
             <CardHeader>
               <CardTitle className="min-w-0 break-words">{product.name}</CardTitle>
               <CardAction className="flex flex-col items-end gap-1">
-                <Badge variant={!available ? "secondary" : "default"}>
-                  Estado: {!available ? "No Disponible" : active ? "Activo" : "Oculto"}
-                </Badge>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="available">{available ? "Disponible" : "No Disponible"}</Label>
+                  <Switch
+                    id="available"
+                    checked={available}
+                    onCheckedChange={setAvailable}
+                    disabled={inventoryMode === "inventario" && stockQuantity === "0"}
+                  />
+                </div>
                 <Badge variant="outline">{product.variants.length} variante(s)</Badge>
               </CardAction>
             </CardHeader>
@@ -405,19 +405,22 @@ export function ProductEditorForm({
                 </div>
               )}
             </CardContent>
-            <CardFooter className="flex flex-col gap-3">
-              <div className="flex items-center gap-2">
-                <Switch id="available" checked={available} onCheckedChange={setAvailable} disabled={inventoryMode === "inventario" && stockQuantity === "0"} />
-                <Label htmlFor="available">{available ? "Disponible" : "No Disponible"}</Label>
-              </div>
+            <CardFooter>
               <Button onClick={save} disabled={saving} className="w-full">
                 {saving ? "Guardando…" : "Guardar"}
               </Button>
             </CardFooter>
           </Card>
+          <VariantManager
+            productId={product.id}
+            productVersion={product.version}
+            currency={currency}
+            variants={product.variants}
+            pricingMode={pricingMode}
+          />
         </div>
 
-        <div>
+        <div className="lg:col-start-2 lg:row-start-2">
           <Card>
             <CardHeader>
               <CardTitle>Imágenes</CardTitle>

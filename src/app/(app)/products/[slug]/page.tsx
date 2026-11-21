@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
 import { ProductEditorForm } from "@/components/product-editor-form";
-import { VariantManager, type EditableVariant } from "@/components/variant-manager";
+import type { EditableVariant } from "@/components/variant-manager";
 import { getPlanLimits } from "@/lib/cache";
 import { PanelShell } from "@/components/panel-shell";
 
@@ -85,15 +85,6 @@ export default async function ProductEditorPage({
           currency={store?.currency ?? "HNL"}
           pricingMode={store?.pricing_mode ?? "SHOW_ALL"}
         />
-        <div className="max-w-xl">
-          <VariantManager
-            productId={product.id}
-            productVersion={product.version}
-            currency={store?.currency ?? "HNL"}
-            variants={product.variants}
-            pricingMode={store?.pricing_mode ?? "SHOW_ALL"}
-          />
-        </div>
       </div>
     </PanelShell>
   );
