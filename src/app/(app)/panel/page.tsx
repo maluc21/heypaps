@@ -82,7 +82,10 @@ export default async function PanelPage() {
             <CardHeader>
               <CardTitle>Tu catálogo</CardTitle>
               <CardAction>
-                <Badge variant={isPublished ? "default" : "secondary"}>
+                <Badge
+                  variant={isPublished ? "default" : "secondary"}
+                  className={isPublished ? "bg-[#80EF80]" : undefined}
+                >
                   {isPublished ? "Publicado" : "Borrador"}
                 </Badge>
               </CardAction>
