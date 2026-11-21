@@ -15,13 +15,13 @@ export default function LandingPage() {
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
           <a
             href="/login"
-            className="rounded-full bg-primary px-6 py-3 text-primary-foreground font-semibold shadow hover:bg-primary/90"
+            className="rounded-full bg-primary px-6 py-3 text-primary-foreground font-semibold hover:bg-primary/90"
           >
             Iniciar sesión
           </a>
           <a
             href="/login"
-            className="rounded-full border border-input bg-background px-6 py-3 text-sm font-medium shadow hover:bg-accent hover:text-accent-foreground"
+            className="rounded-full border border-input bg-background px-6 py-3 text-sm font-medium hover:bg-accent hover:text-accent-foreground"
           >
             Crear tu tienda
           </a>

@@ -107,7 +107,7 @@ export function ProductImageManager({
                 onClick={() => handleRemove(filePath)}
                 aria-label={`Eliminar imagen ${index + 1}`}
                 title={`Eliminar imagen ${index + 1}`}
-                className="absolute right-2 top-2 z-10 rounded-md bg-white text-red-600 shadow-sm hover:bg-white/90 hover:text-red-700"
+                className="absolute right-2 top-2 z-10 rounded-md bg-white text-red-600 hover:bg-white/90 hover:text-red-700"
               >
                 <Trash2 className="size-4" />
               </Button>

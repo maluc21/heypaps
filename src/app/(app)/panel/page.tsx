@@ -106,7 +106,7 @@ export default async function PanelPage() {
               <Button
                 render={<Link href="/products/nuevo" />}
                 size="lg"
-                className="w-full justify-center gap-2 font-semibold shadow-sm"
+                className="w-full justify-center gap-2 font-semibold"
               >
                 <PackagePlus className="size-5" aria-hidden="true" />
                 Nuevo producto

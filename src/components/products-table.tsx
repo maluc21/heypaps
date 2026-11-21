@@ -188,7 +188,7 @@ export function ProductsTable({
           <Button
             render={<Link href="/products/nuevo" />}
             size="lg"
-            className="justify-center gap-2 font-semibold shadow-sm"
+            className="justify-center gap-2 font-semibold"
           >
             <PackagePlus className="size-5" aria-hidden="true" />
             Nuevo producto

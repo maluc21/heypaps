@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { Trash2 } from "lucide-react";
 import {
   createCategory,
   deleteCategory,
@@ -157,7 +158,6 @@ export function CategoryManager({ storeId, categories }: Props) {
                   className="w-full truncate bg-transparent text-sm outline-none"
                   aria-label={`Nombre de ${category.name}`}
                 />
-                <p className="truncate text-xs text-muted-foreground">/{category.slug}</p>
               </div>
 
               <Switch
@@ -188,13 +188,14 @@ export function CategoryManager({ storeId, categories }: Props) {
               </div>
 
               <Button
-                variant="ghost"
-                size="sm"
+                variant="destructive"
+                size="icon"
                 disabled={busy}
                 onClick={() => void handleDelete(category.id, category.name)}
                 aria-label={`Eliminar ${category.name}`}
+                title={`Eliminar ${category.name}`}
               >
-                Eliminar
+                <Trash2 className="h-4 w-4" />
               </Button>
             </li>
           ))}

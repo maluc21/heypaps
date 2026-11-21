@@ -56,7 +56,7 @@ export function ProductCard({ storeSlug, product, currency, pricingMode = "SHOW_
   return (
     <Link
       href={href}
-      className="group flex flex-col overflow-hidden rounded-xl border border-border bg-card text-card-foreground transition-shadow hover:shadow-md"
+      className="group flex flex-col overflow-hidden rounded-xl border border-border bg-card text-card-foreground"
     >
       <div className="relative aspect-square w-full overflow-hidden bg-muted">
         {image ? (
