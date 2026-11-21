@@ -48,7 +48,7 @@ export function TopBar({ storeName }: { storeName: string }) {
   const pathname = usePathname();
 
   return (
-    <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+    <header className="sticky top-0 z-40 border-b bg-card">
       <div className="mx-auto grid h-16 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center px-4 sm:px-6">
         <Link href="/panel" className="flex min-w-0 items-center gap-2.5">
           <span className="grid size-9 place-items-center rounded-xl bg-primary text-primary-foreground">
