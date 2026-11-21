@@ -64,6 +64,7 @@ const ATTRIBUTE_TYPES = [
   { key: "talla-codigo", label: "Talla" },
   { key: "peso", label: "Peso" },
   { key: "tamano", label: "Tamaño" },
+  { key: "libre", label: "Personalizada" },
 ] as const;
 
 const SIZE_CODE_OPTIONS = ["S", "M", "L", "XL", "XXL", "XXXL"];
@@ -318,9 +319,6 @@ function VariantForm({
   onSave: (input: VariantInput) => void;
 }) {
   const [form, setForm] = useState<VariantInput>(initial);
-  const [customAttributes, setCustomAttributes] = useState(
-    initial.attributes[0]?.type === "libre",
-  );
   const [showPrice, setShowPrice] = useState(initial.variantId !== null);
   const [showDiscount, setShowDiscount] = useState(initial.discountType !== "none");
   const [showSku, setShowSku] = useState(Boolean(initial.sku && initial.sku.trim() !== ""));
@@ -331,6 +329,7 @@ function VariantForm({
     value: "",
     type: "color",
   };
+  const customAttributes = pair.type === "libre";
 
   // Stock: se valida mientras se escribe, antes de enviar.
   let stockError: string | null = null;
@@ -363,7 +362,7 @@ function VariantForm({
 
   const setType = (value: AttributeTypeKey) => {
     const nextAttribute: AttributePair = {
-      name: labelForType(value),
+      name: value === "libre" ? "" : labelForType(value),
       value: "",
       type: value,
     };
@@ -411,21 +410,6 @@ function VariantForm({
         ],
       };
     });
-  };
-
-  const setCustomToggle = (checked: boolean) => {
-    setCustomAttributes(checked);
-    if (checked) {
-      setForm((current) => ({
-        ...current,
-        attributes: [{ name: "", value: "", type: "libre" }],
-      }));
-    } else {
-      setForm((current) => ({
-        ...current,
-        attributes: [{ name: "Color", value: "", type: "color" }],
-      }));
-    }
   };
 
   const getValueOptions = (type: AttributeTypeKey): readonly string[] => {
@@ -478,66 +462,61 @@ function VariantForm({
       </div>
       {/* Tipo y Valor de la variante */}
       <div className="space-y-2">
-        <div className="flex justify-end">
-          <div className="flex items-center gap-2">
-            <Switch
-              id="variant-custom"
-              checked={customAttributes}
-              onCheckedChange={setCustomToggle}
-            />
-            <Label htmlFor="variant-custom">Personalizado</Label>
-          </div>
-        </div>
         <div
           className={
-            !customAttributes && pair.type === "tamano"
-              ? "grid grid-cols-1 gap-3"
-              : "grid grid-cols-2 gap-3"
+            customAttributes
+              ? "grid grid-cols-1 gap-3 sm:grid-cols-3"
+              : pair.type === "tamano"
+                ? "grid grid-cols-1 gap-3"
+                : "grid grid-cols-2 gap-3"
           }
         >
           <div className="space-y-2">
             <Label htmlFor="variant-type">Tipo</Label>
-            {customAttributes ? (
-              <Input
-                id="variant-type"
-                value={pair.name}
-                onChange={(e) =>
-                  setForm((current) => ({
-                    ...current,
-                    attributes: [{ ...pair, name: e.target.value }],
-                  }))
-                }
-              />
-            ) : (
-              <Select
-                items={ATTRIBUTE_TYPE_ITEMS}
-                value={pair.type ?? "color"}
-                onValueChange={(value) => {
-                  if (value && value !== pair.type) setType(value as AttributeTypeKey);
-                }}
-              >
-                <SelectTrigger id="variant-type" className="w-full">
-                  <SelectValue placeholder="Seleccionar tipo" />
-                </SelectTrigger>
-                <SelectContent>
-                  {ATTRIBUTE_TYPES.map((t) => (
-                    <SelectItem key={t.key} value={t.key}>
-                      {t.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
+            <Select
+              items={ATTRIBUTE_TYPE_ITEMS}
+              value={pair.type ?? "color"}
+              onValueChange={(value) => {
+                if (value && value !== pair.type) setType(value as AttributeTypeKey);
+              }}
+            >
+              <SelectTrigger id="variant-type" className="w-full">
+                <SelectValue placeholder="Seleccionar tipo" />
+              </SelectTrigger>
+              <SelectContent>
+                {ATTRIBUTE_TYPES.map((t) => (
+                  <SelectItem key={t.key} value={t.key}>
+                    {t.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           {customAttributes ? (
-            <div className="space-y-2">
-              <Label htmlFor="variant-value">Valor</Label>
-              <Input
-                id="variant-value"
-                value={pair.value}
-                onChange={(e) => setValue(e.target.value)}
-              />
-            </div>
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="variant-custom-type">Nombre del tipo</Label>
+                <Input
+                  id="variant-custom-type"
+                  value={pair.name}
+                  placeholder="Ej. Material"
+                  onChange={(e) =>
+                    setForm((current) => ({
+                      ...current,
+                      attributes: [{ ...pair, name: e.target.value }],
+                    }))
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="variant-value">Valor</Label>
+                <Input
+                  id="variant-value"
+                  value={pair.value}
+                  onChange={(e) => setValue(e.target.value)}
+                />
+              </div>
+            </>
           ) : pair.type === "color" ? (
             <div className="space-y-2">
               <Label htmlFor="variant-value">Valor</Label>

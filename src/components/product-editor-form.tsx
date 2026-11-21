@@ -11,7 +11,6 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import {
   Card,
@@ -60,6 +59,8 @@ type TagOption = {
   color: string | null;
 };
 
+type ProductStatus = "available" | "unavailable" | "hidden";
+
 type ProductEditorFormProps = {
   product: Product;
   maxImages: number;
@@ -88,8 +89,9 @@ export function ProductEditorForm({
     ) ?? null;
   const [name, setName] = useState(product.name);
   const [description, setDescription] = useState(product.description ?? "");
-  const [active, setActive] = useState(product.active);
-  const [available, setAvailable] = useState(!product.paused);
+  const [productStatus, setProductStatus] = useState<ProductStatus>(
+    !product.active ? "hidden" : product.paused ? "unavailable" : "available",
+  );
   const [showPrice, setShowPrice] = useState(product.show_price ?? true);
   const [images, setImages] = useState<string[]>(product.images ?? []);
   const [categoryId, setCategoryId] = useState<string>(product.category_id ?? "");
@@ -126,8 +128,8 @@ export function ProductEditorForm({
     const res = await updateProduct(product.id, product.version, {
       name,
       description,
-      active,
-      paused: !available,
+      active: productStatus !== "hidden",
+      paused: productStatus === "unavailable",
       images,
       showPrice: pricingMode === "CUSTOM" ? showPrice : undefined,
     });
@@ -226,15 +228,21 @@ export function ProductEditorForm({
             <CardHeader>
               <CardTitle className="min-w-0 break-words">{product.name}</CardTitle>
               <CardAction className="flex flex-col items-end gap-1">
-                <div className="flex items-center gap-2">
-                  <Label htmlFor="available">{available ? "Disponible" : "No Disponible"}</Label>
-                  <Switch
-                    id="available"
-                    checked={available}
-                    onCheckedChange={setAvailable}
-                    disabled={!hasVariants && inventoryMode === "global" && stockQuantity === "0"}
-                  />
-                </div>
+                <Label htmlFor="product-status" className="sr-only">
+                  Estado del producto
+                </Label>
+                <select
+                  id="product-status"
+                  value={productStatus}
+                  onChange={(event) =>
+                    setProductStatus(event.target.value as ProductStatus)
+                  }
+                  className="h-10 w-36 max-w-full rounded-md border border-input bg-background px-2 text-sm"
+                >
+                  <option value="available">Disponible</option>
+                  <option value="unavailable">No disponible</option>
+                  <option value="hidden">Oculto</option>
+                </select>
                 <Badge variant="outline">
                   {variantCount} {variantCount === 1 ? "variante" : "variantes"}
                 </Badge>
@@ -378,10 +386,6 @@ export function ProductEditorForm({
                     </option>
                   ))}
                 </select>
-              </div>
-              <div className="flex items-center gap-2">
-                <Switch id="active" checked={active} onCheckedChange={setActive} />
-                <Label htmlFor="active">Visible en catálogo</Label>
               </div>
               {!hasVariants && (
                 <InventoryModeOptions
