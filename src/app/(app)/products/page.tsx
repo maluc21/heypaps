@@ -89,7 +89,6 @@ export default async function ProductsPage() {
                 paused: boolean;
                 category_id: string | null;
                 tag_id: string | null;
-                version: number;
               };
               return {
                 id: row.id,
@@ -101,7 +100,6 @@ export default async function ProductsPage() {
                 paused: row.paused,
                 category_id: row.category_id,
                 tag_id: row.tag_id,
-                version: row.version,
               };
             })}
             categories={categories ?? []}

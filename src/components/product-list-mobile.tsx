@@ -5,9 +5,7 @@ import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { updateProduct } from "@/lib/actions/product";
 import { Edit, Search } from "lucide-react";
-import { useRouter } from "next/navigation";
 
 type FilterOption = {
   id: string;
@@ -26,7 +24,6 @@ type Product = {
   paused: boolean;
   category_id: string | null;
   tag_id: string | null;
-  version?: number;
 };
 
 export function ProductListMobile({
@@ -38,13 +35,11 @@ export function ProductListMobile({
   categories: FilterOption[];
   tags: FilterOption[];
 }) {
-  const [loading, setLoading] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [tagId, setTagId] = useState("");
   const [status, setStatus] = useState<StatusFilter>("all");
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const router = useRouter();
 
   const filteredProducts = useMemo(() => {
     const searchTerm = query.trim().toLowerCase();
@@ -67,16 +62,6 @@ export function ProductListMobile({
 
   const hasFilters =
     query.trim() !== "" || categoryId !== "" || tagId !== "" || status !== "all";
-
-  async function handleToggle(product: Product) {
-    setLoading(product.id);
-    try {
-      await updateProduct(product.id, product.version ?? 1, { active: !product.active });
-      router.refresh();
-    } finally {
-      setLoading(null);
-    }
-  }
 
   if (products.length === 0) {
     return (
@@ -196,7 +181,7 @@ export function ProductListMobile({
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-3">
           {filteredProducts.map((product) => (
             <Card key={product.id}>
               <CardContent className="flex items-center justify-between gap-3 p-4">
@@ -209,20 +194,13 @@ export function ProductListMobile({
                 <div className="flex items-center gap-2">
                   <Button
                     size="sm"
-                    variant={product.active ? "outline" : "default"}
-                    disabled={loading === product.id}
-                    onClick={() => handleToggle(product)}
-                    className="min-h-11"
-                  >
-                    {product.active ? "Desactivar" : "Activar"}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="min-h-11 px-3"
+                    variant="outline"
+                    className="min-h-12 min-w-24 gap-2 px-4"
                     render={<Link href={`/products/${product.slug}`} />}
+                    aria-label={`Editar ${product.name}`}
                   >
-                    <Edit className="h-4 w-4" />
+                    <Edit className="h-4 w-4" aria-hidden="true" />
+                    Editar
                   </Button>
                 </div>
               </CardContent>
