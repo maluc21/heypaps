@@ -184,14 +184,13 @@ export function NewProductForm({
             </div>
           </div>
 
-          <div className="space-y-2">
-            <InventoryModeOptions
-              idPrefix="new-inventory-mode"
-              value={inventoryMode}
-              onChange={setInventoryMode}
-              variantDescription="Después de crear el producto, agrega variantes para asignar stock a cada una."
-            />
-            {inventoryMode === "global" && (
+          <InventoryModeOptions
+            idPrefix="new-inventory-mode"
+            value={inventoryMode}
+            onChange={setInventoryMode}
+            variantDescription="Agrega variantes para asignar stock a cada una."
+          >
+            {inventoryMode === "global" ? (
               <div className="space-y-2">
                 <Label htmlFor="new-stock-quantity">Cantidad disponible</Label>
                 <Input
@@ -202,8 +201,8 @@ export function NewProductForm({
                   onChange={(e) => setStockQuantity(e.target.value)}
                 />
               </div>
-            )}
-          </div>
+            ) : null}
+          </InventoryModeOptions>
         </CardContent>
         <CardFooter className="gap-2">
           <Button

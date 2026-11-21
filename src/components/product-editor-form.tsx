@@ -384,14 +384,13 @@ export function ProductEditorForm({
                 <Label htmlFor="active">Visible en catálogo</Label>
               </div>
               {!hasVariants && (
-                <div className="space-y-2">
-                  <InventoryModeOptions
-                    idPrefix="product-inventory-mode"
-                    value={inventoryMode}
-                    onChange={setInventoryMode}
-                    variantDescription="Agrega variantes en la sección Variantes para asignar stock a cada una."
-                  />
-                  {inventoryMode === "global" && (
+                <InventoryModeOptions
+                  idPrefix="product-inventory-mode"
+                  value={inventoryMode}
+                  onChange={setInventoryMode}
+                  variantDescription="Agrega variantes para asignar stock a cada una."
+                >
+                  {inventoryMode === "global" ? (
                     <div className="space-y-2">
                       <Label htmlFor="stock-quantity">Cantidad disponible</Label>
                       <Input
@@ -402,16 +401,15 @@ export function ProductEditorForm({
                         onChange={(e) => setStockQuantity(e.target.value)}
                       />
                     </div>
-                  )}
-                  {inventoryMode === "variants" && (
+                  ) : inventoryMode === "variants" ? (
                     <a
                       href="#variant-manager"
                       className="inline-flex min-h-9 items-center text-sm font-medium text-primary underline-offset-4 hover:underline"
                     >
                       Ir a Variantes
                     </a>
-                  )}
-                </div>
+                  ) : null}
+                </InventoryModeOptions>
               )}
               {hasVariants && (
                 <div className="space-y-2">
