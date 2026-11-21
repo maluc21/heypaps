@@ -212,15 +212,17 @@ export function ProductEditorForm({
   return (
     <div>
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <div className="space-y-0.5 lg:col-start-1 lg:row-start-1">
+        <div className="flex items-center justify-between gap-2 lg:col-start-1 lg:row-start-1 lg:flex-col lg:items-start lg:justify-start lg:gap-0.5">
+          <h2 className="min-w-0 text-base font-semibold leading-tight">
+            Editar producto
+          </h2>
           <Link
             href="/products"
-            className="inline-flex min-h-8 items-center gap-1.5 text-xs text-muted-foreground hover:text-primary"
+            className="inline-flex min-h-8 shrink-0 items-center gap-1.5 text-xs text-muted-foreground hover:text-primary lg:order-first"
           >
             <ArrowLeft className="size-4" aria-hidden="true" />
             Regresar
           </Link>
-          <h2 className="text-base font-semibold leading-tight">Editar producto</h2>
         </div>
 
         <div className="space-y-4 lg:col-start-1 lg:row-start-2">

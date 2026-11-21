@@ -8,7 +8,7 @@
  * se captura el formulario y se muestran los errores.
  */
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -19,7 +19,7 @@ import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { deleteVariant, saveVariant, type VariantInput } from "@/lib/actions/variant";
-import { COLOR_HEX, COLOR_OPTIONS } from "@/lib/colors";
+import { COLOR_OPTIONS } from "@/lib/colors";
 import { parseAmountToCents } from "@/lib/money";
 import { formatMoney } from "@/lib/utils";
 import {
@@ -73,19 +73,6 @@ const SIZE_DIMENSION_FIELDS = [
   { key: "width", label: "Ancho" },
   { key: "depth", label: "Profundidad" },
 ] as const;
-
-// Base UI renderiza en <SelectValue> la etiqueta del item seleccionado, y
-// solo si el Select recibe la lista de items. Sin esto el trigger muestra el
-// valor crudo ("+504") en vez de la etiqueta ("Honduras (+504)").
-const ATTRIBUTE_TYPE_ITEMS = ATTRIBUTE_TYPES.map((t) => ({
-  label: t.label,
-  value: t.key,
-}));
-
-const COLOR_ITEMS = COLOR_OPTIONS.map((color) => ({
-  label: color,
-  value: color,
-}));
 
 const WEIGHT_UNIT_ITEMS = [
   { label: "g", value: WEIGHT_UNITS[0] },
@@ -424,10 +411,6 @@ function VariantForm({
   };
 
   const options = getValueOptions(pair.type ?? "color");
-  const valueItems = useMemo(
-    () => options.map((opt) => ({ label: opt, value: opt })),
-    [options],
-  );
 
   return (
     <form
@@ -473,24 +456,22 @@ function VariantForm({
         >
           <div className="space-y-2">
             <Label htmlFor="variant-type">Tipo</Label>
-            <Select
-              items={ATTRIBUTE_TYPE_ITEMS}
+            <select
+              id="variant-type"
               value={pair.type ?? "color"}
-              onValueChange={(value) => {
-                if (value && value !== pair.type) setType(value as AttributeTypeKey);
+              onChange={(event) => {
+                if (event.target.value !== pair.type) {
+                  setType(event.target.value as AttributeTypeKey);
+                }
               }}
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
             >
-              <SelectTrigger id="variant-type" className="w-full">
-                <SelectValue placeholder="Seleccionar tipo" />
-              </SelectTrigger>
-              <SelectContent>
-                {ATTRIBUTE_TYPES.map((t) => (
-                  <SelectItem key={t.key} value={t.key}>
-                    {t.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              {ATTRIBUTE_TYPES.map((t) => (
+                <option key={t.key} value={t.key}>
+                  {t.label}
+                </option>
+              ))}
+            </select>
           </div>
           {customAttributes ? (
             <>
@@ -520,30 +501,21 @@ function VariantForm({
           ) : pair.type === "color" ? (
             <div className="space-y-2">
               <Label htmlFor="variant-value">Valor</Label>
-              <Select
-                items={COLOR_ITEMS}
+              <select
+                id="variant-value"
                 value={pair.value}
-                onValueChange={(value) => {
-                  if (value) setValue(value);
-                }}
+                onChange={(event) => setValue(event.target.value)}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
               >
-                <SelectTrigger id="variant-value" className="w-full">
-                  <SelectValue placeholder="Seleccionar color" />
-                </SelectTrigger>
-                <SelectContent>
-                  {COLOR_OPTIONS.map((color) => (
-                    <SelectItem key={color} value={color}>
-                      <span className="flex items-center gap-2">
-                        <span
-                          className="inline-block h-3 w-3 rounded-full border border-border"
-                          style={{ backgroundColor: COLOR_HEX[color] ?? color.toLowerCase() }}
-                        />
-                        {color}
-                      </span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                <option value="" disabled>
+                  Seleccionar color
+                </option>
+                {COLOR_OPTIONS.map((color) => (
+                  <option key={color} value={color}>
+                    {color}
+                  </option>
+                ))}
+              </select>
             </div>
           ) : pair.type === "peso" ? (
             <div className="grid grid-cols-[minmax(0,1fr)_minmax(5rem,auto)] gap-2">
@@ -586,24 +558,21 @@ function VariantForm({
           ) : pair.type === "tamano" ? null : (
             <div className="space-y-2">
               <Label htmlFor="variant-value">Valor</Label>
-              <Select
-                items={valueItems}
+              <select
+                id="variant-value"
                 value={pair.value}
-                onValueChange={(value) => {
-                  if (value) setValue(value);
-                }}
+                onChange={(event) => setValue(event.target.value)}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
               >
-                <SelectTrigger id="variant-value" className="w-full">
-                  <SelectValue placeholder="Seleccionar valor" />
-                </SelectTrigger>
-                <SelectContent>
-                  {options.map((opt) => (
-                    <SelectItem key={opt} value={opt}>
-                      {opt}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                <option value="" disabled>
+                  Seleccionar valor
+                </option>
+                {options.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
+                ))}
+              </select>
             </div>
           )}
         </div>
