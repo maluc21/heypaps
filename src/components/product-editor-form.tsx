@@ -69,7 +69,7 @@ type ProductStatus = "available" | "unavailable" | "hidden";
 
 const PRODUCT_STATUS_OPTIONS = [
   { value: "available", label: "Disponible", dotClassName: "bg-green-600" },
-  { value: "unavailable", label: "No disponible", dotClassName: "bg-amber-500" },
+  { value: "unavailable", label: "No disponible", dotClassName: "bg-red-500" },
   { value: "hidden", label: "Oculto", dotClassName: "bg-gray-400" },
 ] as const;
 
@@ -270,7 +270,7 @@ export function ProductEditorForm({
         <div className="space-y-4 lg:col-start-1 lg:row-start-2">
           <Card>
             <CardHeader className="gap-2">
-              <CardTitle className="min-w-0 break-words">{product.name}</CardTitle>
+              <CardTitle className="min-w-0 break-words">{name}</CardTitle>
               <div className="w-36 max-w-full">
                 <Label htmlFor="product-status-desktop" className="sr-only">
                   Estado del producto
@@ -285,7 +285,7 @@ export function ProductEditorForm({
                   className="h-10 w-36 max-w-full rounded-md border border-input bg-background px-2 text-sm sm:hidden"
                 >
                   <option value="available">🟢 Disponible</option>
-                  <option value="unavailable">🟠 No disponible</option>
+                  <option value="unavailable">🔴 No disponible</option>
                   <option value="hidden">⚪ Oculto</option>
                 </select>
                 <div className="hidden sm:block">

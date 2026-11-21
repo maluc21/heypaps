@@ -125,7 +125,7 @@
   --secondary-900: oklch(0.3984 0 27.99);
   --secondary-950: oklch(0.2596 0 28.1);
   --secondary-1000: oklch(0.1692 0 28.06);
-  --background: var(--color-white);
+  --background: #f9f9f9;
   --foreground: var(--base-800);
   --card: var(--color-white);
   --card-foreground: var(--base-800);
