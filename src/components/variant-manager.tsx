@@ -667,12 +667,12 @@ function VariantForm({
               disabled={pricingMode === "REQUEST_ALL"}
               onCheckedChange={setShowPrice}
             />
-            <Label htmlFor="variant-show-price">Precio específico ({currency})</Label>
+            <Label htmlFor="variant-show-price">Precio específico</Label>
           </div>
           {showPrice ? (
             <div className="space-y-2">
               <Label htmlFor="variant-price" className="sr-only">
-                Precio específico ({currency})
+                Precio específico
               </Label>
               <Input
                 id="variant-price"
@@ -819,7 +819,7 @@ function VariantForm({
                 onChange={(e) => setForm({ ...form, sku: e.target.value })}
               />
               <p className="text-xs text-muted-foreground">
-                Si posee un código identificativo externo existente.
+                Si posee un código identificativo externo.
               </p>
             </div>
           ) : null}

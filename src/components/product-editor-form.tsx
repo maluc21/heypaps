@@ -268,7 +268,7 @@ export function ProductEditorForm({
                       onChange={() => setShowPrice(true)}
                       className="peer sr-only"
                     />
-                    <span className="flex min-h-14 items-center gap-2 rounded-xl border border-border p-3 transition-colors peer-checked:border-primary peer-checked:bg-muted peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-focus-visible:ring-offset-2">
+                    <span className="flex min-h-14 items-center gap-2 rounded-xl border border-border p-3 transition-colors peer-checked:border-border peer-checked:bg-muted peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-focus-visible:ring-offset-2">
                       <DollarSign
                         className="size-5 shrink-0 text-muted-foreground"
                         aria-hidden="true"
@@ -300,7 +300,7 @@ export function ProductEditorForm({
                       onChange={() => setShowPrice(false)}
                       className="peer sr-only"
                     />
-                    <span className="flex min-h-14 items-center gap-2 rounded-xl border border-border p-3 transition-colors peer-checked:border-primary peer-checked:bg-muted peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-focus-visible:ring-offset-2">
+                    <span className="flex min-h-14 items-center gap-2 rounded-xl border border-border p-3 transition-colors peer-checked:border-border peer-checked:bg-muted peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-focus-visible:ring-offset-2">
                       <MessageCircle
                         className="size-5 shrink-0 text-muted-foreground"
                         aria-hidden="true"
