@@ -13,6 +13,13 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Card,
   CardAction,
   CardContent,
@@ -60,6 +67,29 @@ type TagOption = {
 };
 
 type ProductStatus = "available" | "unavailable" | "hidden";
+
+const PRODUCT_STATUS_OPTIONS = [
+  { value: "available", label: "Disponible", dotClassName: "bg-green-600" },
+  { value: "unavailable", label: "No disponible", dotClassName: "bg-amber-500" },
+  { value: "hidden", label: "Oculto", dotClassName: "bg-gray-400" },
+] as const;
+
+const productStatusOptionContent = (
+  option: (typeof PRODUCT_STATUS_OPTIONS)[number],
+) => (
+  <span className="inline-flex items-center gap-2">
+    <span
+      aria-hidden="true"
+      className={`size-2 shrink-0 rounded-full ${option.dotClassName}`}
+    />
+    {option.label}
+  </span>
+);
+
+const PRODUCT_STATUS_ITEMS = PRODUCT_STATUS_OPTIONS.map((option) => ({
+  value: option.value,
+  label: productStatusOptionContent(option),
+}));
 
 type ProductEditorFormProps = {
   product: Product;
@@ -240,18 +270,27 @@ export function ProductEditorForm({
                 <Label htmlFor="product-status" className="sr-only">
                   Estado del producto
                 </Label>
-                <select
-                  id="product-status"
+                <Select
+                  items={PRODUCT_STATUS_ITEMS}
                   value={productStatus}
-                  onChange={(event) =>
-                    setProductStatus(event.target.value as ProductStatus)
-                  }
-                  className="h-10 w-36 max-w-full rounded-md border border-input bg-background px-2 text-sm"
+                  onValueChange={(value) => {
+                    if (value) setProductStatus(value as ProductStatus);
+                  }}
                 >
-                  <option value="available">Disponible</option>
-                  <option value="unavailable">No disponible</option>
-                  <option value="hidden">Oculto</option>
-                </select>
+                  <SelectTrigger
+                    id="product-status"
+                    className="h-10 w-36 max-w-full"
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PRODUCT_STATUS_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {productStatusOptionContent(option)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">

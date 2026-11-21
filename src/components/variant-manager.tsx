@@ -186,7 +186,7 @@ export function VariantManager({ productId, productVersion, currency, variants, 
       <CardHeader>
         <CardTitle>Variantes</CardTitle>
         <CardDescription>
-          Tamaños, colores, pesos, dimensiones, estilos, etc.  para cada producto.
+          Color, talla, peso, tamaño, etc."
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -744,7 +744,7 @@ function VariantForm({
                     aria-describedby="variant-stock-unit-hint"
                   />
                   <p id="variant-stock-unit-hint" className="text-xs text-muted-foreground">
-                    Ej.: bolsas, sacos o cajas.
+                    Ej. cajas
                   </p>
                 </div>
               </div>
