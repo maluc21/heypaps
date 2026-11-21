@@ -23,7 +23,6 @@ import {
   Card,
   CardAction,
   CardContent,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -141,7 +140,6 @@ export function ProductEditorForm({
   );
   const [saving, setSaving] = useState(false);
 
-  const selectedTag = tags.find((tag) => tag.id === tagId) ?? null;
   const [basePrice, setBasePrice] = useState(
     baseVariant
       ? (baseVariant.price_cents / 100).toFixed(2)
@@ -249,17 +247,24 @@ export function ProductEditorForm({
   return (
     <div>
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <div className="flex items-center justify-between gap-2 lg:col-start-1 lg:row-start-1 lg:flex-col lg:items-start lg:justify-start lg:gap-0.5">
-          <h2 className="min-w-0 text-base font-semibold leading-tight">
-            Editar producto
-          </h2>
+        <div className="grid grid-cols-[1fr_auto] items-center gap-2 lg:col-span-2 lg:row-start-1 lg:grid-cols-2 lg:grid-rows-[auto_auto]">
           <Link
             href="/products"
-            className="inline-flex min-h-8 shrink-0 items-center gap-1.5 text-xs text-muted-foreground hover:text-primary lg:order-first"
+            className="col-start-2 row-start-1 inline-flex min-h-8 shrink-0 items-center gap-1.5 text-xs text-primary-foreground hover:underline lg:col-start-1"
           >
             <ArrowLeft className="size-4" aria-hidden="true" />
             Regresar
           </Link>
+          <h2 className="col-start-1 row-start-1 min-w-0 text-base font-semibold leading-tight lg:row-start-2">
+            Editar producto
+          </h2>
+          <Button
+            onClick={save}
+            disabled={saving}
+            className="hidden w-auto lg:col-start-2 lg:row-start-2 lg:inline-flex lg:justify-self-end"
+          >
+            {saving ? "Guardando…" : "Guardar"}
+          </Button>
         </div>
 
         <div className="space-y-4 lg:col-start-1 lg:row-start-2">
@@ -267,30 +272,46 @@ export function ProductEditorForm({
             <CardHeader className="gap-2">
               <CardTitle className="min-w-0 break-words">{product.name}</CardTitle>
               <div className="w-36 max-w-full">
-                <Label htmlFor="product-status" className="sr-only">
+                <Label htmlFor="product-status-desktop" className="sr-only">
                   Estado del producto
                 </Label>
-                <Select
-                  items={PRODUCT_STATUS_ITEMS}
+                <select
+                  id="product-status-mobile"
                   value={productStatus}
-                  onValueChange={(value) => {
-                    if (value) setProductStatus(value as ProductStatus);
-                  }}
+                  onChange={(event) =>
+                    setProductStatus(event.target.value as ProductStatus)
+                  }
+                  aria-label="Estado del producto"
+                  className="h-10 w-36 max-w-full rounded-md border border-input bg-background px-2 text-sm sm:hidden"
                 >
-                  <SelectTrigger
-                    id="product-status"
-                    className="h-10 w-36 max-w-full"
+                  <option value="available">🟢 Disponible</option>
+                  <option value="unavailable">🟠 No disponible</option>
+                  <option value="hidden">⚪ Oculto</option>
+                </select>
+                <div className="hidden sm:block">
+                  <Select
+                    items={PRODUCT_STATUS_ITEMS}
+                    value={productStatus}
+                    onValueChange={(value) => {
+                      if (value) setProductStatus(value as ProductStatus);
+                    }}
                   >
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PRODUCT_STATUS_OPTIONS.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {productStatusOptionContent(option)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                    <SelectTrigger
+                      id="product-status-desktop"
+                      aria-label="Estado del producto"
+                      className="h-10 w-36 max-w-full"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PRODUCT_STATUS_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {productStatusOptionContent(option)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -456,7 +477,7 @@ export function ProductEditorForm({
                   ) : inventoryMode === "variants" ? (
                     <a
                       href="#variant-manager"
-                      className="inline-flex min-h-9 items-center text-sm font-medium text-primary underline-offset-4 hover:underline"
+                      className="inline-flex min-h-9 items-center text-sm font-medium text-primary-foreground underline-offset-4 hover:underline"
                     >
                       Ir a Variantes
                     </a>
@@ -474,11 +495,6 @@ export function ProductEditorForm({
                 </div>
               )}
             </CardContent>
-            <CardFooter>
-              <Button onClick={save} disabled={saving} className="w-full">
-                {saving ? "Guardando…" : "Guardar"}
-              </Button>
-            </CardFooter>
           </Card>
           <div id="variant-manager" className="scroll-mt-20">
             <VariantManager
@@ -507,12 +523,14 @@ export function ProductEditorForm({
                 productId={product.id}
                 images={images}
                 maxImages={maxImages}
-                tag={selectedTag}
                 onChange={setImages}
               />
             </CardContent>
           </Card>
         </div>
+        <Button onClick={save} disabled={saving} className="w-full lg:hidden">
+          {saving ? "Guardando…" : "Guardar"}
+        </Button>
       </div>
     </div>
   )

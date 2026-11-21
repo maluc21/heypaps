@@ -186,7 +186,7 @@ export function VariantManager({ productId, productVersion, currency, variants, 
       <CardHeader>
         <CardTitle>Variantes</CardTitle>
         <CardDescription>
-          Color, talla, peso, tamaño, etc."
+          Color, talla, peso, tamaño, personalizado
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -217,14 +217,16 @@ export function VariantManager({ productId, productVersion, currency, variants, 
                     {variant.final_price_cents !== variant.price_cents ? (
                       <span className="line-through"> {formatMoney(variant.price_cents, currency)}</span>
                     ) : null}
-                    {" · "}
-                    {variant.stock === null
-                      ? "Sin límite de stock"
-                      : variant.stock > 0
-                        ? variant.stock_unit
-                          ? `${variant.stock} ${variant.stock_unit}`
-                          : `${variant.stock} en stock`
-                        : "Agotado"}
+                    {variant.stock !== null ? (
+                      <>
+                        {" · "}
+                        {variant.stock > 0
+                          ? variant.stock_unit
+                            ? `${variant.stock} ${variant.stock_unit}`
+                            : `${variant.stock} en stock`
+                          : "Agotado"}
+                      </>
+                    ) : null}
                   </p>
                 </div>
                 <Badge
@@ -233,22 +235,22 @@ export function VariantManager({ productId, productVersion, currency, variants, 
                 >
                   {variant.active ? "Activa" : "Inactiva"}
                 </Badge>
-                <div className="flex w-full items-center justify-end gap-1 sm:w-auto">
+                <div className="flex w-full items-center gap-2 sm:w-auto">
                   <Button
-                    variant="ghost"
+                    variant="outline"
                     size="sm"
-                    className="h-auto min-w-14 flex-col gap-0.5 px-2 py-1 text-[10px] leading-tight sm:h-9 sm:min-w-0 sm:flex-row sm:gap-1.5 sm:px-3 sm:py-2 sm:text-sm"
+                    className="h-10 min-w-0 flex-1 justify-center gap-2 px-2 text-xs sm:h-9 sm:flex-none sm:px-3 sm:text-sm"
                     disabled={busy}
                     onClick={() => setEditing(toFormState(variant))}
                     aria-label={`Editar ${variantLabel(variant.attributes)}`}
                   >
                     <Pencil className="size-4" aria-hidden="true" />
-                    <span>Editar</span>
+                    Editar
                   </Button>
                   <Button
-                    variant="ghost"
+                    variant="outline"
                     size="sm"
-                    className="h-auto min-w-14 flex-col gap-0.5 px-2 py-1 text-[10px] leading-tight sm:h-9 sm:min-w-0 sm:flex-row sm:gap-1.5 sm:px-3 sm:py-2 sm:text-sm"
+                    className="h-10 min-w-0 flex-1 justify-center gap-2 px-2 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive sm:h-9 sm:flex-none sm:px-3 sm:text-sm"
                     disabled={busy}
                     onClick={() => void handleDelete(variant)}
                     aria-label={`Eliminar ${variantLabel(variant.attributes)}`}

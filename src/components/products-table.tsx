@@ -319,7 +319,7 @@ export function ProductsTable({
                       <td className="p-3">
                         <Link
                           href={`/products/${p.slug}`}
-                          className="font-medium hover:text-primary hover:underline underline-offset-4"
+                          className="font-medium text-primary-foreground hover:underline underline-offset-4"
                         >
                           {p.name}
                         </Link>

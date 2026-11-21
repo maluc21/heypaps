@@ -11,7 +11,6 @@ import { useRef, useState } from "react";
 import Image from "next/image";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { ProductTagBadge } from "@/components/product-tag-badge";
 import { deleteUploadedImage, uploadImage } from "@/lib/image-upload";
 import { Trash2 } from "lucide-react";
 
@@ -20,7 +19,6 @@ type Props = {
   productId: string;
   images: string[];
   maxImages: number;
-  tag: { name: string } | null;
   onChange: (images: string[]) => void;
 };
 
@@ -29,7 +27,6 @@ export function ProductImageManager({
   productId,
   images,
   maxImages,
-  tag,
   onChange,
 }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -90,43 +87,46 @@ export function ProductImageManager({
           {images.map((filePath, index) => (
             <li
               key={filePath}
-              className="relative aspect-square overflow-hidden rounded-lg border border-border"
+              className="overflow-hidden rounded-lg border border-border"
             >
-              <Image
-                src={filePath}
-                alt=""
-                fill
-                sizes="(min-width: 1024px) 30vw, 45vw"
-                className="object-cover"
-              />
-              {tag ? <ProductTagBadge label={tag.name} /> : null}
+              <div className="relative aspect-square">
+                <Image
+                  src={filePath}
+                  alt=""
+                  fill
+                  sizes="(min-width: 1024px) 30vw, 45vw"
+                  className="object-cover"
+                />
+              </div>
               <Button
                 type="button"
-                size="icon-lg"
+                variant="ghost"
+                size="sm"
                 disabled={busy}
                 onClick={() => handleRemove(filePath)}
                 aria-label={`Eliminar imagen ${index + 1}`}
                 title={`Eliminar imagen ${index + 1}`}
-                className="absolute right-2 top-2 z-10 rounded-md bg-white text-red-600 hover:bg-white/90 hover:text-red-700"
+                className="h-9 w-full gap-1 rounded-none border-t border-border px-2 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
               >
-                <Trash2 className="size-4" />
+                <Trash2 className="size-3.5" />
+                Eliminar
               </Button>
             </li>
           ))}
           {slotsLeft > 0 ? (
             <li
-              role="button"
-              tabIndex={0}
-              onClick={() => inputRef.current?.click()}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  inputRef.current?.click();
-                }
-              }}
-              className="relative aspect-square overflow-hidden rounded-lg border border-dashed border-border flex items-center justify-center cursor-pointer hover:bg-muted/50"
+              className="overflow-hidden rounded-lg border border-dashed border-border"
             >
-              <span className="text-2xl text-muted-foreground">+</span>
+              <button
+                type="button"
+                onClick={() => inputRef.current?.click()}
+                disabled={busy}
+                className="flex aspect-square w-full items-center justify-center text-2xl text-muted-foreground hover:bg-muted/50"
+                aria-label="Agregar imagen"
+              >
+                +
+              </button>
+              <div aria-hidden="true" className="h-9 border-t border-dashed border-border" />
             </li>
           ) : null}
         </ul>
