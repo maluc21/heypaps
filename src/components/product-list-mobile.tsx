@@ -79,7 +79,7 @@ export function ProductListMobile({
         <h2 className="text-lg font-semibold">Productos</h2>
         <Button
           type="button"
-          variant="ghost"
+          variant="outline"
           size="icon"
           aria-label={filtersOpen ? "Ocultar búsqueda y filtros" : "Mostrar búsqueda y filtros"}
           aria-expanded={filtersOpen}
@@ -184,9 +184,9 @@ export function ProductListMobile({
         <div className="space-y-3">
           {filteredProducts.map((product) => (
             <Card key={product.id}>
-              <CardContent className="flex items-center justify-between gap-3 p-4">
+              <CardContent className="flex items-center justify-between gap-3 px-4 py-2">
                 <div className="min-w-0 flex-1">
-                  <div className="truncate font-medium">{product.name}</div>
+                  <div className="truncate font-bold">{product.name}</div>
                   <div className="text-sm text-muted-foreground">
                     ${((product.price_cents ?? 0) / 100).toFixed(2)}
                   </div>
