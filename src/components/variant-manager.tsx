@@ -60,7 +60,7 @@ type Props = {
 // Tipos de atributos típicos con sus valores predefinidos.
 const ATTRIBUTE_TYPES = [
   { key: "color", label: "Color" },
-  { key: "talla-codigo", label: "Talla (código)" },
+  { key: "talla-codigo", label: "Talla" },
   { key: "peso", label: "Peso" },
   { key: "tamano", label: "Tamaño" },
 ] as const;
@@ -202,17 +202,13 @@ export function VariantManager({ productId, productVersion, currency, variants, 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Variantes (opcional)</CardTitle>
+        <CardTitle>Variantes</CardTitle>
         <CardDescription>
-          Define tallas, colores, peso o dimensiones para cada producto.
+          Tamaños, colores, pesos, dimensiones, estilos, etc.  para cada producto.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {sorted.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            Sin variantes. Agrega tallas, colores, peso o dimensiones si aplica.
-          </p>
-        ) : (
+        {sorted.length > 0 ? (
           <ul className="space-y-2">
             {sorted.map((variant) => (
               <li
@@ -260,7 +256,7 @@ export function VariantManager({ productId, productVersion, currency, variants, 
               </li>
             ))}
           </ul>
-        )}
+        ) : null}
 
         {editing ? (
           <VariantForm
@@ -450,8 +446,7 @@ function VariantForm({
     >
       {/* Tipo y Valor de la variante */}
       <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <Label htmlFor="variant-type">Tipo</Label>
+        <div className="flex justify-end">
           <div className="flex items-center gap-2">
             <Switch
               id="variant-custom"
@@ -469,6 +464,7 @@ function VariantForm({
           }
         >
           <div className="space-y-2">
+            <Label htmlFor="variant-type">Tipo</Label>
             {customAttributes ? (
               <Input
                 id="variant-type"
@@ -502,36 +498,42 @@ function VariantForm({
             )}
           </div>
           {customAttributes ? (
-            <Input
-              id="variant-value"
-              value={pair.value}
-              onChange={(e) => setValue(e.target.value)}
-            />
+            <div className="space-y-2">
+              <Label htmlFor="variant-value">Valor</Label>
+              <Input
+                id="variant-value"
+                value={pair.value}
+                onChange={(e) => setValue(e.target.value)}
+              />
+            </div>
           ) : pair.type === "color" ? (
-            <Select
-              items={COLOR_ITEMS}
-              value={pair.value}
-              onValueChange={(value) => {
-                if (value) setValue(value);
-              }}
-            >
-              <SelectTrigger id="variant-value" className="w-full">
-                <SelectValue placeholder="Seleccionar color" />
-              </SelectTrigger>
-              <SelectContent>
-                {COLOR_OPTIONS.map((color) => (
-                  <SelectItem key={color} value={color}>
-                    <span className="flex items-center gap-2">
-                      <span
-                        className="inline-block h-3 w-3 rounded-full border border-border"
-                        style={{ backgroundColor: COLOR_HEX[color] ?? color.toLowerCase() }}
-                      />
-                      {color}
-                    </span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="space-y-2">
+              <Label htmlFor="variant-value">Valor</Label>
+              <Select
+                items={COLOR_ITEMS}
+                value={pair.value}
+                onValueChange={(value) => {
+                  if (value) setValue(value);
+                }}
+              >
+                <SelectTrigger id="variant-value" className="w-full">
+                  <SelectValue placeholder="Seleccionar color" />
+                </SelectTrigger>
+                <SelectContent>
+                  {COLOR_OPTIONS.map((color) => (
+                    <SelectItem key={color} value={color}>
+                      <span className="flex items-center gap-2">
+                        <span
+                          className="inline-block h-3 w-3 rounded-full border border-border"
+                          style={{ backgroundColor: COLOR_HEX[color] ?? color.toLowerCase() }}
+                        />
+                        {color}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           ) : pair.type === "peso" ? (
             <div className="grid grid-cols-[minmax(0,1fr)_minmax(5rem,auto)] gap-2">
               <div className="space-y-2">
@@ -571,24 +573,27 @@ function VariantForm({
               </div>
             </div>
           ) : pair.type === "tamano" ? null : (
-            <Select
-              items={valueItems}
-              value={pair.value}
-              onValueChange={(value) => {
-                if (value) setValue(value);
-              }}
-            >
-              <SelectTrigger id="variant-value" className="w-full">
-                <SelectValue placeholder="Seleccionar valor" />
-              </SelectTrigger>
-              <SelectContent>
-                {options.map((opt) => (
-                  <SelectItem key={opt} value={opt}>
-                    {opt}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="space-y-2">
+              <Label htmlFor="variant-value">Valor</Label>
+              <Select
+                items={valueItems}
+                value={pair.value}
+                onValueChange={(value) => {
+                  if (value) setValue(value);
+                }}
+              >
+                <SelectTrigger id="variant-value" className="w-full">
+                  <SelectValue placeholder="Seleccionar valor" />
+                </SelectTrigger>
+                <SelectContent>
+                  {options.map((opt) => (
+                    <SelectItem key={opt} value={opt}>
+                      {opt}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           )}
         </div>
         {!customAttributes && pair.type === "tamano" ? (
@@ -643,165 +648,167 @@ function VariantForm({
         ) : null}
       </div>
 
-      {/* Precio toggle */}
-      <div className="space-y-2">
-        <div className="flex items-center gap-2">
-          <Switch
-            id="variant-show-price"
-            checked={showPrice}
-            disabled={pricingMode === "REQUEST_ALL"}
-            onCheckedChange={setShowPrice}
-          />
-          <Label htmlFor="variant-show-price">Precio específico</Label>
-        </div>
-        {showPrice ? (
-          <div className="space-y-2">
-            <Label htmlFor="variant-price">Precio específico ({currency})</Label>
-            <Input
-              id="variant-price"
-              inputMode="decimal"
-              placeholder={basePrice || "450.50"}
-              value={form.price}
-              onChange={(e) => setForm({ ...form, price: e.target.value })}
+      <div className="space-y-4 rounded-lg border border-border bg-muted/40 p-3">
+        {/* Precio toggle */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <Switch
+              id="variant-show-price"
+              checked={showPrice}
               disabled={pricingMode === "REQUEST_ALL"}
-              className={pricingMode === "REQUEST_ALL" ? "opacity-50 cursor-not-allowed bg-muted" : ""}
+              onCheckedChange={setShowPrice}
             />
-            {pricingMode === "REQUEST_ALL" ? (
-              <p className="text-xs text-muted-foreground">Precio bloqueado por la configuración global de la tienda.</p>
-            ) : null}
+            <Label htmlFor="variant-show-price">Precio específico</Label>
           </div>
-        ) : null}
-      </div>
-
-      {/* Descuento toggle */}
-      <div className="space-y-2">
-        <div className="flex items-center gap-2">
-          <Switch
-            id="variant-show-discount"
-            checked={showDiscount}
-            onCheckedChange={(checked) => {
-              setShowDiscount(checked);
-              setForm((current) => ({
-                ...current,
-                discountType: checked
-                  ? current.discountType === "none"
-                    ? "percent"
-                    : current.discountType
-                  : "none",
-                discountValue: checked ? current.discountValue : "",
-              }));
-            }}
-          />
-          <Label htmlFor="variant-show-discount">Descuento</Label>
-        </div>
-        {showDiscount ? (
-          <div className="grid grid-cols-2 gap-3">
+          {showPrice ? (
             <div className="space-y-2">
-              <Label htmlFor="variant-discount-type">Tipo de descuento</Label>
-              <select
-                id="variant-discount-type"
-                value={form.discountType}
-                onChange={(e) =>
-                  setForm({ ...form, discountType: e.target.value as DiscountType, discountValue: "" })
-                }
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              >
-                <option value="percent">Porcentaje (%)</option>
-                <option value="fixed">Monto fijo</option>
-              </select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="variant-discount-value">
-                {form.discountType === "percent" ? "Porcentaje" : "Monto"}
-              </Label>
+              <Label htmlFor="variant-price">Precio específico ({currency})</Label>
               <Input
-                id="variant-discount-value"
+                id="variant-price"
                 inputMode="decimal"
-                placeholder={form.discountType === "percent" ? "10" : "50.00"}
-                value={form.discountValue}
-                onChange={(e) => setForm({ ...form, discountValue: e.target.value })}
+                placeholder={basePrice || "450.50"}
+                value={form.price}
+                onChange={(e) => setForm({ ...form, price: e.target.value })}
+                disabled={pricingMode === "REQUEST_ALL"}
+                className={pricingMode === "REQUEST_ALL" ? "opacity-50 cursor-not-allowed bg-muted" : ""}
               />
+              {pricingMode === "REQUEST_ALL" ? (
+                <p className="text-xs text-muted-foreground">Precio bloqueado por la configuración global de la tienda.</p>
+              ) : null}
             </div>
-          </div>
-        ) : null}
-        {showDiscount && discountedPriceCents !== null && priceCents !== null ? (
-          <div className="rounded-md border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-800">
-            <span className="line-through text-muted-foreground mr-2">
-              {formatMoney(priceCents, currency)}
-            </span>
-            <span className="font-semibold">{formatMoney(discountedPriceCents, currency)}</span>
-          </div>
-        ) : null}
-      </div>
-
-      {/* Por Inventario toggle + stock */}
-      <div className="space-y-2">
-        <div className="flex items-center gap-2">
-          <Switch
-            id="variant-inventory-mode"
-            checked={!form.madeToOrder}
-            onCheckedChange={(checked) => setForm({ ...form, madeToOrder: !checked })}
-          />
-          <Label htmlFor="variant-inventory-mode">Por Inventario</Label>
+          ) : null}
         </div>
-        {!form.madeToOrder ? (
-          <div className="space-y-2">
-            <Label htmlFor="variant-stock-label">Cantidad disponible</Label>
-            <Input
-              id="variant-stock"
-              inputMode="numeric"
-              placeholder="Unidades disponibles"
-              aria-invalid={stockError !== null}
-              aria-describedby={stockError ? "variant-stock-error" : undefined}
-              value={form.stock}
-              onChange={(e) => setForm({ ...form, stock: e.target.value })}
-            />
-            {stockError ? (
-              <p id="variant-stock-error" className="text-xs text-destructive" role="alert">
-                {stockError}
-              </p>
-            ) : null}
-          </div>
-        ) : null}
-      </div>
 
-      {/* Código propio toggle */}
-      <div className="space-y-2">
-        <div className="flex items-center gap-2">
-          <Switch
-            id="variant-show-sku"
-            checked={showSku}
-            onCheckedChange={(checked) => {
-              setShowSku(checked);
-              if (!checked) setForm((current) => ({ ...current, sku: "" }));
-            }}
-          />
-          <Label htmlFor="variant-show-sku">Código propio</Label>
+        {/* Descuento toggle */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <Switch
+              id="variant-show-discount"
+              checked={showDiscount}
+              onCheckedChange={(checked) => {
+                setShowDiscount(checked);
+                setForm((current) => ({
+                  ...current,
+                  discountType: checked
+                    ? current.discountType === "none"
+                      ? "percent"
+                      : current.discountType
+                    : "none",
+                  discountValue: checked ? current.discountValue : "",
+                }));
+              }}
+            />
+            <Label htmlFor="variant-show-discount">Descuento</Label>
+          </div>
+          {showDiscount ? (
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="variant-discount-type">Tipo de descuento</Label>
+                <select
+                  id="variant-discount-type"
+                  value={form.discountType}
+                  onChange={(e) =>
+                    setForm({ ...form, discountType: e.target.value as DiscountType, discountValue: "" })
+                  }
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                >
+                  <option value="percent">Porcentaje (%)</option>
+                  <option value="fixed">Monto fijo</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="variant-discount-value">
+                  {form.discountType === "percent" ? "Porcentaje" : "Monto"}
+                </Label>
+                <Input
+                  id="variant-discount-value"
+                  inputMode="decimal"
+                  placeholder={form.discountType === "percent" ? "10" : "50.00"}
+                  value={form.discountValue}
+                  onChange={(e) => setForm({ ...form, discountValue: e.target.value })}
+                />
+              </div>
+            </div>
+          ) : null}
+          {showDiscount && discountedPriceCents !== null && priceCents !== null ? (
+            <div className="rounded-md border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-800">
+              <span className="line-through text-muted-foreground mr-2">
+                {formatMoney(priceCents, currency)}
+              </span>
+              <span className="font-semibold">{formatMoney(discountedPriceCents, currency)}</span>
+            </div>
+          ) : null}
         </div>
-        {showSku ? (
-          <div className="space-y-2">
-            <Input
-              id="variant-sku"
-              value={form.sku}
-              onChange={(e) => setForm({ ...form, sku: e.target.value })}
-            />
-            <p className="text-xs text-muted-foreground">(SKU opcional)</p>
-          </div>
-        ) : null}
-      </div>
 
-      {/* Activar/desactivar variante individual */}
-      <div className="space-y-2">
-        <div className="flex items-center gap-2">
-          <Switch
-            id="variant-active"
-            checked={form.active}
-            disabled={busy}
-            onCheckedChange={(checked) => setForm({ ...form, active: checked })}
-          />
-          <Label htmlFor="variant-active">
-            {form.active ? "Activa" : "Inactiva"}
-          </Label>
+        {/* Por Inventario toggle + stock */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <Switch
+              id="variant-inventory-mode"
+              checked={!form.madeToOrder}
+              onCheckedChange={(checked) => setForm({ ...form, madeToOrder: !checked })}
+            />
+            <Label htmlFor="variant-inventory-mode">Por Inventario</Label>
+          </div>
+          {!form.madeToOrder ? (
+            <div className="space-y-2">
+              <Label htmlFor="variant-stock-label">Cantidad disponible</Label>
+              <Input
+                id="variant-stock"
+                inputMode="numeric"
+                placeholder="Unidades disponibles"
+                aria-invalid={stockError !== null}
+                aria-describedby={stockError ? "variant-stock-error" : undefined}
+                value={form.stock}
+                onChange={(e) => setForm({ ...form, stock: e.target.value })}
+              />
+              {stockError ? (
+                <p id="variant-stock-error" className="text-xs text-destructive" role="alert">
+                  {stockError}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+
+        {/* Código propio toggle */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <Switch
+              id="variant-show-sku"
+              checked={showSku}
+              onCheckedChange={(checked) => {
+                setShowSku(checked);
+                if (!checked) setForm((current) => ({ ...current, sku: "" }));
+              }}
+            />
+            <Label htmlFor="variant-show-sku">Código propio</Label>
+          </div>
+          {showSku ? (
+            <div className="space-y-2">
+              <Input
+                id="variant-sku"
+                value={form.sku}
+                onChange={(e) => setForm({ ...form, sku: e.target.value })}
+              />
+              <p className="text-xs text-muted-foreground">(SKU opcional)</p>
+            </div>
+          ) : null}
+        </div>
+
+        {/* Activar/desactivar variante individual */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <Switch
+              id="variant-active"
+              checked={form.active}
+              disabled={busy}
+              onCheckedChange={(checked) => setForm({ ...form, active: checked })}
+            />
+            <Label htmlFor="variant-active">
+              {form.active ? "Activa" : "Inactiva"}
+            </Label>
+          </div>
         </div>
       </div>
 

@@ -98,7 +98,9 @@ export default async function PanelPage() {
               <div className="grid grid-cols-[auto_minmax(2rem,1fr)_auto] items-center gap-3 text-sm">
                 <span className="text-muted-foreground">Almacenamiento</span>
                 <UsageProgress value={storageUsage} label="Uso de almacenamiento" />
-                <span>{formatBytes(used)}</span>
+                <span className="text-right text-xs">
+                  {formatBytes(used)} / {formatBytes(plan.max_storage_bytes)}
+                </span>
               </div>
 
               <Button

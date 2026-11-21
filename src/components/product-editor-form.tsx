@@ -191,7 +191,7 @@ export function ProductEditorForm({
           <h2 className="text-base font-semibold">Editar producto</h2>
           <Link
             href="/products"
-            className="inline-flex min-h-9 items-center gap-1.5 text-sm text-muted-foreground hover:text-primary"
+            className="inline-flex min-h-9 items-center gap-1.5 text-xs text-muted-foreground hover:text-primary"
           >
             <ArrowLeft className="size-4" aria-hidden="true" />
             Volver a productos
@@ -247,9 +247,6 @@ export function ProductEditorForm({
                         <span className="block text-sm font-semibold leading-tight">
                           Mostrar Precio
                         </span>
-                        <span className="mt-1 block text-xs leading-snug text-muted-foreground">
-                          Valor publicado
-                        </span>
                       </span>
                       <span
                         aria-hidden="true"
@@ -281,9 +278,6 @@ export function ProductEditorForm({
                       <span className="min-w-0 flex-1">
                         <span className="block text-sm font-semibold leading-tight">
                           Sin Precio
-                        </span>
-                        <span className="mt-1 block text-xs leading-snug text-muted-foreground">
-                          A solicitud
                         </span>
                       </span>
                       <span
