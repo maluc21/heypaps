@@ -132,7 +132,7 @@
   --popover: var(--color-white);
   --popover-foreground: var(--base-800);
   --primary: var(--primary-300);
-  --primary-foreground: var(--color-black);
+  --primary-foreground: #004b23;
   --secondary: var(--secondary-50);
   --secondary-foreground: var(--color-black);
   --muted: #f3f4f6;
@@ -152,7 +152,7 @@
   --sidebar: var(--base-100);
   --sidebar-foreground: var(--base-800);
   --sidebar-primary: var(--primary-300);
-  --sidebar-primary-foreground: var(--color-black);
+  --sidebar-primary-foreground: #004b23;
   --sidebar-accent: var(--base-200);
   --sidebar-accent-foreground: var(--base-800);
   --sidebar-border: var(--base-200);
@@ -167,7 +167,7 @@
   --popover: var(--base-950);
   --popover-foreground: var(--base-200);
   --primary: var(--primary-300);
-  --primary-foreground: var(--color-black);
+  --primary-foreground: #004b23;
   --secondary: var(--secondary-50);
   --secondary-foreground: var(--color-black);
   --muted: var(--base-900);
@@ -186,7 +186,7 @@
   --sidebar: var(--base-900);
   --sidebar-foreground: var(--base-200);
   --sidebar-primary: var(--primary-300);
-  --sidebar-primary-foreground: var(--color-black);
+  --sidebar-primary-foreground: #004b23;
   --sidebar-accent: var(--base-800);
   --sidebar-accent-foreground: var(--base-200);
   --sidebar-border: var(--base-800);

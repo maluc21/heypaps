@@ -5,6 +5,7 @@ import {
   hidesSinglePresentation,
   pairsFromAttributes,
   stockToStorage,
+  stockUnitToStorage,
   variantLabel,
 } from "@/lib/variants";
 
@@ -107,6 +108,21 @@ describe("stockToStorage", () => {
     expect(() => stockToStorage("-1", false)).toThrow(/entero/);
     expect(() => stockToStorage("1.5", false)).toThrow(/entero/);
     expect(() => stockToStorage("abc", false)).toThrow(/entero/);
+  });
+});
+
+describe("stockUnitToStorage", () => {
+  it("recorta y guarda el nombre opcional de la cantidad", () => {
+    expect(stockUnitToStorage("  bolsas  ", false)).toBe("bolsas");
+    expect(stockUnitToStorage("", false)).toBeNull();
+  });
+
+  it("ignora el nombre cuando la variante es por encargo", () => {
+    expect(stockUnitToStorage("cajas", true)).toBeNull();
+  });
+
+  it("limita el nombre a 40 caracteres", () => {
+    expect(() => stockUnitToStorage("x".repeat(41), false)).toThrow(/40 caracteres/);
   });
 });
 

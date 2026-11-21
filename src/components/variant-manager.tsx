@@ -45,6 +45,7 @@ export type EditableVariant = {
   discount_type: DiscountType;
   discount_value: number;
   stock: number | null;
+  stock_unit: string | null;
   active: boolean;
   position: number;
 };
@@ -111,6 +112,7 @@ function toFormState(variant: EditableVariant | null): VariantInput {
       discountValue: "",
       madeToOrder: true,
       stock: "",
+      stockUnit: "",
       active: true,
     };
   }
@@ -130,6 +132,7 @@ function toFormState(variant: EditableVariant | null): VariantInput {
         : String(variant.discount_value),
     madeToOrder: variant.stock === null,
     stock: variant.stock === null ? "" : String(variant.stock),
+    stockUnit: variant.stock_unit ?? "",
     active: variant.active,
   };
 }
@@ -196,6 +199,11 @@ export function VariantManager({ productId, productVersion, currency, variants, 
   const sorted = [...attributedVariants].sort(
     (a, b) => a.final_price_cents - b.final_price_cents,
   );
+  const editingVariantIndex = editing?.variantId
+    ? sorted.findIndex((variant) => variant.id === editing.variantId)
+    : -1;
+  const editingVariantNumber =
+    editingVariantIndex >= 0 ? editingVariantIndex + 1 : sorted.length + 1;
   const baseVariant = variants.find((v) => Object.keys(v.attributes ?? {}).length === 0);
   const basePrice = baseVariant ? (baseVariant.price_cents / 100).toFixed(2) : "";
 
@@ -210,12 +218,15 @@ export function VariantManager({ productId, productVersion, currency, variants, 
       <CardContent className="space-y-4">
         {sorted.length > 0 ? (
           <ul className="space-y-2">
-            {sorted.map((variant) => (
+            {sorted.map((variant, index) => (
               <li
                 key={variant.id}
                 className="flex items-center gap-2 rounded-lg border border-border p-3"
               >
                 <div className="min-w-0 flex-1">
+                  <p className="text-xs font-semibold text-muted-foreground">
+                    Variante {index + 1}
+                  </p>
                   <p className="truncate text-sm font-medium">
                     {variantLabel(variant.attributes)}
                   </p>
@@ -228,7 +239,9 @@ export function VariantManager({ productId, productVersion, currency, variants, 
                     {variant.stock === null
                       ? "Sin límite de stock"
                       : variant.stock > 0
-                        ? `${variant.stock} en stock`
+                        ? variant.stock_unit
+                          ? `${variant.stock} ${variant.stock_unit}`
+                          : `${variant.stock} en stock`
                         : "Agotado"}
                   </p>
                 </div>
@@ -262,6 +275,7 @@ export function VariantManager({ productId, productVersion, currency, variants, 
           <VariantForm
             key={editing.variantId ?? "new"}
             initial={editing}
+            variantNumber={editingVariantNumber}
             currency={currency}
             basePrice={basePrice}
             busy={busy}
@@ -286,6 +300,7 @@ export function VariantManager({ productId, productVersion, currency, variants, 
 
 function VariantForm({
   initial,
+  variantNumber,
   currency,
   basePrice,
   busy,
@@ -294,6 +309,7 @@ function VariantForm({
   onSave,
 }: {
   initial: VariantInput;
+  variantNumber: number;
   currency: string;
   basePrice: string;
   busy: boolean;
@@ -444,6 +460,22 @@ function VariantForm({
         onSave(next);
       }}
     >
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-xs font-semibold text-muted-foreground">
+          Variante {variantNumber}
+        </p>
+        <div className="flex items-center gap-2">
+          <Switch
+            id="variant-active"
+            checked={form.active}
+            disabled={busy}
+            onCheckedChange={(checked) => setForm({ ...form, active: checked })}
+          />
+          <Label htmlFor="variant-active">
+            {form.active ? "Activa" : "Inactiva"}
+          </Label>
+        </div>
+      </div>
       {/* Tipo y Valor de la variante */}
       <div className="space-y-2">
         <div className="flex justify-end">
@@ -598,9 +630,6 @@ function VariantForm({
         </div>
         {!customAttributes && pair.type === "tamano" ? (
           <div className="space-y-2">
-            <p className="text-sm font-medium">
-              Dimensiones (alto × ancho × profundidad)
-            </p>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               {SIZE_DIMENSION_FIELDS.map((dimension) => (
                 <div key={dimension.key} className="space-y-2">
@@ -649,6 +678,7 @@ function VariantForm({
       </div>
 
       <div className="space-y-4 rounded-lg border border-border bg-muted/40 p-3">
+        <p className="text-sm font-semibold">Opcionales</p>
         {/* Precio toggle */}
         <div className="space-y-2">
           <div className="flex items-center gap-2">
@@ -658,11 +688,13 @@ function VariantForm({
               disabled={pricingMode === "REQUEST_ALL"}
               onCheckedChange={setShowPrice}
             />
-            <Label htmlFor="variant-show-price">Precio específico</Label>
+            <Label htmlFor="variant-show-price">Precio específico ({currency})</Label>
           </div>
           {showPrice ? (
             <div className="space-y-2">
-              <Label htmlFor="variant-price">Precio específico ({currency})</Label>
+              <Label htmlFor="variant-price" className="sr-only">
+                Precio específico ({currency})
+              </Label>
               <Input
                 id="variant-price"
                 inputMode="decimal"
@@ -703,7 +735,7 @@ function VariantForm({
           {showDiscount ? (
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label htmlFor="variant-discount-type">Tipo de descuento</Label>
+                <Label htmlFor="variant-discount-type">Tipo</Label>
                 <select
                   id="variant-discount-type"
                   value={form.discountType}
@@ -752,16 +784,34 @@ function VariantForm({
           </div>
           {!form.madeToOrder ? (
             <div className="space-y-2">
-              <Label htmlFor="variant-stock-label">Cantidad disponible</Label>
-              <Input
-                id="variant-stock"
-                inputMode="numeric"
-                placeholder="Unidades disponibles"
-                aria-invalid={stockError !== null}
-                aria-describedby={stockError ? "variant-stock-error" : undefined}
-                value={form.stock}
-                onChange={(e) => setForm({ ...form, stock: e.target.value })}
-              />
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="variant-stock">Cantidad disponible</Label>
+                  <Input
+                    id="variant-stock"
+                    inputMode="numeric"
+                    placeholder="Unidades disponibles"
+                    aria-invalid={stockError !== null}
+                    aria-describedby={stockError ? "variant-stock-error" : undefined}
+                    value={form.stock}
+                    onChange={(e) => setForm({ ...form, stock: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="variant-stock-unit">Nombre de la cantidad (opcional)</Label>
+                  <Input
+                    id="variant-stock-unit"
+                    maxLength={40}
+                    placeholder="bolsas"
+                    value={form.stockUnit}
+                    onChange={(e) => setForm({ ...form, stockUnit: e.target.value })}
+                    aria-describedby="variant-stock-unit-hint"
+                  />
+                  <p id="variant-stock-unit-hint" className="text-xs text-muted-foreground">
+                    Ej.: bolsas, sacos o cajas.
+                  </p>
+                </div>
+              </div>
               {stockError ? (
                 <p id="variant-stock-error" className="text-xs text-destructive" role="alert">
                   {stockError}
@@ -791,25 +841,13 @@ function VariantForm({
                 value={form.sku}
                 onChange={(e) => setForm({ ...form, sku: e.target.value })}
               />
-              <p className="text-xs text-muted-foreground">(SKU opcional)</p>
+              <p className="text-xs text-muted-foreground">
+                Si posee un código identificativo propio, puede ingresarlo.
+              </p>
             </div>
           ) : null}
         </div>
 
-        {/* Activar/desactivar variante individual */}
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <Switch
-              id="variant-active"
-              checked={form.active}
-              disabled={busy}
-              onCheckedChange={(checked) => setForm({ ...form, active: checked })}
-            />
-            <Label htmlFor="variant-active">
-              {form.active ? "Activa" : "Inactiva"}
-            </Label>
-          </div>
-        </div>
       </div>
 
       <div className="flex gap-2">

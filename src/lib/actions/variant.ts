@@ -7,6 +7,7 @@ import {
   attributesFromPairs,
   discountValueToStorage,
   stockToStorage,
+  stockUnitToStorage,
   type AttributePair,
   type DiscountType,
 } from "@/lib/variants";
@@ -23,6 +24,7 @@ export type VariantInput = {
   discountValue: string;
   madeToOrder: boolean;
   stock: string;
+  stockUnit: string;
   active: boolean;
 };
 
@@ -53,6 +55,7 @@ export async function saveVariant(
       discountType: input.discountType,
       discountValue: discountValueToStorage(input.discountType, input.discountValue, priceCents),
       stock: stockToStorage(input.stock, input.madeToOrder),
+      stockUnit: stockUnitToStorage(input.stockUnit, input.madeToOrder),
     };
   } catch (err) {
     return { error: (err as Error).message };
@@ -82,6 +85,7 @@ export async function saveVariant(
     p_discount_type: payload.discountType,
     p_discount_value: payload.discountValue,
     p_stock: payload.stock,
+    p_stock_unit: payload.stockUnit,
     p_active: input.active,
     p_position: 0,
     p_expected_version: expectedVersion,

@@ -77,6 +77,7 @@ export type PublicVariant = {
   discount_value: number;
   final_price_cents: number;
   stock: number | null;
+  stock_unit: string | null;
   image_file_id: string | null;
   active: boolean;
   position: number;

@@ -131,6 +131,7 @@ export function ProductEditorForm({
             discountValue,
             madeToOrder: baseVariant.stock === null,
             stock: baseVariant.stock === null ? "" : String(baseVariant.stock),
+            stockUnit: "",
             active: baseVariant.active,
           });
           if (vr.error && vr.error !== "CONFLICT") {
@@ -147,6 +148,7 @@ export function ProductEditorForm({
           discountValue: "",
           madeToOrder: true,
           stock: "",
+          stockUnit: "",
           active: true,
         });
         if (vr.error && vr.error !== "CONFLICT") {

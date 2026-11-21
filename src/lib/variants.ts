@@ -195,6 +195,17 @@ export function stockToStorage(input: string, madeToOrder: boolean): number | nu
   return value;
 }
 
+/** Nombre opcional para describir la unidad del inventario ("cajas", "sacos"). */
+export function stockUnitToStorage(input: string, madeToOrder: boolean): string | null {
+  if (madeToOrder) return null;
+  const trimmed = input.trim();
+  if (trimmed === "") return null;
+  if (trimmed.length > MAX_ATTRIBUTE_LENGTH) {
+    throw new Error(`El nombre de la cantidad admite hasta ${MAX_ATTRIBUTE_LENGTH} caracteres.`);
+  }
+  return trimmed;
+}
+
 /**
  * ¿Guardar esta variante activa va a ocultar la presentación única?
  * Lo hace la base: si una variante con atributos queda activa, la variante sin

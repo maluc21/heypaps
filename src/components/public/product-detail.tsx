@@ -219,7 +219,9 @@ export function ProductDetail({ store, storeId, product, productUrl }: Props) {
               {selected.stock === null
                 ? "Por encargo"
                 : selected.stock > 0
-                  ? `${selected.stock} disponible(s)`
+                  ? selected.stock_unit
+                    ? `${selected.stock} ${selected.stock_unit}`
+                    : `${selected.stock} disponible(s)`
                   : "Agotado"}
             </p>
           ) : null}
