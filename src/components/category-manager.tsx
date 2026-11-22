@@ -144,9 +144,9 @@ export function CategoryManager({ storeId, categories }: Props) {
           {sorted.map((category, index) => (
             <li
               key={category.id}
-              className="flex items-center gap-2 rounded-lg border border-border p-2"
+              className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-lg border border-border p-2 sm:flex sm:flex-nowrap"
             >
-              <div className="min-w-0 flex-1">
+              <div className="min-w-0 flex-1 sm:col-auto">
                 <input
                   defaultValue={category.name}
                   onBlur={(e) => {
@@ -166,7 +166,7 @@ export function CategoryManager({ storeId, categories }: Props) {
                 aria-label={`Mostrar ${category.name}`}
               />
 
-              <div className="flex flex-col">
+              <div className="col-start-1 row-start-2 flex items-center gap-1 sm:col-auto sm:row-auto sm:flex-col">
                 <Button
                   variant="ghost"
                   size="xs"
@@ -190,6 +190,7 @@ export function CategoryManager({ storeId, categories }: Props) {
               <Button
                 variant="destructive"
                 size="icon"
+                className="col-start-2 row-start-2"
                 disabled={busy}
                 onClick={() => void handleDelete(category.id, category.name)}
                 aria-label={`Eliminar ${category.name}`}

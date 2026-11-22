@@ -138,7 +138,7 @@ export function TagManager({ storeId, tags }: Props) {
           {sorted.map((tag, index) => (
             <li
               key={tag.id}
-              className="flex items-center gap-2 rounded-lg border border-border p-3"
+              className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 rounded-lg border border-border p-3 sm:flex sm:flex-nowrap"
             >
               <span
                 className="h-4 w-4 shrink-0 rounded-full"
@@ -163,6 +163,7 @@ export function TagManager({ storeId, tags }: Props) {
                 <Button
                   variant="ghost"
                   size="xs"
+                  className="col-start-1 row-start-2 sm:col-auto sm:row-auto"
                   disabled={busy}
                   onClick={() => void handleColor(tag, null)}
                   aria-label={`Quitar color de ${tag.name}`}
@@ -171,7 +172,7 @@ export function TagManager({ storeId, tags }: Props) {
                 </Button>
               ) : null}
 
-              <div className="flex flex-col">
+              <div className="col-start-2 row-start-2 flex justify-center gap-1 sm:col-auto sm:row-auto sm:flex-col">
                 <Button
                   variant="ghost"
                   size="xs"
@@ -195,6 +196,7 @@ export function TagManager({ storeId, tags }: Props) {
               <Button
                 variant="ghost"
                 size="sm"
+                className="col-start-3 row-start-2 sm:col-auto sm:row-auto"
                 disabled={busy}
                 onClick={() => void handleDelete(tag)}
                 aria-label={`Eliminar ${tag.name}`}

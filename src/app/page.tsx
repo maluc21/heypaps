@@ -5,7 +5,7 @@ export const metadata = {
 
 export default function LandingPage() {
   return (
-    <div className="flex min-h-screen w-full flex-col items-center justify-center bg-muted px-6">
+    <div className="flex min-h-dvh w-full flex-col items-center justify-center bg-muted px-4 py-8 sm:px-6">
       <div className="max-w-2xl text-center space-y-6">
         <h1 className="text-3xl font-bold tracking-tight">Catálogos digitales para microemprendedores</h1>
         <p className="text-lg text-muted-foreground">

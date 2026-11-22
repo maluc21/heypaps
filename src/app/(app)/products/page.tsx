@@ -67,7 +67,7 @@ export default async function ProductsPage() {
 
   return (
     <PanelShell>
-      <div className="space-y-4 p-4">
+      <div className="space-y-4 p-3 sm:p-4">
         <div className="hidden sm:block">
           <ProductsTable
             initialProducts={(products ?? []) as Product[]}

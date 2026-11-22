@@ -139,7 +139,7 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div className="flex min-h-screen w-full items-center justify-center bg-muted px-4">
+    <div className="flex min-h-dvh w-full items-center justify-center bg-muted px-3 py-4 sm:px-4">
       <Card className="w-full max-w-md space-y-4">
         <CardHeader className="text-center">
           <CardTitle>Crea tu Catálogo</CardTitle>
@@ -238,14 +238,15 @@ export default function OnboardingPage() {
             <form onSubmit={handleCreateProduct} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="productName">Nombre del producto</Label>
-                <Input id="productName" name="name" value={productName} onChange={(e) => setProductName(e.target.value)} required />
+                <Input id="productName" name="name" autoComplete="off" value={productName} onChange={(e) => setProductName(e.target.value)} required />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="price">Precio ({currency === "HNL" ? "L" : "USD"})</Label>
                 <Input
                   id="price"
                   name="price"
-                  type="text"
+                  type="number"
+                  step="any"
                   inputMode="decimal"
                   autoComplete="off"
                   value={price}

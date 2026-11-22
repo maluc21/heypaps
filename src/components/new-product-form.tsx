@@ -135,6 +135,8 @@ export function NewProductForm({
             <Label htmlFor="new-price">Precio ({currency})</Label>
             <Input
               id="new-price"
+              type="number"
+              step="any"
               inputMode="decimal"
               placeholder="450.50"
               value={price}
@@ -148,7 +150,7 @@ export function NewProductForm({
             ) : null}
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="new-category">Categoría</Label>
               <select
@@ -195,6 +197,8 @@ export function NewProductForm({
                 <Label htmlFor="new-stock-quantity">Cantidad disponible</Label>
                 <Input
                   id="new-stock-quantity"
+                  type="number"
+                  step="1"
                   inputMode="numeric"
                   value={stockQuantity}
                   onChange={(e) => setStockQuantity(e.target.value)}
@@ -203,7 +207,7 @@ export function NewProductForm({
             ) : null}
           </InventoryModeOptions>
         </CardContent>
-        <CardFooter className="gap-2">
+        <CardFooter className="sticky bottom-0 z-30 -mx-4 gap-2 border-t bg-card px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 lg:static lg:mx-0 lg:px-(--card-spacing)">
           <Button
             type="button"
             variant="outline"

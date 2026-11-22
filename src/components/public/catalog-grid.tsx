@@ -49,7 +49,7 @@ export function CatalogGrid({ storeSlug, products, currency, pricingMode }: Prop
         onChange={(e) => setQuery(e.target.value)}
         placeholder="Buscar producto…"
         aria-label="Buscar producto"
-        className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="h-11 w-full rounded-lg border border-border bg-white px-3 py-2.5 text-base text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
       />
 
       {filtered.length === 0 ? (
@@ -57,7 +57,7 @@ export function CatalogGrid({ storeSlug, products, currency, pricingMode }: Prop
           Sin resultados para “{query.trim()}”.
         </p>
       ) : (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-3 min-[380px]:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
           {filtered.map((product, index) => (
             <ProductCard
               key={product.id}

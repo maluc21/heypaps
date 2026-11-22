@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Edit, Search } from "lucide-react";
+import { Edit, Plus, Search } from "lucide-react";
 
 type FilterOption = {
   id: string;
@@ -77,17 +77,27 @@ export function ProductListMobile({
     <div className="space-y-4">
       <header className="flex items-center justify-between gap-3">
         <h2 className="text-lg font-semibold">Productos</h2>
-        <Button
-          type="button"
-          variant="outline"
-          size="icon"
-          aria-label={filtersOpen ? "Ocultar búsqueda y filtros" : "Mostrar búsqueda y filtros"}
-          aria-expanded={filtersOpen}
-          aria-controls="mobile-product-filters"
-          onClick={() => setFiltersOpen((open) => !open)}
-        >
-          <Search aria-hidden="true" />
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            aria-label={filtersOpen ? "Ocultar búsqueda y filtros" : "Mostrar búsqueda y filtros"}
+            aria-expanded={filtersOpen}
+            aria-controls="mobile-product-filters"
+            onClick={() => setFiltersOpen((open) => !open)}
+          >
+            <Search aria-hidden="true" />
+          </Button>
+          <Button
+            render={<Link href="/products/nuevo" />}
+            size="icon"
+            aria-label="Nuevo producto"
+            title="Nuevo producto"
+          >
+            <Plus aria-hidden="true" />
+          </Button>
+        </div>
       </header>
 
       <div id="mobile-product-filters" hidden={!filtersOpen} className="space-y-3">

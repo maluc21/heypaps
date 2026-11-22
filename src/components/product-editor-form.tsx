@@ -407,6 +407,8 @@ export function ProductEditorForm({
                 <Label htmlFor="base-price">Precio ({currency})</Label>
                 <Input
                   id="base-price"
+                  type="number"
+                  step="any"
                   inputMode="decimal"
                   value={basePrice}
                   onChange={(e) => setBasePrice(e.target.value)}
@@ -469,6 +471,8 @@ export function ProductEditorForm({
                       <Label htmlFor="stock-quantity">Cantidad disponible</Label>
                       <Input
                         id="stock-quantity"
+                        type="number"
+                        step="1"
                         inputMode="numeric"
                         value={stockQuantity}
                         onChange={(e) => setStockQuantity(e.target.value)}
@@ -528,7 +532,7 @@ export function ProductEditorForm({
             </CardContent>
           </Card>
         </div>
-        <Button onClick={save} disabled={saving} className="w-full lg:hidden">
+        <Button onClick={save} disabled={saving} className="sticky bottom-[calc(env(safe-area-inset-bottom)+0.25rem)] z-30 w-full shadow-lg lg:hidden">
           {saving ? "Guardando…" : "Guardar"}
         </Button>
       </div>

@@ -346,6 +346,9 @@ export function StoreSettingsForm({ store, role, plan, usage }: Props) {
             <Label htmlFor="store-whatsapp">WhatsApp</Label>
             <Input
               id="store-whatsapp"
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
               value={whatsapp}
               disabled={!isOwner || saving}
               placeholder="+504 1234 5678"
@@ -465,6 +468,8 @@ export function StoreSettingsForm({ store, role, plan, usage }: Props) {
               </Label>
               <Input
                 id="store-fx"
+                type="number"
+                step="any"
                 value={fxRate}
                 disabled={!isOwner || saving}
                 inputMode="decimal"
@@ -542,7 +547,7 @@ export function StoreSettingsForm({ store, role, plan, usage }: Props) {
               onBlur={() => persist()}
             />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="store-city">Ciudad</Label>
               <Input

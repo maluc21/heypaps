@@ -1,6 +1,7 @@
 import { Button as ButtonPrimitive } from "@base-ui/react/button"
 import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "cn"
+import * as React from "react"
 import { CircleArrowRightIcon } from "lucide-react"
 
 const buttonVariants = cva(
@@ -47,6 +48,10 @@ function Button({
   children,
   ...props
 }: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
+  const hasIcon = React.Children.toArray(children).some(
+    (child) => React.isValidElement(child) && typeof child.type !== "string"
+  )
+
   return (
     <ButtonPrimitive
       data-slot="button"
@@ -54,7 +59,7 @@ function Button({
       {...props}
     >
       {children}
-      {size?.startsWith("icon") ? null : (
+      {size?.startsWith("icon") || hasIcon ? null : (
         <CircleArrowRightIcon aria-hidden="true" className="size-4 shrink-0" />
       )}
     </ButtonPrimitive>

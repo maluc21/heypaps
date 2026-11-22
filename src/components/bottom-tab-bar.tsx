@@ -24,9 +24,9 @@ export function BottomTabBar() {
   return (
     <nav
       aria-label="Navegación móvil"
-      className="fixed inset-x-0 bottom-0 z-50 border-t border-border/80 bg-background/95 px-2 pt-2 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden"
+      className="fixed inset-x-0 bottom-0 z-50 border-t border-border/80 bg-background/95 px-1 pt-1 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden"
     >
-      <div className="mx-auto grid max-w-xl grid-cols-5 gap-1">
+      <div className="mx-auto grid h-[4.25rem] max-w-xl grid-cols-5 gap-0.5">
         {navItems.map((item) => {
           const isActive =
             pathname === item.href ||
@@ -38,7 +38,7 @@ export function BottomTabBar() {
               key={item.href}
               href={item.href}
               aria-current={isActive ? "page" : undefined}
-              className={`flex min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1 py-2 text-xs font-medium transition-colors ${
+              className={`flex min-h-16 min-w-0 flex-col items-center justify-center gap-0.5 rounded-xl px-0.5 py-1 text-[11px] leading-tight font-medium transition-colors ${
                 isActive
                   ? "bg-muted text-foreground"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground"

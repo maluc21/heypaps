@@ -26,7 +26,7 @@ export default async function PanelLayout({
   const store = await getCurrentStore(user.id, supabase);
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-dvh flex-col">
       <TopBar storeName={store?.name || "Catálogo"} />
       <main className="flex-1 overflow-auto">{children}</main>
     </div>

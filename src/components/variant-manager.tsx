@@ -591,7 +591,7 @@ function VariantForm({
         </div>
         {!customAttributes && pair.type === "tamano" ? (
           <div className="space-y-2">
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 sm:grid-cols-4">
               {SIZE_DIMENSION_FIELDS.map((dimension) => (
                 <div key={dimension.key} className="space-y-2">
                   <Label htmlFor={`variant-${dimension.key}`}>
@@ -652,6 +652,8 @@ function VariantForm({
               </Label>
               <Input
                 id="variant-price"
+                type="number"
+                step="any"
                 inputMode="decimal"
                 placeholder={basePrice || "450.50"}
                 value={form.price}
@@ -709,6 +711,8 @@ function VariantForm({
                 </Label>
                 <Input
                   id="variant-discount-value"
+                  type="number"
+                  step="any"
                   inputMode="decimal"
                   placeholder={form.discountType === "percent" ? "10" : "50.00"}
                   value={form.discountValue}
@@ -744,6 +748,8 @@ function VariantForm({
                   <Label htmlFor="variant-stock">Cantidad disponible</Label>
                   <Input
                     id="variant-stock"
+                    type="number"
+                    step="1"
                     inputMode="numeric"
                     aria-invalid={stockError !== null}
                     aria-describedby={stockError ? "variant-stock-error" : undefined}
