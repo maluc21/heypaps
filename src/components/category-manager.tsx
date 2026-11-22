@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { ArrowDown, ArrowUp, Check, Pencil, Trash2, X } from "lucide-react";
+import { ArrowDown, ArrowUp, Check, Edit, Trash2, X } from "lucide-react";
 import {
   createCategory,
   deleteCategory,
@@ -142,7 +142,12 @@ export function CategoryManager({ storeId, categories }: Props) {
             if (e.key === "Enter") void handleCreate();
           }}
         />
-        <Button onClick={handleCreate} disabled={busy || name.trim().length < 2}>
+        <Button
+          size="sm"
+          className="h-11 lg:h-9"
+          onClick={handleCreate}
+          disabled={busy || name.trim().length < 2}
+        >
           Crear
         </Button>
       </div>
@@ -156,11 +161,13 @@ export function CategoryManager({ storeId, categories }: Props) {
           {sorted.map((category, index) => (
             <li
               key={category.id}
-              className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-lg border border-border p-2"
+              className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-lg border border-border bg-white p-2"
             >
               <div
                 className={`flex min-w-0 items-center gap-1 ${
-                  editingId === category.id ? "col-span-2" : "col-start-1 row-start-1"
+                  editingId === category.id
+                    ? "col-span-2 row-start-1"
+                    : "col-start-1 row-start-1"
                 }`}
               >
                 {editingId === category.id ? (
@@ -207,45 +214,51 @@ export function CategoryManager({ storeId, categories }: Props) {
                     <span className="min-w-0 flex-1 truncate text-base font-semibold">
                       {category.name}
                     </span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="min-h-11 shrink-0 gap-1 px-2 text-sm"
-                      disabled={busy}
-                      onClick={() => {
-                        setEditingId(category.id);
-                        setEditingName(category.name);
-                      }}
-                      aria-label={`Editar nombre de ${category.name}`}
-                    >
-                      <Pencil className="size-4" aria-hidden="true" />
-                      Editar
-                    </Button>
                   </>
                 )}
               </div>
 
               <div
                 className={`flex items-center gap-2 ${
-                  editingId === category.id ? "col-start-2 row-start-2" : "col-start-2 row-start-1"
+                  editingId === category.id
+                    ? "col-start-2 row-start-2 flex-row"
+                    : "col-start-2 row-start-1 row-span-2 flex-col"
                 }`}
               >
-                <Switch
-                  checked={category.active}
-                  onCheckedChange={(checked) => void handleToggle(category.id, checked)}
-                  aria-label={`Mostrar ${category.name}`}
-                />
-                <Button
-                  variant="outline"
-                  size="icon-sm"
-                  className="bg-white text-destructive hover:bg-destructive/10 hover:text-destructive"
-                  disabled={busy}
-                  onClick={() => void handleDelete(category.id, category.name)}
-                  aria-label={`Eliminar ${category.name}`}
-                  title={`Eliminar ${category.name}`}
-                >
-                  <Trash2 className="size-5" aria-hidden="true" />
-                </Button>
+                {editingId !== category.id ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="min-h-12 gap-1.5 px-2 text-sm"
+                    disabled={busy}
+                    onClick={() => {
+                      setEditingId(category.id);
+                      setEditingName(category.name);
+                    }}
+                    aria-label={`Editar nombre de ${category.name}`}
+                  >
+                    <Edit className="size-6" aria-hidden="true" />
+                    Editar
+                  </Button>
+                ) : null}
+                <div className="flex items-center gap-2">
+                  <Switch
+                    checked={category.active}
+                    onCheckedChange={(checked) => void handleToggle(category.id, checked)}
+                    aria-label={`Mostrar ${category.name}`}
+                  />
+                  <Button
+                    variant="outline"
+                    size="icon-sm"
+                    className="bg-white text-destructive hover:bg-destructive/10 hover:text-destructive"
+                    disabled={busy}
+                    onClick={() => void handleDelete(category.id, category.name)}
+                    aria-label={`Eliminar ${category.name}`}
+                    title={`Eliminar ${category.name}`}
+                  >
+                    <Trash2 className="size-5" aria-hidden="true" />
+                  </Button>
+                </div>
               </div>
 
               <div className="col-start-1 row-start-2 flex items-center gap-1">
