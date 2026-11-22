@@ -4,8 +4,10 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Edit, Plus, Search } from "lucide-react";
+import { formatMoney } from "@/lib/utils";
+import { Barcode, Boxes, Edit, Plus, Search } from "lucide-react";
 
 type FilterOption = {
   id: string;
@@ -13,6 +15,14 @@ type FilterOption = {
 };
 
 type StatusFilter = "all" | "visible" | "hidden" | "paused";
+
+type Variant = {
+  sku: string | null;
+  stock: number | null;
+  stock_unit: string | null;
+  active: boolean;
+  final_price_cents: number;
+};
 
 type Product = {
   id: string;
@@ -24,16 +34,19 @@ type Product = {
   paused: boolean;
   category_id: string | null;
   tag_id: string | null;
+  variants: Variant[];
 };
 
 export function ProductListMobile({
   products,
   categories,
   tags,
+  currency,
 }: {
   products: Product[];
   categories: FilterOption[];
   tags: FilterOption[];
+  currency: string;
 }) {
   const [query, setQuery] = useState("");
   const [categoryId, setCategoryId] = useState("");
@@ -192,32 +205,99 @@ export function ProductListMobile({
         </Card>
       ) : (
         <div className="space-y-3">
-          {filteredProducts.map((product) => (
-            <Card key={product.id}>
-              <CardContent className="flex items-center justify-between gap-3 px-4 py-2">
-                <div className="min-w-0 flex-1">
-                  <div className="truncate font-bold">{product.name}</div>
-                  <div className="text-sm text-muted-foreground">
-                    ${((product.price_cents ?? 0) / 100).toFixed(2)}
+          {filteredProducts.map((product) => {
+            const status = productStatus(product);
+            const codes = getProductCodes(product);
+
+            return (
+              <Card key={product.id} className="py-2">
+                <CardContent className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 gap-y-1 px-3 py-1">
+                  <div className="min-w-0">
+                    <h3 className="truncate text-base font-semibold leading-tight">{product.name}</h3>
+                    <p className="mt-0.5 text-sm font-medium">
+                      {formatMoney(getPrice(product), currency)}
+                    </p>
                   </div>
-                </div>
-                <div className="flex items-center gap-2">
                   <Button
                     size="sm"
-                    variant="outline"
-                    className="min-h-12 min-w-24 gap-2 px-4"
+                    variant="ghost"
+                    className="row-span-2 min-h-12 gap-1.5 px-2 text-sm"
                     render={<Link href={`/products/${product.slug}`} />}
                     aria-label={`Editar ${product.name}`}
                   >
-                    <Edit className="h-4 w-4" aria-hidden="true" />
+                    <Edit className="size-6" aria-hidden="true" />
                     Editar
                   </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                  <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+                    <Badge variant={status === "Disponible" ? "default" : "secondary"}>
+                      {status}
+                    </Badge>
+                    {codes.length > 0 ? (
+                      <span className="inline-flex min-w-0 items-center gap-1">
+                        <Barcode className="size-3.5 shrink-0" aria-hidden="true" />
+                        <span className="truncate">
+                          {codes[0]}
+                          {codes.length > 1 ? ` +${codes.length - 1}` : ""}
+                        </span>
+                      </span>
+                    ) : null}
+                    <span className="inline-flex items-center gap-1">
+                      <Boxes className="size-3.5 shrink-0" aria-hidden="true" />
+                      {inventorySummary(product)}
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
     </div>
   );
+}
+
+function getPrice(product: Product): number {
+  const activeVariants = product.variants.filter((variant) => variant.active);
+  if (activeVariants.length === 0) return product.price_cents ?? 0;
+  return Math.min(...activeVariants.map((variant) => variant.final_price_cents));
+}
+
+function productStatus(product: Product): string {
+  if (!product.active) return "Oculto";
+  if (product.paused) return "Pausado";
+
+  const activeVariants = product.variants.filter((variant) => variant.active);
+  const hasStock = activeVariants.some(
+    (variant) => variant.stock === null || variant.stock > 0
+  );
+  if (!hasStock) return "Agotado";
+  if (activeVariants.every((variant) => variant.stock === null)) return "Por encargo";
+  return "Disponible";
+}
+
+function getProductCodes(product: Product): string[] {
+  return [...new Set(
+    product.variants
+      .map((variant) => variant.sku?.trim())
+      .filter((sku): sku is string => Boolean(sku))
+  )];
+}
+
+function inventorySummary(product: Product): string {
+  const activeVariants = product.variants.filter((variant) => variant.active);
+  if (activeVariants.length === 0) return "0 unidades";
+  if (activeVariants.every((variant) => variant.stock === null)) return "Por encargo";
+
+  const quantities = new Map<string, number>();
+  for (const variant of activeVariants) {
+    if (variant.stock === null) continue;
+    const unit = variant.stock_unit?.trim() || "unidades";
+    quantities.set(unit, (quantities.get(unit) ?? 0) + variant.stock);
+  }
+
+  const summary = [...quantities].map(([unit, quantity]) => `${quantity} ${unit}`);
+  if (activeVariants.some((variant) => variant.stock === null)) {
+    summary.push("por encargo");
+  }
+  return summary.join(" · ");
 }
