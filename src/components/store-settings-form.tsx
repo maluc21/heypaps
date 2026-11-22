@@ -71,8 +71,26 @@ function subscribeToNothing(): () => void {
 }
 
 const CURRENCIES = [
+  { code: "ARS", label: "Peso argentino (ARS)" },
+  { code: "BOB", label: "Boliviano (BOB)" },
+  { code: "BRL", label: "Real brasileño (BRL)" },
+  { code: "CLP", label: "Peso chileno (CLP)" },
+  { code: "COP", label: "Peso colombiano (COP)" },
+  { code: "CRC", label: "Colón costarricense (CRC)" },
+  { code: "CUP", label: "Peso cubano (CUP)" },
+  { code: "DOP", label: "Peso dominicano (DOP)" },
+  { code: "EUR", label: "Euro (EUR)" },
+  { code: "GTQ", label: "Quetzal guatemalteco (GTQ)" },
+  { code: "HTG", label: "Gourde haitiano (HTG)" },
   { code: "HNL", label: "Lempira (HNL)" },
-  { code: "USD", label: "Dólar (USD)" },
+  { code: "MXN", label: "Peso mexicano (MXN)" },
+  { code: "NIO", label: "Córdoba nicaragüense (NIO)" },
+  { code: "PAB", label: "Balboa panameño (PAB)" },
+  { code: "PEN", label: "Sol peruano (PEN)" },
+  { code: "PYG", label: "Guaraní paraguayo (PYG)" },
+  { code: "USD", label: "Dólar estadounidense (USD)" },
+  { code: "UYU", label: "Peso uruguayo (UYU)" },
+  { code: "VES", label: "Bolívar venezolano (VES)" },
 ];
 
 const SOCIAL_PLATFORMS = [
