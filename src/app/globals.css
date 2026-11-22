@@ -132,16 +132,16 @@
   --popover: var(--color-white);
   --popover-foreground: #181818;
   --primary: var(--primary-300);
-  --primary-foreground: #006400;
+  --primary-foreground: #181818;
   --secondary: var(--secondary-50);
   --secondary-foreground: var(--color-black);
-  --muted: #f3f4f6;
+  --muted: #efefeb;
   --muted-foreground: var(--base-600);
-  --accent: var(--muted);
+  --accent: #efefeb;
   --accent-foreground: #181818;
   --destructive: oklch(0.577 0.245 27.325);
-  --border: var(--base-300);
-  --input: var(--base-300);
+  --border: #181818;
+  --input: #181818;
   --ring: var(--primary-300);
   --chart-1: var(--primary-300);
   --chart-2: var(--secondary-50);
@@ -152,8 +152,8 @@
   --sidebar: var(--base-100);
   --sidebar-foreground: #181818;
   --sidebar-primary: var(--primary-300);
-  --sidebar-primary-foreground: #006400;
-  --sidebar-accent: var(--base-200);
+  --sidebar-primary-foreground: #181818;
+  --sidebar-accent: #efefeb;
   --sidebar-accent-foreground: #181818;
   --sidebar-border: var(--base-200);
   --sidebar-ring: var(--primary-300);
@@ -167,13 +167,13 @@
   --popover: var(--base-950);
   --popover-foreground: var(--base-200);
   --primary: var(--primary-300);
-  --primary-foreground: #006400;
+  --primary-foreground: #181818;
   --secondary: var(--secondary-50);
   --secondary-foreground: var(--color-black);
   --muted: var(--base-900);
   --muted-foreground: var(--base-400);
-  --accent: var(--muted);
-  --accent-foreground: var(--base-200);
+  --accent: #efefeb;
+  --accent-foreground: #181818;
   --destructive: oklch(0.704 0.191 22.216);
   --border: var(--base-800);
   --input: var(--base-700);
@@ -186,14 +186,21 @@
   --sidebar: var(--base-900);
   --sidebar-foreground: var(--base-200);
   --sidebar-primary: var(--primary-300);
-  --sidebar-primary-foreground: #006400;
-  --sidebar-accent: var(--base-800);
-  --sidebar-accent-foreground: var(--base-200);
+  --sidebar-primary-foreground: #181818;
+  --sidebar-accent: #efefeb;
+  --sidebar-accent-foreground: #181818;
   --sidebar-border: var(--base-800);
   --sidebar-ring: var(--primary-300);
 }
 
 @layer base {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  textarea,
+  select {
+    background-color: #ffffff;
+    color: #181818;
+  }
+
   .font-display {
     font-weight: var(--display-weight);
   }

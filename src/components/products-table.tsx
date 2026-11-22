@@ -283,10 +283,10 @@ export function ProductsTable({
             </div>
           ) : null}
 
-          <div className="overflow-x-auto rounded-xl border">
-              <table className="w-full min-w-200 text-sm">
+          <div className="overflow-x-auto rounded-xl border border-[#181818] bg-white">
+              <table className="w-full min-w-200 bg-white text-sm">
                 <thead>
-                  <tr className="border-b bg-muted/40">
+                  <tr className="border-b bg-white">
                     <th className="p-3 text-left w-10">
                       <input
                         type="checkbox"
@@ -306,7 +306,7 @@ export function ProductsTable({
                 </thead>
                 <tbody>
                   {filtered.map((p) => (
-                    <tr key={p.id} className="border-b hover:bg-muted/40">
+                    <tr key={p.id} className="border-b bg-white hover:bg-[#efefeb]">
                       <td className="p-3">
                         <input
                           type="checkbox"

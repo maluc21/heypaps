@@ -96,10 +96,10 @@ export function StoreAdmin({ initial }: { initial: AdminList }) {
           Todavía no hay tiendas registradas.
         </p>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-border bg-card">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto rounded-xl border border-[#181818] bg-white">
+          <table className="w-full bg-white text-sm">
             <thead>
-              <tr className="border-b bg-muted/40 text-left">
+              <tr className="border-b bg-white text-left">
                 <th className="p-3">Tienda</th>
                 <th className="p-3">Estado</th>
                 <th className="p-3">Plan</th>
@@ -112,7 +112,7 @@ export function StoreAdmin({ initial }: { initial: AdminList }) {
             </thead>
             <tbody>
               {stores.map((store) => (
-                <tr key={store.id} className="border-b">
+                <tr key={store.id} className="border-b bg-white hover:bg-[#efefeb]">
                   <td className="p-3">
                     <div className="font-medium">{store.name}</div>
                     <div className="text-xs text-muted-foreground">/{store.slug}</div>
