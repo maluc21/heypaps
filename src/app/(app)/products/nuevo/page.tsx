@@ -50,17 +50,15 @@ export default async function NewProductPage() {
 
   return (
     <PanelShell>
-      <div className="p-4">
-        <NewProductForm
-          storeId={store.id}
-          currency={store.currency}
-          categories={categories ?? []}
-          tags={tags ?? []}
-          maxProducts={plan.max_products}
-          currentProducts={productCount ?? 0}
-          pricingMode={store.pricing_mode ?? "SHOW_ALL"}
-        />
-      </div>
+      <NewProductForm
+        storeId={store.id}
+        currency={store.currency}
+        categories={categories ?? []}
+        tags={tags ?? []}
+        maxProducts={plan.max_products}
+        currentProducts={productCount ?? 0}
+        pricingMode={store.pricing_mode ?? "SHOW_ALL"}
+      />
     </PanelShell>
   );
 }

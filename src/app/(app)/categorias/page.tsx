@@ -29,7 +29,7 @@ export default async function CategoriesPage() {
   if (!store) {
     return (
       <PanelShell>
-        <div className="p-4">
+        <div className="p-3 sm:p-4">
           <p className="rounded-xl border border-border bg-card p-6 text-center text-muted-foreground">
             Todavía no tienes una tienda.{" "}
             <a href="/onboarding" className="underline">
@@ -50,7 +50,7 @@ export default async function CategoriesPage() {
 
   return (
     <PanelShell>
-      <div className="p-4">
+      <div className="p-3 sm:p-4">
         <CategoryManager
           storeId={store.id}
           categories={(categories ?? []) as Category[]}

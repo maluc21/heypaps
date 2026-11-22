@@ -94,8 +94,10 @@ export function NewProductForm({
   };
 
   return (
-    <form onSubmit={submit} className="space-y-4 p-4 pb-24">
-      <h2 className="text-lg font-semibold">Nuevo producto</h2>
+    <form onSubmit={submit} className="space-y-4 p-3 pb-24 sm:p-4">
+      <h2 className="truncate text-lg font-semibold">
+        {name.trim() || "Nuevo producto"}
+      </h2>
 
       {atLimit ? (
         <Card>
@@ -207,7 +209,7 @@ export function NewProductForm({
             ) : null}
           </InventoryModeOptions>
         </CardContent>
-        <CardFooter className="sticky bottom-0 z-30 -mx-4 gap-2 border-t bg-card px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 lg:static lg:mx-0 lg:px-(--card-spacing)">
+        <CardFooter className="sticky bottom-0 z-30 gap-2 border-t bg-card pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 lg:static">
           <Button
             type="button"
             variant="outline"
