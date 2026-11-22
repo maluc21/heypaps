@@ -354,7 +354,7 @@ export function ProductEditorForm({
                         }`}
                       >
                         <span
-                          className={`absolute top-0.5 size-4 rounded-full bg-white transition-transform ${
+                          className={`absolute top-0.5 size-4 rounded-full bg-[#128b2b] transition-transform ${
                             showPrice ? "translate-x-4" : "translate-x-0.5"
                           }`}
                         />
@@ -386,7 +386,7 @@ export function ProductEditorForm({
                         }`}
                       >
                         <span
-                          className={`absolute top-0.5 size-4 rounded-full bg-white transition-transform ${
+                          className={`absolute top-0.5 size-4 rounded-full bg-[#128b2b] transition-transform ${
                             !showPrice ? "translate-x-4" : "translate-x-0.5"
                           }`}
                         />

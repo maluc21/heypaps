@@ -26,7 +26,7 @@ export default async function TagsPage() {
   if (!store) {
     return (
       <PanelShell>
-        <div className="p-4">
+        <div className="p-3 sm:p-4">
           <p className="rounded-xl border border-[#efefeb] bg-card p-6 text-center text-muted-foreground">
             Todavía no tienes una tienda.{" "}
             <a href="/onboarding" className="underline">
@@ -47,7 +47,7 @@ export default async function TagsPage() {
 
   return (
     <PanelShell>
-      <div className="p-4">
+      <div className="p-3 sm:p-4">
         <TagManager storeId={store.id} tags={(tags ?? []) as EditableTag[]} />
       </div>
     </PanelShell>

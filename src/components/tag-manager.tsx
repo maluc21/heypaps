@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { ArrowDown, ArrowUp, Check, Edit, Trash2, X } from "lucide-react";
 import {
   createTag,
   deleteTag,
@@ -36,6 +37,8 @@ export function TagManager({ storeId, tags }: Props) {
   const [name, setName] = useState("");
   const [color, setColor] = useState<string | null>(TAG_COLORS[0]);
   const [busy, setBusy] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState("");
 
   const sorted = [...tags].sort((a, b) => a.position - b.position);
 
@@ -63,6 +66,28 @@ export function TagManager({ storeId, tags }: Props) {
       return;
     }
     router.refresh();
+  };
+
+  const handleRename = async (tag: EditableTag) => {
+    const nextName = editingName.trim();
+    if (nextName.length < 2) {
+      toast.error("El nombre debe tener al menos 2 caracteres.");
+      return;
+    }
+
+    setBusy(true);
+    try {
+      const res = await updateTag(tag.id, { name: nextName });
+      if (res.error) {
+        toast.error(res.error);
+        return;
+      }
+      setEditingId(null);
+      toast.success("Nombre de etiqueta actualizado.");
+      router.refresh();
+    } finally {
+      setBusy(false);
+    }
   };
 
   const handleMove = async (id: string, direction: -1 | 1) => {
@@ -99,17 +124,16 @@ export function TagManager({ storeId, tags }: Props) {
   };
 
   return (
-    <div className="space-y-4 p-4 pb-24">
+    <div className="space-y-4 pb-24">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">Etiquetas</h2>
         <Badge variant="outline">{tags.length}</Badge>
       </div>
       <p className="text-sm text-muted-foreground">
-        Sirven para distinguir productos: “Nuevo”, “Oferta”, “Últimas unidades”. Cada
-        producto lleva una sola etiqueta.
+        Ej. “Nuevo”, “Promoción”, “Últimos”, etc.
       </p>
 
-      <div className="space-y-3 rounded-xl border border-border p-3">
+      <div className="space-y-3 rounded-xl border border-[#efefeb] bg-white p-3">
         <Input
           id="new-tag"
           value={name}
@@ -121,90 +145,172 @@ export function TagManager({ storeId, tags }: Props) {
         />
         <ColorPicker color={color} onChange={setColor} />
         <Button
+          size="sm"
+          className="h-11 w-full lg:h-9"
           onClick={handleCreate}
           disabled={busy || name.trim().length === 0}
-          className="w-full"
         >
           Crear etiqueta
         </Button>
       </div>
 
       {sorted.length === 0 ? (
-        <p className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+        <p className="rounded-lg border border-dashed border-[#efefeb] p-6 text-center text-sm text-muted-foreground">
           Todavía no tienes etiquetas.
         </p>
       ) : (
         <ul className="space-y-2">
-          {sorted.map((tag, index) => (
-            <li
-              key={tag.id}
-              className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 rounded-lg border border-border p-3 sm:flex sm:flex-nowrap"
-            >
-              <span
-                className="h-4 w-4 shrink-0 rounded-full"
-                style={{ backgroundColor: tag.color ?? "#d4d4d8" }}
-                aria-hidden="true"
-              />
-              <span className="min-w-0 flex-1 truncate text-sm font-medium">
-                {tag.name}
-              </span>
+          {sorted.map((tag, index) => {
+            const isEditing = editingId === tag.id;
 
-              <label className="flex items-center gap-1">
-                <span className="sr-only">Color de {tag.name}</span>
-                <input
-                  type="color"
-                  value={tag.color ?? "#d4d4d8"}
-                  disabled={busy}
-                  onChange={(e) => void handleColor(tag, e.target.value)}
-                  className="h-7 w-7 cursor-pointer rounded border border-border bg-transparent p-0"
-                />
-              </label>
-              {tag.color ? (
-                <Button
-                  variant="ghost"
-                  size="xs"
-                  className="col-start-1 row-start-2 sm:col-auto sm:row-auto"
-                  disabled={busy}
-                  onClick={() => void handleColor(tag, null)}
-                  aria-label={`Quitar color de ${tag.name}`}
-                >
-                  Sin color
-                </Button>
-              ) : null}
-
-              <div className="col-start-2 row-start-2 flex justify-center gap-1 sm:col-auto sm:row-auto sm:flex-col">
-                <Button
-                  variant="ghost"
-                  size="xs"
-                  disabled={busy || index === 0}
-                  onClick={() => void handleMove(tag.id, -1)}
-                  aria-label={`Subir ${tag.name}`}
-                >
-                  ↑
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="xs"
-                  disabled={busy || index === sorted.length - 1}
-                  onClick={() => void handleMove(tag.id, 1)}
-                  aria-label={`Bajar ${tag.name}`}
-                >
-                  ↓
-                </Button>
-              </div>
-
-              <Button
-                variant="ghost"
-                size="sm"
-                className="col-start-3 row-start-2 sm:col-auto sm:row-auto"
-                disabled={busy}
-                onClick={() => void handleDelete(tag)}
-                aria-label={`Eliminar ${tag.name}`}
+            return (
+              <li
+                key={tag.id}
+                className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-lg border border-[#efefeb] bg-white p-2"
               >
-                Eliminar
-              </Button>
-            </li>
-          ))}
+                <div
+                  className={`flex min-w-0 items-center gap-2 ${
+                    isEditing ? "col-span-2 row-start-1" : "col-start-1 row-start-1"
+                  }`}
+                >
+                  {isEditing ? (
+                    <>
+                      <Input
+                        autoFocus
+                        value={editingName}
+                        onChange={(event) => setEditingName(event.target.value)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter") {
+                            event.preventDefault();
+                            void handleRename(tag);
+                          }
+                          if (event.key === "Escape") setEditingId(null);
+                        }}
+                        aria-label={`Nuevo nombre para ${tag.name}`}
+                        className="min-w-0 flex-1"
+                      />
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="bg-white text-green-700 hover:bg-green-50 hover:text-green-800"
+                        disabled={busy || editingName.trim().length < 2}
+                        onClick={() => void handleRename(tag)}
+                        aria-label={`Guardar nombre de ${tag.name}`}
+                        title="Guardar"
+                      >
+                        <Check className="size-5" aria-hidden="true" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="bg-white"
+                        disabled={busy}
+                        onClick={() => setEditingId(null)}
+                        aria-label={`Cancelar edición de ${tag.name}`}
+                        title="Cancelar"
+                      >
+                        <X className="size-5" aria-hidden="true" />
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <span
+                        className="size-4 shrink-0 rounded-full"
+                        style={{ backgroundColor: tag.color ?? "#d4d4d8" }}
+                        aria-hidden="true"
+                      />
+                      <span className="min-w-0 flex-1 truncate text-base font-semibold">
+                        {tag.name}
+                      </span>
+                    </>
+                  )}
+                </div>
+
+                <div
+                  className={`flex items-center gap-2 ${
+                    isEditing
+                      ? "col-start-2 row-start-2 flex-col"
+                      : "col-start-2 row-start-1 row-span-2 flex-col"
+                  }`}
+                >
+                  {!isEditing ? (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="min-h-12 gap-1.5 px-2 text-sm"
+                      disabled={busy}
+                      onClick={() => {
+                        setEditingId(tag.id);
+                        setEditingName(tag.name);
+                      }}
+                      aria-label={`Editar nombre de ${tag.name}`}
+                    >
+                      <Edit className="size-6" aria-hidden="true" />
+                      Editar
+                    </Button>
+                  ) : null}
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    className="bg-white text-foreground hover:bg-muted hover:text-foreground"
+                    disabled={busy}
+                    onClick={() => void handleDelete(tag)}
+                    aria-label={`Eliminar ${tag.name}`}
+                    title={`Eliminar ${tag.name}`}
+                  >
+                    <Trash2 className="size-5" aria-hidden="true" />
+                  </Button>
+                </div>
+
+                <div className="col-start-1 row-start-2 flex flex-wrap items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon-xs"
+                    disabled={busy || index === 0}
+                    onClick={() => void handleMove(tag.id, -1)}
+                    aria-label={`Subir ${tag.name}`}
+                    title="Subir"
+                  >
+                    <ArrowUp className="size-4" aria-hidden="true" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon-xs"
+                    disabled={busy || index === sorted.length - 1}
+                    onClick={() => void handleMove(tag.id, 1)}
+                    aria-label={`Bajar ${tag.name}`}
+                    title="Bajar"
+                  >
+                    <ArrowDown className="size-4" aria-hidden="true" />
+                  </Button>
+                  <label className="flex min-h-11 items-center gap-1 pl-1 text-xs text-foreground">
+                    <span>Color</span>
+                    <input
+                      type="color"
+                      value={tag.color ?? "#d4d4d8"}
+                      disabled={busy}
+                      onChange={(event) => void handleColor(tag, event.target.value)}
+                      className="size-11 cursor-pointer rounded-lg border border-[#efefeb] bg-white p-1"
+                      aria-label={`Cambiar color de ${tag.name}`}
+                      title="Cambiar color"
+                    />
+                  </label>
+                  {tag.color ? (
+                    <Button
+                      variant="ghost"
+                      size="xs"
+                      className="min-h-10"
+                      disabled={busy}
+                      onClick={() => void handleColor(tag, null)}
+                      aria-label={`Quitar color de ${tag.name}`}
+                    >
+                      Sin color
+                    </Button>
+                  ) : null}
+                </div>
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>
@@ -229,7 +335,7 @@ function ColorPicker({
           onClick={() => onChange(option)}
           aria-label={`Color ${option}`}
           aria-pressed={color === option}
-          className={`h-6 w-6 rounded-full border-2 ${
+          className={`size-11 rounded-full border-2 ${
             color === option ? "border-foreground" : "border-transparent"
           }`}
           style={{ backgroundColor: option }}
@@ -239,7 +345,7 @@ function ColorPicker({
         type="button"
         onClick={() => onChange(null)}
         aria-pressed={color === null}
-        className={`rounded-full border px-2 py-0.5 text-xs ${
+        className={`min-h-11 rounded-full border px-3 py-1 text-xs ${
           color === null ? "border-foreground" : "border-border"
         }`}
       >
