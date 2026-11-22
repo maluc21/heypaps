@@ -30,7 +30,7 @@ export default async function CategoriesPage() {
     return (
       <PanelShell>
         <div className="p-3 sm:p-4">
-          <p className="rounded-xl border border-border bg-card p-6 text-center text-muted-foreground">
+          <p className="rounded-xl border border-[#efefeb] bg-card p-6 text-center text-muted-foreground">
             Todavía no tienes una tienda.{" "}
             <a href="/onboarding" className="underline">
               Crea la primera

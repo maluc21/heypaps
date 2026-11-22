@@ -197,7 +197,7 @@ export function ProductsTable({
       </div>
 
       {initialProducts.length === 0 ? (
-        <div className="rounded-xl border border-border bg-card p-8 text-center text-muted-foreground">
+        <div className="rounded-xl border border-[#efefeb] bg-card p-8 text-center text-muted-foreground">
           No hay productos todavía. Crea tu primero para publicar tu catálogo.
         </div>
       ) : (

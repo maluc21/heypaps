@@ -92,7 +92,7 @@ export function StoreAdmin({ initial }: { initial: AdminList }) {
       </div>
 
       {stores.length === 0 ? (
-        <p className="rounded-xl border border-border bg-card p-8 text-center text-muted-foreground">
+        <p className="rounded-xl border border-[#efefeb] bg-card p-8 text-center text-muted-foreground">
           Todavía no hay tiendas registradas.
         </p>
       ) : (
@@ -223,7 +223,7 @@ function AuditPanel({
   onClose: () => void;
 }) {
   return (
-    <div className="rounded-xl border border-border bg-card p-4">
+    <div className="rounded-xl border border-[#efefeb] bg-card p-4">
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-sm font-semibold">Auditoría · {store.name}</h2>
         <Button variant="ghost" size="sm" onClick={onClose}>
