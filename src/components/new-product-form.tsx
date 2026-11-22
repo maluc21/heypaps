@@ -95,9 +95,7 @@ export function NewProductForm({
 
   return (
     <form onSubmit={submit} className="space-y-4 p-3 pb-24 sm:p-4">
-      <h2 className="truncate text-lg font-semibold">
-        {name.trim() || "Nuevo producto"}
-      </h2>
+      <h2 className="text-lg font-semibold">Nuevo producto</h2>
 
       {atLimit ? (
         <Card>
@@ -109,7 +107,7 @@ export function NewProductForm({
 
       <Card>
         <CardHeader>
-          <CardTitle>Detalles</CardTitle>
+          <CardTitle className="truncate">{name.trim() || "Detalles"}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
