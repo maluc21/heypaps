@@ -39,11 +39,15 @@ export default async function TagsPage() {
     );
   }
 
-  const { data: tags } = await supabase
+  const { data: tags, error: tagsError } = await supabase
     .from("tags")
     .select("id, name, color, position, active")
     .eq("store_id", store.id)
     .order("position", { ascending: true });
+
+  if (tagsError) {
+    throw new Error(`No se pudieron cargar las etiquetas: ${tagsError.message}`);
+  }
 
   return (
     <PanelShell>

@@ -2,7 +2,7 @@
 -- Batería de seguridad: autorización de RPC, aislamiento entre inquilinos,
 -- superficie pública, cuota de almacenamiento y auditoría de privilegios.
 --
--- Ejecutar SOLO contra una base de desarrollo/staging ya migrada (0001..0035):
+-- Ejecutar SOLO contra una base de desarrollo/staging ya migrada (0001..0036):
 --   supabase db query --linked -f supabase/tests/security.sql
 --
 -- Cómo se lee el resultado:
