@@ -47,11 +47,16 @@ export default async function SettingsPage() {
 
   const storeId = store.id;
 
-  const [{ data: storage }, { count: productCount }] = await Promise.all([
+  const [{ data: storage }, { count: productCount }, { data: productImages }] = await Promise.all([
     supabase.from("store_storage").select("bytes_used").eq("store_id", storeId).maybeSingle(),
     supabase
       .from("products")
       .select("id", { count: "exact", head: true })
+      .eq("store_id", storeId)
+      .is("deleted_at", null),
+    supabase
+      .from("products")
+      .select("images")
       .eq("store_id", storeId)
       .is("deleted_at", null),
   ]);
@@ -67,19 +72,21 @@ export default async function SettingsPage() {
 
   const usage: UsageSummary = {
     products: productCount ?? 0,
+    maxImagesUsed: Math.max(
+      0,
+      ...(productImages ?? []).map((product) => product.images?.length ?? 0),
+    ),
     bytesUsed: Number(storage?.bytes_used ?? 0),
   };
 
   return (
     <PanelShell>
-      <div className="p-4">
-        <StoreSettingsForm
-          store={store as unknown as StoreSettingsData}
-          role={store.role}
-          plan={planSummary}
-          usage={usage}
-        />
-      </div>
+      <StoreSettingsForm
+        store={store as unknown as StoreSettingsData}
+        role={store.role}
+        plan={planSummary}
+        usage={usage}
+      />
     </PanelShell>
   );
 }

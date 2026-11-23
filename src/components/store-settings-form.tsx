@@ -18,6 +18,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { StoreLogoManager } from "@/components/store-logo-manager";
+import { SocialIcon, type SocialPlatform as SocialPlatformKey } from "@/components/social-icons";
 import {
   publishStore,
   regenerateStoreSlug,
@@ -56,6 +57,7 @@ export type PlanSummary = {
 
 export type UsageSummary = {
   products: number;
+  maxImagesUsed: number;
   bytesUsed: number;
 };
 
@@ -102,7 +104,115 @@ const SOCIAL_PLATFORMS = [
   { key: "x", label: "X (Twitter)", placeholder: "tuusuario" },
 ] as const;
 
-type SocialPlatform = (typeof SOCIAL_PLATFORMS)[number]["key"];
+type SocialPlatform = SocialPlatformKey;
+
+const COUNTRIES_BY_REGION = {
+  América: [
+    { name: "Antigua y Barbuda", dialCode: "+1268" },
+    { name: "Argentina", dialCode: "+54" },
+    { name: "Bahamas", dialCode: "+1242" },
+    { name: "Barbados", dialCode: "+1246" },
+    { name: "Belice", dialCode: "+501" },
+    { name: "Bolivia", dialCode: "+591" },
+    { name: "Brasil", dialCode: "+55" },
+    { name: "Canadá", dialCode: "+1" },
+    { name: "Chile", dialCode: "+56" },
+    { name: "Colombia", dialCode: "+57" },
+    { name: "Costa Rica", dialCode: "+506" },
+    { name: "Cuba", dialCode: "+53" },
+    { name: "Dominica", dialCode: "+1767" },
+    { name: "Ecuador", dialCode: "+593" },
+    { name: "El Salvador", dialCode: "+503" },
+    { name: "Estados Unidos", dialCode: "+1" },
+    { name: "Granada", dialCode: "+1473" },
+    { name: "Guatemala", dialCode: "+502" },
+    { name: "Guyana", dialCode: "+592" },
+    { name: "Haití", dialCode: "+509" },
+    { name: "Honduras", dialCode: "+504" },
+    { name: "Jamaica", dialCode: "+1876" },
+    { name: "México", dialCode: "+52" },
+    { name: "Nicaragua", dialCode: "+505" },
+    { name: "Panamá", dialCode: "+507" },
+    { name: "Paraguay", dialCode: "+595" },
+    { name: "Perú", dialCode: "+51" },
+    { name: "República Dominicana", dialCode: "+1809" },
+    { name: "San Cristóbal y Nieves", dialCode: "+1869" },
+    { name: "San Vicente y las Granadinas", dialCode: "+1784" },
+    { name: "Santa Lucía", dialCode: "+1758" },
+    { name: "Surinam", dialCode: "+597" },
+    { name: "Trinidad y Tobago", dialCode: "+1868" },
+    { name: "Uruguay", dialCode: "+598" },
+    { name: "Venezuela", dialCode: "+58" },
+  ],
+  Europa: [
+    { name: "Albania", dialCode: "+355" },
+    { name: "Alemania", dialCode: "+49" },
+    { name: "Andorra", dialCode: "+376" },
+    { name: "Armenia", dialCode: "+374" },
+    { name: "Austria", dialCode: "+43" },
+    { name: "Azerbaiyán", dialCode: "+994" },
+    { name: "Bélgica", dialCode: "+32" },
+    { name: "Bielorrusia", dialCode: "+375" },
+    { name: "Bosnia y Herzegovina", dialCode: "+387" },
+    { name: "Bulgaria", dialCode: "+359" },
+    { name: "Chipre", dialCode: "+357" },
+    { name: "Ciudad del Vaticano", dialCode: "+39" },
+    { name: "Croacia", dialCode: "+385" },
+    { name: "Dinamarca", dialCode: "+45" },
+    { name: "Eslovaquia", dialCode: "+421" },
+    { name: "Eslovenia", dialCode: "+386" },
+    { name: "España", dialCode: "+34" },
+    { name: "Estonia", dialCode: "+372" },
+    { name: "Finlandia", dialCode: "+358" },
+    { name: "Francia", dialCode: "+33" },
+    { name: "Georgia", dialCode: "+995" },
+    { name: "Grecia", dialCode: "+30" },
+    { name: "Hungría", dialCode: "+36" },
+    { name: "Irlanda", dialCode: "+353" },
+    { name: "Islandia", dialCode: "+354" },
+    { name: "Italia", dialCode: "+39" },
+    { name: "Kosovo", dialCode: "+383" },
+    { name: "Letonia", dialCode: "+371" },
+    { name: "Liechtenstein", dialCode: "+423" },
+    { name: "Lituania", dialCode: "+370" },
+    { name: "Luxemburgo", dialCode: "+352" },
+    { name: "Macedonia del Norte", dialCode: "+389" },
+    { name: "Malta", dialCode: "+356" },
+    { name: "Moldavia", dialCode: "+373" },
+    { name: "Mónaco", dialCode: "+377" },
+    { name: "Montenegro", dialCode: "+382" },
+    { name: "Noruega", dialCode: "+47" },
+    { name: "Países Bajos", dialCode: "+31" },
+    { name: "Polonia", dialCode: "+48" },
+    { name: "Portugal", dialCode: "+351" },
+    { name: "Reino Unido", dialCode: "+44" },
+    { name: "República Checa", dialCode: "+420" },
+    { name: "Rumanía", dialCode: "+40" },
+    { name: "Rusia", dialCode: "+7" },
+    { name: "San Marino", dialCode: "+378" },
+    { name: "Serbia", dialCode: "+381" },
+    { name: "Suecia", dialCode: "+46" },
+    { name: "Suiza", dialCode: "+41" },
+    { name: "Turquía", dialCode: "+90" },
+    { name: "Ucrania", dialCode: "+380" },
+  ],
+} as const;
+
+const PHONE_COUNTRIES = Object.values(COUNTRIES_BY_REGION).flat();
+const PHONE_COUNTRIES_BY_LONGEST_CODE = [...PHONE_COUNTRIES].sort(
+  (a, b) => b.dialCode.length - a.dialCode.length,
+);
+
+function splitPhoneNumber(phone: string) {
+  const digits = phone.replace(/\D/g, "");
+  const country = PHONE_COUNTRIES_BY_LONGEST_CODE.find((item) =>
+    digits.startsWith(item.dialCode.slice(1)),
+  );
+
+  return country
+    ? { dialCode: country.dialCode, number: digits.slice(country.dialCode.length - 1) }
+    : { dialCode: "+504", number: digits };
+}
 
 export function StoreSettingsForm({ store, role, plan, usage }: Props) {
   const router = useRouter();
@@ -110,7 +220,11 @@ export function StoreSettingsForm({ store, role, plan, usage }: Props) {
 
   const [name, setName] = useState(store.name);
   const [description, setDescription] = useState(store.description ?? "");
-  const [whatsapp, setWhatsapp] = useState(store.whatsapp_e164 ?? "");
+  const storedWhatsapp = store.whatsapp_e164 ?? "";
+  const initialPhone = splitPhoneNumber(storedWhatsapp);
+  const [whatsappDialCode, setWhatsappDialCode] = useState<string>(initialPhone.dialCode);
+  const [whatsappNumber, setWhatsappNumber] = useState(initialPhone.number);
+  const [whatsappDirty, setWhatsappDirty] = useState(false);
   const storedIdent = (store.appearance?.identification as Record<string, string | null>) ?? {};
   const [address, setAddress] = useState(storedIdent.address ?? "");
   const [city, setCity] = useState(storedIdent.city ?? "");
@@ -156,7 +270,9 @@ export function StoreSettingsForm({ store, role, plan, usage }: Props) {
 
     const nextName = overrides.name ?? name;
     const nextDescription = overrides.description ?? description;
-    const nextWhatsapp = overrides.whatsapp ?? whatsapp;
+    const currentWhatsapp = whatsappNumber ? `${whatsappDialCode}${whatsappNumber}` : "";
+    const nextWhatsapp = overrides.whatsapp ??
+      (whatsappDirty ? currentWhatsapp : storedWhatsapp);
     const nextAddress = overrides.address ?? address;
     const nextCity = overrides.city ?? city;
     const nextCountry = overrides.country ?? country;
@@ -185,7 +301,6 @@ export function StoreSettingsForm({ store, role, plan, usage }: Props) {
 
     if (overrides.name !== undefined) setName(overrides.name);
     if (overrides.description !== undefined) setDescription(overrides.description);
-    if (overrides.whatsapp !== undefined) setWhatsapp(overrides.whatsapp);
     if (overrides.address !== undefined) setAddress(overrides.address);
     if (overrides.city !== undefined) setCity(overrides.city);
     if (overrides.country !== undefined) setCountry(overrides.country);
@@ -300,9 +415,17 @@ export function StoreSettingsForm({ store, role, plan, usage }: Props) {
     100,
     Math.round((usage.bytesUsed / Math.max(1, plan.max_storage_bytes)) * 100),
   );
+  const productsPercent = Math.min(
+    100,
+    Math.round((usage.products / Math.max(1, plan.max_products)) * 100),
+  );
+  const imagesPercent = Math.min(
+    100,
+    Math.round((usage.maxImagesUsed / Math.max(1, plan.max_images_per_product)) * 100),
+  );
 
   return (
-    <div className="space-y-4 p-4 pb-24">
+    <div className="space-y-4 px-2 py-3 pb-24 sm:p-4 sm:pb-24">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">Ajustes</h2>
         <Badge variant={store.status === "published" ? "default" : "secondary"}>
@@ -344,19 +467,44 @@ export function StoreSettingsForm({ store, role, plan, usage }: Props) {
 
           <div className="space-y-2">
             <Label htmlFor="store-whatsapp">WhatsApp</Label>
-            <Input
-              id="store-whatsapp"
-              type="tel"
-              inputMode="tel"
-              autoComplete="tel"
-              value={whatsapp}
-              disabled={!isOwner || saving}
-              placeholder="+504 1234 5678"
-              onChange={(e) => setWhatsapp(e.target.value)}
-              onBlur={() => persist()}
-            />
+            <div className="grid grid-cols-[minmax(0,0.44fr)_minmax(0,0.56fr)] gap-2">
+              <select
+                aria-label="País y prefijo telefónico"
+                value={whatsappDialCode}
+                disabled={!isOwner || saving}
+                onChange={(e) => {
+                  const dialCode = e.target.value;
+                  setWhatsappDialCode(dialCode);
+                  setWhatsappDirty(true);
+                  persist({
+                    whatsapp: whatsappNumber ? `${dialCode}${whatsappNumber}` : "",
+                  });
+                }}
+                className="min-h-11 min-w-0 rounded-md border border-input bg-background px-2 text-base"
+              >
+                {PHONE_COUNTRIES.map((item, index) => (
+                  <option key={`${item.name}-${index}`} value={item.dialCode}>
+                    {item.dialCode} {item.name}
+                  </option>
+                ))}
+              </select>
+              <Input
+                id="store-whatsapp"
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel-national"
+                value={whatsappNumber}
+                disabled={!isOwner || saving}
+                placeholder="1234 5678"
+                onChange={(e) => {
+                  setWhatsappNumber(e.target.value.replace(/\D/g, ""));
+                  setWhatsappDirty(true);
+                }}
+                onBlur={() => persist()}
+              />
+            </div>
             <p className="text-xs text-muted-foreground">
-              Se guarda en formato internacional. Es a donde caen las ventas.
+              Sin espacios ni guiones.
             </p>
           </div>
         </CardContent>
@@ -365,7 +513,7 @@ export function StoreSettingsForm({ store, role, plan, usage }: Props) {
       <Card>
         <CardHeader>
           <CardTitle>Link público</CardTitle>
-          <CardDescription>Compártelo por WhatsApp con tus clientes.</CardDescription>
+          <CardDescription>Enlace directo a tu catálogo.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex gap-2">
@@ -429,7 +577,7 @@ export function StoreSettingsForm({ store, role, plan, usage }: Props) {
                 setCurrency(v);
                 persist({ currency: v });
               }}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              className="min-h-11 w-full rounded-md border border-input bg-background px-3 text-base"
             >
               {CURRENCIES.map((c) => (
                 <option key={c.code} value={c.code}>
@@ -450,7 +598,7 @@ export function StoreSettingsForm({ store, role, plan, usage }: Props) {
                 setSecondaryCurrency(v);
                 persist({ secondaryCurrency: v });
               }}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              className="min-h-11 w-full rounded-md border border-input bg-background px-3 text-base"
             >
               <option value="">Ninguna</option>
               {CURRENCIES.filter((c) => c.code !== currency).map((c) => (
@@ -483,51 +631,34 @@ export function StoreSettingsForm({ store, role, plan, usage }: Props) {
             </div>
           ) : null}
 
-          <div className="space-y-3 pt-2">
-            <Label>Visibilidad de precios</Label>
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="radio"
-                name="pricing-mode"
-                value="SHOW_ALL"
-                checked={pricingMode === "SHOW_ALL"}
-                disabled={!isOwner || saving}
-                onChange={() => {
-                  setPricingMode("SHOW_ALL");
-                  persist({ pricingMode: "SHOW_ALL" });
-                }}
-              />
-              Mostrar precio en todos los productos
-            </label>
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="radio"
-                name="pricing-mode"
-                value="REQUEST_ALL"
-                checked={pricingMode === "REQUEST_ALL"}
-                disabled={!isOwner || saving}
-                onChange={() => {
-                  setPricingMode("REQUEST_ALL");
-                  persist({ pricingMode: "REQUEST_ALL" });
-                }}
-              />
-              Precio a solicitud en todos los productos
-            </label>
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="radio"
-                name="pricing-mode"
-                value="CUSTOM"
-                checked={pricingMode === "CUSTOM"}
-                disabled={!isOwner || saving}
-                onChange={() => {
-                  setPricingMode("CUSTOM");
-                  persist({ pricingMode: "CUSTOM" });
-                }}
-              />
-              Personalizado por producto
-            </label>
-          </div>
+          <fieldset className="space-y-3 pt-2">
+            <legend className="text-sm font-medium">Visibilidad de precios</legend>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+              {[
+                { value: "SHOW_ALL", title: "Mostrar precio en todos los productos" },
+                { value: "REQUEST_ALL", title: "Sin precio en todos los productos. A solicitud." },
+                { value: "CUSTOM", title: "Personalizado por producto" },
+              ].map((option) => (
+                <label key={option.value} className="min-w-0 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="pricing-mode"
+                    value={option.value}
+                    checked={pricingMode === option.value}
+                    disabled={!isOwner || saving}
+                    onChange={() => {
+                      setPricingMode(option.value);
+                      persist({ pricingMode: option.value });
+                    }}
+                    className="peer sr-only"
+                  />
+                  <span className="flex min-h-14 items-center rounded-xl border border-border bg-background p-3 text-sm font-medium transition-colors peer-checked:border-primary peer-checked:bg-primary/10 peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-focus-visible:ring-offset-2">
+                    {option.title}
+                  </span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
         </CardContent>
       </Card>
 
@@ -560,13 +691,31 @@ export function StoreSettingsForm({ store, role, plan, usage }: Props) {
             </div>
             <div className="space-y-2">
               <Label htmlFor="store-country">País</Label>
-              <Input
+              <select
                 id="store-country"
                 value={country}
                 disabled={!isOwner || saving}
-                onChange={(e) => setCountry(e.target.value)}
-                onBlur={() => persist()}
-              />
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setCountry(v);
+                  persist({ country: v });
+                }}
+                className="min-h-11 w-full rounded-md border border-input bg-background px-3 text-base"
+              >
+                {!country ? <option value="">Selecciona un país</option> : null}
+                {country && !PHONE_COUNTRIES.some((item) => item.name === country) ? (
+                  <option value={country}>{country}</option>
+                ) : null}
+                {Object.entries(COUNTRIES_BY_REGION).map(([region, countries]) => (
+                  <optgroup key={region} label={region}>
+                    {countries.map((item) => (
+                      <option key={item.name} value={item.name}>
+                        {item.name}
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
             </div>
           </div>
           <div className="space-y-2">
@@ -600,7 +749,7 @@ export function StoreSettingsForm({ store, role, plan, usage }: Props) {
         <CardHeader>
           <CardTitle>Redes Sociales</CardTitle>
           <CardDescription>
-            Enlaces a tus redes sociales. Se mostrarán en tu catálogo público.
+            Pega los enlaces de tus perfiles.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -609,8 +758,8 @@ export function StoreSettingsForm({ store, role, plan, usage }: Props) {
               <div key={platform.key} className="space-y-2">
                 <Label htmlFor={`social-${platform.key}`}>{platform.label}</Label>
                 <div className="flex gap-2 items-center">
-                  <span className="flex size-8 items-center justify-center rounded-full bg-muted text-xs font-semibold text-muted-foreground">
-                    {platform.label.charAt(0).toUpperCase()}
+                  <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-foreground">
+                    <SocialIcon platform={platform.key} className="size-4" />
                   </span>
                   <Input
                     id={`social-${platform.key}`}
@@ -636,21 +785,33 @@ export function StoreSettingsForm({ store, role, plan, usage }: Props) {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3 text-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">Productos</span>
-            <span>
-              {usage.products} de {plan.max_products}
-            </span>
+          <div className="space-y-1">
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">Productos</span>
+              <span>
+                {usage.products} de {plan.max_products} ({productsPercent}%)
+              </span>
+            </div>
+            <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+              <div className="h-full rounded-full bg-primary" style={{ width: `${productsPercent}%` }} />
+            </div>
           </div>
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">Imágenes por producto</span>
-            <span>hasta {plan.max_images_per_product}</span>
+          <div className="space-y-1">
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">Imágenes por producto</span>
+              <span>
+                {usage.maxImagesUsed} de {plan.max_images_per_product} ({imagesPercent}%)
+              </span>
+            </div>
+            <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+              <div className="h-full rounded-full bg-primary" style={{ width: `${imagesPercent}%` }} />
+            </div>
           </div>
           <div className="space-y-1">
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">Almacenamiento</span>
               <span>
-                {formatBytes(usage.bytesUsed)} de {formatBytes(plan.max_storage_bytes)}
+                {formatBytes(usage.bytesUsed)} de {formatBytes(plan.max_storage_bytes)} ({storagePercent}%)
               </span>
             </div>
             <div className="h-2 w-full overflow-hidden rounded-full bg-muted">

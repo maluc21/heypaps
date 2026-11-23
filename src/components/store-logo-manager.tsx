@@ -69,7 +69,7 @@ export function StoreLogoManager({ storeId, logo, storeName, onChange }: Props) 
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-3">
+      <div className="flex min-w-0 items-center gap-3">
         <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-border bg-muted">
           {logo ? (
             <Image src={logo} alt="" fill sizes="64px" className="object-cover" />
@@ -79,7 +79,7 @@ export function StoreLogoManager({ storeId, logo, storeName, onChange }: Props) 
             </span>
           )}
         </div>
-        <div className="flex flex-col gap-2">
+        <div className="flex min-w-0 flex-1 flex-col items-stretch gap-2">
           <input
             ref={inputRef}
             id="store-logo"
@@ -100,7 +100,7 @@ export function StoreLogoManager({ storeId, logo, storeName, onChange }: Props) 
             {busy ? "Subiendo…" : "Seleccionar imagen"}
           </Button>
           {selectedFileName ? (
-            <p className="text-xs text-muted-foreground">
+            <p className="truncate text-xs text-muted-foreground">
               {selectedFileName}
             </p>
           ) : (
