@@ -2,7 +2,7 @@
 -- Batería de seguridad: autorización de RPC, aislamiento entre inquilinos,
 -- superficie pública, cuota de almacenamiento y auditoría de privilegios.
 --
--- Ejecutar SOLO contra una base de desarrollo/staging ya migrada (0001..0019):
+-- Ejecutar SOLO contra una base de desarrollo/staging ya migrada (0001..0035):
 --   supabase db query --linked -f supabase/tests/security.sql
 --
 -- Cómo se lee el resultado:
@@ -89,7 +89,8 @@ insert into public.tags (id, store_id, name, color) values
   ('ea000000-0000-0000-0000-000000000001', 'e6000000-0000-0000-0000-000000000001', 'Etiqueta A', '#112233'),
   ('ea000000-0000-0000-0000-000000000002', 'e6000000-0000-0000-0000-000000000002', 'Etiqueta B', '#445566')
 on conflict (id) do update
-  set store_id = excluded.store_id, name = excluded.name, color = excluded.color;
+  set store_id = excluded.store_id, name = excluded.name, color = excluded.color,
+      active = true;
 
 insert into public.products (id, store_id, slug, name, category_id, tag_id) values
   ('e7000000-0000-0000-0000-000000000001', 'e6000000-0000-0000-0000-000000000001', 'prod-a', 'Producto A',
@@ -751,7 +752,11 @@ declare
   v_cat    jsonb;
   v_prod   jsonb;
   v_sitemap jsonb;
+  v_filtered jsonb;
   v_slugs  text;
+  v_tag_a text := 'ea000000-0000-0000-0000-000000000001';
+  v_owner_a uuid := 'e5000000-0000-0000-0000-000000000001';
+  v_res text;
 begin
   -- Una tienda en borrador y una que no existen devuelven lo mismo.
   perform pg_temp.sec_check(501, 'S.5 superficie pública',
@@ -847,6 +852,40 @@ begin
       select string_agg(k, ',') from jsonb_object_keys(
         (select s from jsonb_array_elements(coalesce(v_sitemap->'stores', '[]'::jsonb)) s limit 1)) k
     )::text);
+
+  perform pg_temp.sec_set_user(v_owner_a);
+  v_res := pg_temp.sec_try(format(
+    $q$select public.update_tag('%s', null, null, null, false)$q$, v_tag_a));
+  perform pg_temp.sec_reset_role();
+  perform pg_temp.sec_check(515, 'S.5 superficie pública',
+    'update_tag: el dueño puede ocultar una etiqueta', v_res = 'PERMITIDO', v_res);
+
+  v_cat := public.public_catalog('e2e-sec-a', 50, 0, null, null);
+  perform pg_temp.sec_check(516, 'S.5 superficie pública',
+    'public_catalog: no lista etiquetas inactivas',
+    not exists (
+        select 1 from jsonb_array_elements(coalesce(v_cat->'tags', '[]'::jsonb)) t
+        where t->>'id' = v_tag_a
+    ),
+    'etiquetas: ' || jsonb_array_length(coalesce(v_cat->'tags', '[]'::jsonb))::text);
+
+  perform pg_temp.sec_check(517, 'S.5 superficie pública',
+    'public_catalog: conserva el producto, pero oculta la etiqueta inactiva',
+    exists (
+        select 1 from jsonb_array_elements(coalesce(v_cat->'products', '[]'::jsonb)) p
+        where p->>'id' = 'e7000000-0000-0000-0000-000000000001'
+          and p->>'tag' is null
+          and p->>'tag_color' is null
+    ),
+    'producto y etiqueta');
+
+  v_filtered := public.public_catalog('e2e-sec-a', 50, 0, null, 'etiqueta-a');
+  perform pg_temp.sec_check(518, 'S.5 superficie pública',
+    'public_catalog: un filtro por etiqueta inactiva no devuelve productos',
+    jsonb_array_length(coalesce(v_filtered->'products', '[]'::jsonb)) = 0,
+    'productos: ' || jsonb_array_length(coalesce(v_filtered->'products', '[]'::jsonb))::text);
+
+  update public.tags set active = true where id = v_tag_a::uuid;
 end $$;
 
 -- -----------------------------------------------------------------------------

@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
   DialogContent,
@@ -31,6 +32,7 @@ export type EditableTag = {
   name: string;
   color: string | null;
   position: number;
+  active: boolean;
 };
 
 type Props = {
@@ -68,6 +70,15 @@ export function TagManager({ storeId, tags }: Props) {
 
   const handleColor = async (tag: EditableTag, next: string | null) => {
     const res = await updateTag(tag.id, { color: next });
+    if (res.error) {
+      toast.error(res.error);
+      return;
+    }
+    router.refresh();
+  };
+
+  const handleToggle = async (tag: EditableTag, active: boolean) => {
+    const res = await updateTag(tag.id, { active });
     if (res.error) {
       toast.error(res.error);
       return;
@@ -247,6 +258,12 @@ export function TagManager({ storeId, tags }: Props) {
                     Editar
                   </Button>
                 )}
+
+                <Switch
+                  checked={tag.active}
+                  onCheckedChange={(checked) => void handleToggle(tag, checked)}
+                  aria-label={`Mostrar ${tag.name}`}
+                />
 
                 <Button
                   variant="ghost"

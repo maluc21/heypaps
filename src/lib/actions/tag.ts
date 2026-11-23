@@ -29,22 +29,21 @@ export async function createTag(
   return { id: String(data) };
 }
 
-/** Renombra, recolorea o reordena una etiqueta. */
+/** Actualiza una etiqueta y el estado de visibilidad en el catálogo. */
 export async function updateTag(
   tagId: string,
-  updates: { name?: string; color?: string | null; position?: number },
+  updates: { name?: string; color?: string | null; position?: number; active?: boolean },
 ): Promise<{ error?: string }> {
   if (!UUID_RE.test(tagId)) return { error: "Etiqueta inválida." };
 
   const supabase = await createServerClient();
   const { error } = await supabase.rpc("update_tag", {
     p_tag_id: tagId,
-    // NULL conserva el color actual; '' lo quita; un hex lo establece.
-    // Así la función mantiene la firma de 4 parámetros y es compatible con
-    // la versión anterior (PostgREST resuelve por nombre).
+    // NULL conserva el valor actual; '' quita el color.
     p_name: updates.name ?? null,
     p_color: updates.color === undefined ? null : (updates.color ?? ""),
     p_position: updates.position ?? null,
+    p_active: updates.active ?? null,
   });
 
   if (error) return { error: error.message ?? "No se pudo guardar la etiqueta." };

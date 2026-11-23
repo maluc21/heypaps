@@ -41,7 +41,7 @@ export default async function TagsPage() {
 
   const { data: tags } = await supabase
     .from("tags")
-    .select("id, name, color, position")
+    .select("id, name, color, position, active")
     .eq("store_id", store.id)
     .order("position", { ascending: true });
 
