@@ -141,9 +141,10 @@ export function TagManager({ storeId, tags }: Props) {
       </div>
 
       <div className="space-y-2 rounded-xl border border-[#efefeb] bg-white p-3">
-        <div className="flex min-w-0 items-center gap-2">
+        <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] gap-2 lg:flex lg:items-center">
           <Input
             id="new-tag"
+            className="min-w-0 lg:flex-1"
             value={name}
             placeholder="Nombre de la etiqueta"
             onChange={(e) => setName(e.target.value)}
@@ -151,20 +152,22 @@ export function TagManager({ storeId, tags }: Props) {
               if (e.key === "Enter") void handleCreate();
             }}
           />
-          <ColorSelector
-            color={color}
-            label="Elegir color de la nueva etiqueta"
-            onClick={() => setColorPickerTarget(null)}
-          />
+          <Button
+            size="sm"
+            className="col-span-2 row-start-2 h-11 w-full shrink-0 lg:col-span-1 lg:row-auto lg:h-11 lg:w-40"
+            onClick={handleCreate}
+            disabled={busy || name.trim().length === 0}
+          >
+            Crear etiqueta
+          </Button>
+          <div className="col-start-2 row-start-1 lg:order-3">
+            <ColorSelector
+              color={color}
+              label="Elegir color de la nueva etiqueta"
+              onClick={() => setColorPickerTarget(null)}
+            />
+          </div>
         </div>
-        <Button
-          size="sm"
-          className="h-11 w-full lg:h-9"
-          onClick={handleCreate}
-          disabled={busy || name.trim().length === 0}
-        >
-          Crear etiqueta
-        </Button>
       </div>
 
       {sorted.length === 0 ? (

@@ -186,33 +186,40 @@ export function ProductsTable({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">Productos</h2>
-        <div className="flex gap-2">
+      </div>
+
+      {initialProducts.length === 0 ? (
+        <div className="space-y-4 rounded-xl border border-[#efefeb] bg-card p-8 text-center text-muted-foreground">
+          <p>No hay productos todavía. Crea tu primero para publicar tu catálogo.</p>
           <Button
             render={<Link href="/products/nuevo" />}
-            size="lg"
-            className="justify-center gap-2 font-semibold"
+            className="h-11 px-5 lg:h-11 lg:w-40"
           >
             <PackagePlus className="size-5" aria-hidden="true" />
             Nuevo producto
           </Button>
         </div>
-      </div>
-
-      {initialProducts.length === 0 ? (
-        <div className="rounded-xl border border-[#efefeb] bg-card p-8 text-center text-muted-foreground">
-          No hay productos todavía. Crea tu primero para publicar tu catálogo.
-        </div>
       ) : (
         <>
           <div className="space-y-2">
-            <Input
-              id="product-search"
-              type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Buscar por nombre o descripción…"
-              aria-label="Buscar productos"
-            />
+            <div className="flex min-w-0 gap-2">
+              <Input
+                id="product-search"
+                className="min-w-0 flex-1"
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Buscar por nombre o descripción…"
+                aria-label="Buscar productos"
+              />
+              <Button
+                render={<Link href="/products/nuevo" />}
+                className="h-11 shrink-0 gap-2 px-5 lg:h-11 lg:w-40"
+              >
+                <PackagePlus className="size-5" aria-hidden="true" />
+                Nuevo producto
+              </Button>
+            </div>
             <div className="grid grid-cols-3 gap-2">
               <select
                 aria-label="Filtrar por categoría"
