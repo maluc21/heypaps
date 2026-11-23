@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { connection } from "next/server";
-import { Fredoka, Geist_Mono, Roboto } from "next/font/google";
+import { Fredoka, Geist_Mono, Google_Sans } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 import { getEnv } from "@/lib/env";
@@ -11,10 +11,12 @@ const fredoka = Fredoka({
   variable: "--display-family",
 });
 
-const roboto = Roboto({
+const googleSans = Google_Sans({
   subsets: ["latin"],
-  weight: ["400"],
+  weight: "variable",
   variable: "--text-family",
+  fallback: ["Arial", "sans-serif"],
+  adjustFontFallback: false,
 });
 
 const geistMono = Geist_Mono({
@@ -43,7 +45,7 @@ export default async function RootLayout({
   return (
     <html
       lang="es"
-      className={`${fredoka.variable} ${roboto.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${fredoka.variable} ${googleSans.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col">
