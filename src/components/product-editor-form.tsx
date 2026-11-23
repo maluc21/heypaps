@@ -287,7 +287,7 @@ export function ProductEditorForm({
         <div className="space-y-4 lg:col-start-1 lg:row-start-2">
           <Card>
             <CardHeader className="gap-2">
-              <CardTitle className="min-w-0 break-words">{name}</CardTitle>
+              <CardTitle className="min-w-0 wrap-break-word">{name}</CardTitle>
               <div className="w-36 max-w-full">
                 <Label htmlFor="product-status-desktop" className="sr-only">
                   Estado del producto
