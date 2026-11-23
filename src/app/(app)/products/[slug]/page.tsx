@@ -48,7 +48,7 @@ export default async function ProductEditorPage({
 
   const { data: store } = await supabase
     .from("stores")
-    .select("plan_code, currency, pricing_mode")
+    .select("slug, plan_code, currency, pricing_mode")
     .eq("id", product.store_id)
     .maybeSingle();
 
@@ -79,6 +79,7 @@ export default async function ProductEditorPage({
       <div className="space-y-4 px-3 py-2 sm:p-4">
         <ProductEditorForm
           product={product}
+          storeSlug={store?.slug}
           maxImages={planLimits.max_images_per_product}
           categories={categories ?? []}
           tags={tags ?? []}

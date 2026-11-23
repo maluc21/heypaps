@@ -438,6 +438,13 @@ function VariantForm({
       onSubmit={(e) => {
         e.preventDefault();
         const next = { ...form };
+        if (
+          pair.type === "tamano" &&
+          !Object.values(next.attributes[0]?.dimensions ?? {}).some((value) => value.trim())
+        ) {
+          toast.error("Indica al menos una medida: alto, ancho o profundidad.");
+          return;
+        }
         if (!showPrice && basePrice) {
           next.price = basePrice;
         }
@@ -590,7 +597,7 @@ function VariantForm({
           )}
         </div>
         {!customAttributes && pair.type === "tamano" ? (
-          <div className="space-y-2">
+          <div className="space-y-2" role="group" aria-label="Medidas de tamaño">
             <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 sm:grid-cols-4">
               {SIZE_DIMENSION_FIELDS.map((dimension) => (
                 <div key={dimension.key} className="space-y-2">
@@ -603,7 +610,6 @@ function VariantForm({
                     inputMode="decimal"
                     min="0.001"
                     step="any"
-                    required
                     placeholder="0"
                     value={pair.dimensions?.[dimension.key] ?? ""}
                     onChange={(e) =>
@@ -628,6 +634,9 @@ function VariantForm({
                 </select>
               </div>
             </div>
+            <p className="text-xs text-muted-foreground">
+              Completa al menos una medida; las demás son opcionales.
+            </p>
           </div>
         ) : null}
       </div>

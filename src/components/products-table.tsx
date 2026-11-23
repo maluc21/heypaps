@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { PackagePlus, Trash2 } from "lucide-react";
+import { ExternalLink, PackagePlus, Trash2 } from "lucide-react";
 
 export type Variant = {
   id: string;
@@ -49,6 +49,7 @@ type ProductsTableProps = {
   categories: FilterOption[];
   tags: FilterOption[];
   currency: string;
+  storeSlug?: string;
 };
 
 export function ProductsTable({
@@ -56,6 +57,7 @@ export function ProductsTable({
   categories,
   tags,
   currency,
+  storeSlug,
 }: ProductsTableProps) {
   const router = useRouter();
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -335,16 +337,35 @@ export function ProductsTable({
                         </Badge>
                       </td>
                       <td className="p-3 text-center">
-                        <Button
-                          size="icon"
-                          variant="destructive"
-                          disabled={deleting}
-                          onClick={() => void handleDelete(p)}
-                          aria-label={`Eliminar ${p.name} del catálogo`}
-                          title={`Eliminar ${p.name} del catálogo`}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-center justify-center gap-1">
+                          {storeSlug ? (
+                            <Button
+                              render={
+                                <Link
+                                  href={`/s/${storeSlug}/${p.slug}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                />
+                              }
+                              size="icon"
+                              variant="outline"
+                              aria-label={`Abrir ${p.name} en el catálogo público`}
+                              title="Abrir producto público en una pestaña nueva"
+                            >
+                              <ExternalLink className="size-4" aria-hidden="true" />
+                            </Button>
+                          ) : null}
+                          <Button
+                            size="icon"
+                            variant="destructive"
+                            disabled={deleting}
+                            onClick={() => void handleDelete(p)}
+                            aria-label={`Eliminar ${p.name} del catálogo`}
+                            title={`Eliminar ${p.name} del catálogo`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))}

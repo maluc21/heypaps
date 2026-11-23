@@ -74,6 +74,7 @@ export default async function ProductsPage() {
             categories={categories ?? []}
             tags={tags ?? []}
             currency={store.currency ?? "HNL"}
+            storeSlug={store.slug}
           />
         </div>
         <div className="sm:hidden">
@@ -113,6 +114,7 @@ export default async function ProductsPage() {
             categories={categories ?? []}
             tags={tags ?? []}
             currency={store.currency ?? "HNL"}
+            storeSlug={store.slug}
           />
         </div>
       </div>

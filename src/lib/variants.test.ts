@@ -36,7 +36,43 @@ describe("typed variant measurements", () => {
     ]);
   });
 
-  it("rejects incomplete or non-positive measurements", () => {
+  it.each([
+    {
+      dimensions: { height: "20", width: "", depth: "" },
+      expected: "Alto: 20 cm",
+    },
+    {
+      dimensions: { height: "", width: "10.5", depth: "" },
+      expected: "Ancho: 10.5 cm",
+    },
+    {
+      dimensions: { height: "", width: "", depth: "3" },
+      expected: "Profundidad: 3 cm",
+    },
+  ])("accepts and restores any one size dimension", ({ dimensions, expected }) => {
+    const attributes = attributesFromPairs([
+      { name: "Tamaño", value: "", type: "tamano", unit: "cm", dimensions },
+    ]);
+
+    expect(attributes).toEqual({ Tamaño: expected });
+    expect(pairsFromAttributes(attributes)).toEqual([
+      { name: "Tamaño", value: "", type: "tamano", unit: "cm", dimensions },
+    ]);
+  });
+
+  it("preserves additional optional size dimensions", () => {
+    const dimensions = { height: "20", width: "", depth: "3" };
+    const attributes = attributesFromPairs([
+      { name: "Tamaño", value: "", type: "tamano", unit: "cm", dimensions },
+    ]);
+
+    expect(attributes).toEqual({ Tamaño: "Alto: 20 × Profundidad: 3 cm" });
+    expect(pairsFromAttributes(attributes)).toEqual([
+      { name: "Tamaño", value: "", type: "tamano", unit: "cm", dimensions },
+    ]);
+  });
+
+  it("requires at least one valid size dimension", () => {
     expect(() =>
       attributesFromPairs([
         {
@@ -44,7 +80,19 @@ describe("typed variant measurements", () => {
           value: "",
           type: "tamano",
           unit: "cm",
-          dimensions: { height: "20", width: "", depth: "3" },
+          dimensions: { height: "", width: "", depth: "" },
+        },
+      ]),
+    ).toThrow("Indica al menos una medida: alto, ancho o profundidad.");
+
+    expect(() =>
+      attributesFromPairs([
+        {
+          name: "Tamaño",
+          value: "",
+          type: "tamano",
+          unit: "cm",
+          dimensions: { height: "", width: "0", depth: "" },
         },
       ]),
     ).toThrow("Indica un valor numérico mayor que cero para el ancho.");

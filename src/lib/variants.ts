@@ -66,12 +66,32 @@ export function attributesFromPairs(pairs: AttributePair[]): Record<string, stri
       const unit = SIZE_UNITS.find((candidate) => candidate === pair.unit);
       if (!unit) throw new Error("Selecciona una unidad válida para las dimensiones.");
       const dimensions = pair.dimensions;
-      if (!dimensions) throw new Error("Completa alto, ancho y profundidad.");
-      value = [
-        normalizePositiveMeasurement(dimensions.height, "el alto"),
-        normalizePositiveMeasurement(dimensions.width, "el ancho"),
-        normalizePositiveMeasurement(dimensions.depth, "la profundidad"),
-      ].join(" × ") + ` ${unit}`;
+      if (!dimensions) {
+        throw new Error("Indica al menos una medida: alto, ancho o profundidad.");
+      }
+
+      const entries = [
+        { key: "height", label: "Alto", input: dimensions.height },
+        { key: "width", label: "Ancho", input: dimensions.width },
+        { key: "depth", label: "Profundidad", input: dimensions.depth },
+      ]
+        .filter((dimension) => dimension.input.trim() !== "")
+        .map((dimension) => ({
+          ...dimension,
+          value: normalizePositiveMeasurement(
+            dimension.input,
+            `el ${dimension.label.toLowerCase()}`,
+          ),
+        }));
+      if (entries.length === 0) {
+        throw new Error("Indica al menos una medida: alto, ancho o profundidad.");
+      }
+
+      value =
+        entries.length === 3
+          ? entries.map((dimension) => dimension.value).join(" × ") + ` ${unit}`
+          : entries.map((dimension) => `${dimension.label}: ${dimension.value}`).join(" × ") +
+            ` ${unit}`;
     } else {
       value = pair.value.trim();
     }
@@ -136,6 +156,49 @@ export function pairsFromAttributes(attributes: Record<string, unknown>): Attrib
             depth: match[3].replace(",", "."),
           },
         };
+      }
+
+      const partialUnit = SIZE_UNITS.find((candidate) =>
+        value.toLowerCase().endsWith(` ${candidate}`),
+      );
+      if (partialUnit) {
+        const dimensions: SizeDimensions = { height: "", width: "", depth: "" };
+        const dimensionKeys = {
+          alto: "height",
+          ancho: "width",
+          profundidad: "depth",
+        } as const;
+        const entries = value
+          .slice(0, -partialUnit.length)
+          .trim()
+          .split(/\s*[x×]\s*/i);
+        let valid = entries.length < 3;
+
+        for (const entry of entries) {
+          const dimensionMatch = entry.match(
+            /^(Alto|Ancho|Profundidad)\s*:\s*(\d+(?:[.,]\d+)?|\.\d+)$/i,
+          );
+          if (!dimensionMatch) {
+            valid = false;
+            break;
+          }
+          const key = dimensionKeys[dimensionMatch[1].toLowerCase() as keyof typeof dimensionKeys];
+          if (dimensions[key]) {
+            valid = false;
+            break;
+          }
+          dimensions[key] = dimensionMatch[2].replace(",", ".");
+        }
+
+        if (valid) {
+          return {
+            name,
+            value: "",
+            type: "tamano",
+            unit: partialUnit,
+            dimensions,
+          };
+        }
       }
     }
 

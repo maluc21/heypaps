@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { formatMoney } from "@/lib/utils";
-import { Barcode, Boxes, Edit, Plus, Search } from "lucide-react";
+import { Barcode, Boxes, Edit, ExternalLink, Plus, Search } from "lucide-react";
 
 type FilterOption = {
   id: string;
@@ -42,11 +42,13 @@ export function ProductListMobile({
   categories,
   tags,
   currency,
+  storeSlug,
 }: {
   products: Product[];
   categories: FilterOption[];
   tags: FilterOption[];
   currency: string;
+  storeSlug: string;
 }) {
   const [query, setQuery] = useState("");
   const [categoryId, setCategoryId] = useState("");
@@ -218,16 +220,33 @@ export function ProductListMobile({
                       {formatMoney(getPrice(product), currency)}
                     </p>
                   </div>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="row-span-2 min-h-12 gap-1.5 px-2 text-sm"
-                    render={<Link href={`/products/${product.slug}`} />}
-                    aria-label={`Editar ${product.name}`}
-                  >
-                    <Edit className="size-6" aria-hidden="true" />
-                    Editar
-                  </Button>
+                  <div className="row-span-2 flex items-center gap-1">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="min-h-12 gap-1.5 px-2 text-sm"
+                      render={<Link href={`/products/${product.slug}`} />}
+                      aria-label={`Editar ${product.name}`}
+                    >
+                      <Edit className="size-6" aria-hidden="true" />
+                      Editar
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="outline"
+                      render={
+                        <Link
+                          href={`/s/${storeSlug}/${product.slug}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        />
+                      }
+                      aria-label={`Abrir ${product.name} en el catálogo público`}
+                      title="Abrir producto público en una pestaña nueva"
+                    >
+                      <ExternalLink className="size-4" aria-hidden="true" />
+                    </Button>
+                  </div>
                   <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
                     <Badge variant={status === "Disponible" ? "default" : "secondary"}>
                       {status}

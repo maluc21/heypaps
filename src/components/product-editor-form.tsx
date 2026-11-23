@@ -34,7 +34,7 @@ import {
   type InventoryMode,
 } from "@/components/inventory-mode-options";
 import { stockToStorage } from "@/lib/variants";
-import { ArrowLeft, DollarSign, MessageCircle } from "lucide-react";
+import { ArrowLeft, DollarSign, ExternalLink, MessageCircle } from "lucide-react";
 
 type Product = {
   id: string;
@@ -92,6 +92,7 @@ const PRODUCT_STATUS_ITEMS = PRODUCT_STATUS_OPTIONS.map((option) => ({
 
 type ProductEditorFormProps = {
   product: Product;
+  storeSlug?: string;
   maxImages: number;
   categories: CategoryOption[];
   tags: TagOption[];
@@ -101,6 +102,7 @@ type ProductEditorFormProps = {
 
 export function ProductEditorForm({
   product,
+  storeSlug,
   maxImages,
   categories,
   tags,
@@ -248,13 +250,28 @@ export function ProductEditorForm({
     <div>
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <div className="grid grid-cols-[1fr_auto] items-center gap-2 lg:col-span-2 lg:row-start-1 lg:grid-cols-2 lg:grid-rows-[auto_auto]">
-          <Link
-            href="/products"
-            className="col-start-2 row-start-1 inline-flex min-h-8 shrink-0 items-center gap-1.5 text-xs text-primary-foreground hover:underline lg:col-start-1"
-          >
-            <ArrowLeft className="size-4" aria-hidden="true" />
-            Regresar
-          </Link>
+          <div className="col-start-2 row-start-1 inline-flex min-h-8 shrink-0 items-center gap-2 lg:col-start-1">
+            {storeSlug ? (
+              <Link
+                href={`/s/${storeSlug}/${product.slug}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`Abrir ${product.name} en el catálogo público`}
+                title="Abrir producto público en una pestaña nueva"
+                className="inline-flex min-h-9 min-w-9 items-center justify-center gap-1.5 rounded-md px-2 text-xs text-primary-foreground hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+              >
+                <ExternalLink className="size-4" aria-hidden="true" />
+                <span className="hidden sm:inline">Ver en catálogo</span>
+              </Link>
+            ) : null}
+            <Link
+              href="/products"
+              className="inline-flex min-h-8 shrink-0 items-center gap-1.5 text-xs text-primary-foreground hover:underline"
+            >
+              <ArrowLeft className="size-4" aria-hidden="true" />
+              Regresar
+            </Link>
+          </div>
           <h2 className="col-start-1 row-start-1 min-w-0 text-base font-semibold leading-tight lg:row-start-2">
             Editar producto
           </h2>
