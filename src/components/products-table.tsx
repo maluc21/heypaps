@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Eye, PackagePlus, Trash2 } from "lucide-react";
+import { ProductStatusBadge } from "@/components/product-status-badge";
 
 export type Variant = {
   id: string;
@@ -78,16 +79,6 @@ export function ProductsTable({
    */
   const reload = async () => {
     router.refresh();
-  };
-
-  const statusOf = (p: Product): string => {
-    if (!p.active) return "Oculto";
-    if (p.paused) return "Pausado";
-    const activeVariants = p.variants.filter((v) => v.active);
-    const anyStock = activeVariants.some((v) => v.stock === null || (v.stock ?? 0) > 0);
-    if (!anyStock) return "Agotado";
-    if (activeVariants.every((v) => v.stock === null)) return "Por encargo";
-    return "Disponible";
   };
 
   const priceFrom = (p: Product): number | null => {
@@ -334,7 +325,7 @@ export function ProductsTable({
                         <td className="p-3">
                           <Link
                             href={`/products/${p.slug}`}
-                            className="font-semibold text-primary-foreground underline-offset-4 group-hover:underline"
+                            className="text-base font-semibold text-primary-foreground underline-offset-4 group-hover:underline"
                           >
                             {p.name}
                           </Link>
@@ -361,9 +352,7 @@ export function ProductsTable({
                           {priceFrom(p) == null ? "—" : formatMoney(priceFrom(p)!, currency)}
                         </td>
                         <td className="p-3">
-                          <Badge variant={statusOf(p) === "Disponible" ? "default" : "secondary"}>
-                            {statusOf(p)}
-                          </Badge>
+                          <ProductStatusBadge product={p} />
                         </td>
                         <td className="p-3 text-center">
                           <div className="flex items-center justify-center gap-1">

@@ -4,10 +4,10 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { formatMoney } from "@/lib/utils";
 import { Barcode, Boxes, Edit, ExternalLink, Plus, Search } from "lucide-react";
+import { ProductStatusBadge } from "@/components/product-status-badge";
 
 type FilterOption = {
   id: string;
@@ -208,7 +208,6 @@ export function ProductListMobile({
       ) : (
         <div className="space-y-3">
           {filteredProducts.map((product) => {
-            const status = productStatus(product);
             const codes = getProductCodes(product);
 
             return (
@@ -248,9 +247,7 @@ export function ProductListMobile({
                     </Button>
                   </div>
                   <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-                    <Badge variant={status === "Disponible" ? "default" : "secondary"}>
-                      {status}
-                    </Badge>
+                    <ProductStatusBadge product={product} />
                     {codes.length > 0 ? (
                       <span className="inline-flex min-w-0 items-center gap-1">
                         <Barcode className="size-3.5 shrink-0" aria-hidden="true" />
@@ -279,19 +276,6 @@ function getPrice(product: Product): number {
   const activeVariants = product.variants.filter((variant) => variant.active);
   if (activeVariants.length === 0) return product.price_cents ?? 0;
   return Math.min(...activeVariants.map((variant) => variant.final_price_cents));
-}
-
-function productStatus(product: Product): string {
-  if (!product.active) return "Oculto";
-  if (product.paused) return "Pausado";
-
-  const activeVariants = product.variants.filter((variant) => variant.active);
-  const hasStock = activeVariants.some(
-    (variant) => variant.stock === null || variant.stock > 0
-  );
-  if (!hasStock) return "Agotado";
-  if (activeVariants.every((variant) => variant.stock === null)) return "Por encargo";
-  return "Disponible";
 }
 
 function getProductCodes(product: Product): string[] {
