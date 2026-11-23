@@ -135,39 +135,34 @@ export function TagManager({ storeId, tags }: Props) {
           <h2 className="text-lg font-semibold">Etiquetas</h2>
           <Badge variant="outline">{tags.length}</Badge>
         </div>
-        <p className="text-sm text-muted-foreground">
-          Ej. “Nuevo”, “Promoción”, “Últimos”, etc.
-        </p>
       </div>
 
-      <div className="space-y-2 rounded-xl border border-[#efefeb] bg-white p-3">
-        <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] gap-2 lg:flex lg:items-center">
-          <Input
-            id="new-tag"
-            className="min-w-0 lg:flex-1"
-            value={name}
-            placeholder="Nombre de la etiqueta"
-            onChange={(e) => setName(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") void handleCreate();
-            }}
+      <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] gap-2 lg:flex lg:items-center">
+        <Input
+          id="new-tag"
+          className="min-w-0 lg:flex-1"
+          value={name}
+          placeholder="Ej. Nuevo, Oferta"
+          onChange={(e) => setName(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") void handleCreate();
+          }}
+        />
+        <div className="col-start-2 row-start-1 flex size-11 shrink-0 items-center justify-center rounded-md border border-[#efefeb] bg-white">
+          <ColorSelector
+            color={color}
+            label="Elegir color de la nueva etiqueta"
+            onClick={() => setColorPickerTarget(null)}
           />
-          <Button
-            size="sm"
-            className="col-span-2 row-start-2 h-11 w-full shrink-0 lg:col-span-1 lg:row-auto lg:h-11 lg:w-40"
-            onClick={handleCreate}
-            disabled={busy || name.trim().length === 0}
-          >
-            Crear etiqueta
-          </Button>
-          <div className="col-start-2 row-start-1 lg:order-3">
-            <ColorSelector
-              color={color}
-              label="Elegir color de la nueva etiqueta"
-              onClick={() => setColorPickerTarget(null)}
-            />
-          </div>
         </div>
+        <Button
+          size="sm"
+          className="col-span-2 row-start-2 h-11 w-full shrink-0 lg:col-span-1 lg:row-auto lg:h-11 lg:w-40"
+          onClick={handleCreate}
+          disabled={busy || name.trim().length === 0}
+        >
+          Crear etiqueta
+        </Button>
       </div>
 
       {sorted.length === 0 ? (

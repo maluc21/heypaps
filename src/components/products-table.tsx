@@ -205,7 +205,7 @@ export function ProductsTable({
             <div className="flex min-w-0 gap-2">
               <Input
                 id="product-search"
-                className="min-w-0 flex-1"
+                className="min-w-0 flex-1 bg-white"
                 type="search"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
@@ -225,7 +225,7 @@ export function ProductsTable({
                 aria-label="Filtrar por categoría"
                 value={categoryId}
                 onChange={(e) => setCategoryId(e.target.value)}
-                className="rounded-md border border-input bg-background px-2 py-2 text-sm"
+                className="rounded-md border border-input bg-white px-2 py-2 text-sm"
               >
                 <option value="">Todas las categorías</option>
                 {categories.map((c) => (
@@ -239,7 +239,7 @@ export function ProductsTable({
                 aria-label="Filtrar por etiqueta"
                 value={tagId}
                 onChange={(e) => setTagId(e.target.value)}
-                className="rounded-md border border-input bg-background px-2 py-2 text-sm"
+                className="rounded-md border border-input bg-white px-2 py-2 text-sm"
               >
                 <option value="">Todas las etiquetas</option>
                 {tags.map((t) => (
@@ -253,7 +253,7 @@ export function ProductsTable({
                 aria-label="Filtrar por estado"
                 value={status}
                 onChange={(e) => setStatus(e.target.value as StatusFilter)}
-                className="rounded-md border border-input bg-background px-2 py-2 text-sm"
+                className="rounded-md border border-input bg-white px-2 py-2 text-sm"
               >
                 <option value="all">Todos los estados</option>
                 <option value="visible">Visibles</option>
