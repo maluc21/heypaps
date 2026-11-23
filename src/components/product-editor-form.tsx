@@ -34,6 +34,10 @@ import {
   type InventoryMode,
 } from "@/components/inventory-mode-options";
 import { stockToStorage } from "@/lib/variants";
+import {
+  PRODUCT_STATUS_OPTIONS,
+  type ProductStatus,
+} from "@/lib/product-status";
 import { ArrowLeft, DollarSign, ExternalLink, MessageCircle } from "lucide-react";
 
 type Product = {
@@ -64,14 +68,6 @@ type TagOption = {
   name: string;
   color: string | null;
 };
-
-type ProductStatus = "available" | "unavailable" | "hidden";
-
-const PRODUCT_STATUS_OPTIONS = [
-  { value: "available", label: "Disponible", dotClassName: "bg-green-600" },
-  { value: "unavailable", label: "No disponible", dotClassName: "bg-red-500" },
-  { value: "hidden", label: "Oculto", dotClassName: "bg-gray-400" },
-] as const;
 
 const productStatusOptionContent = (
   option: (typeof PRODUCT_STATUS_OPTIONS)[number],
