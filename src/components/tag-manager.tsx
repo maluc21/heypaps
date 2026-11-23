@@ -39,6 +39,7 @@ export function TagManager({ storeId, tags }: Props) {
   const [busy, setBusy] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
+  const [openColorId, setOpenColorId] = useState<string | null>(null);
 
   const sorted = [...tags].sort((a, b) => a.position - b.position);
 
@@ -125,13 +126,15 @@ export function TagManager({ storeId, tags }: Props) {
 
   return (
     <div className="space-y-4 pb-24">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Etiquetas</h2>
-        <Badge variant="outline">{tags.length}</Badge>
+      <div className="space-y-1">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold">Etiquetas</h2>
+          <Badge variant="outline">{tags.length}</Badge>
+        </div>
+        <p className="text-sm text-muted-foreground">
+          Ej. “Nuevo”, “Promoción”, “Últimos”, etc.
+        </p>
       </div>
-      <p className="text-sm text-muted-foreground">
-        Ej. “Nuevo”, “Promoción”, “Últimos”, etc.
-      </p>
 
       <div className="space-y-3 rounded-xl border border-[#efefeb] bg-white p-3">
         <Input
@@ -215,7 +218,7 @@ export function TagManager({ storeId, tags }: Props) {
                   ) : (
                     <>
                       <span
-                        className="size-4 shrink-0 rounded-full"
+                        className="size-3 shrink-0 rounded-full"
                         style={{ backgroundColor: tag.color ?? "#d4d4d8" }}
                         aria-hidden="true"
                       />
@@ -262,10 +265,10 @@ export function TagManager({ storeId, tags }: Props) {
                   </Button>
                 </div>
 
-                <div className="col-start-1 row-start-2 flex flex-wrap items-center gap-1">
+                <div className="col-start-1 row-start-2 flex min-h-11 min-w-0 flex-nowrap items-center gap-1">
                   <Button
                     variant="ghost"
-                    size="icon-xs"
+                    size="icon-sm"
                     disabled={busy || index === 0}
                     onClick={() => void handleMove(tag.id, -1)}
                     aria-label={`Subir ${tag.name}`}
@@ -275,7 +278,7 @@ export function TagManager({ storeId, tags }: Props) {
                   </Button>
                   <Button
                     variant="ghost"
-                    size="icon-xs"
+                    size="icon-sm"
                     disabled={busy || index === sorted.length - 1}
                     onClick={() => void handleMove(tag.id, 1)}
                     aria-label={`Bajar ${tag.name}`}
@@ -283,30 +286,47 @@ export function TagManager({ storeId, tags }: Props) {
                   >
                     <ArrowDown className="size-4" aria-hidden="true" />
                   </Button>
-                  <label className="flex min-h-11 items-center gap-1 pl-1 text-xs text-foreground">
-                    <span>Color</span>
-                    <input
-                      type="color"
-                      value={tag.color ?? "#d4d4d8"}
-                      disabled={busy}
-                      onChange={(event) => void handleColor(tag, event.target.value)}
-                      className="size-11 cursor-pointer rounded-lg border border-[#efefeb] bg-white p-1"
-                      aria-label={`Cambiar color de ${tag.name}`}
-                      title="Cambiar color"
-                    />
-                  </label>
-                  {tag.color ? (
+                  <div
+                    className="relative shrink-0"
+                    onBlur={(event) => {
+                      if (!event.currentTarget.contains(event.relatedTarget)) {
+                        setOpenColorId(null);
+                      }
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === "Escape") setOpenColorId(null);
+                    }}
+                  >
                     <Button
+                      type="button"
                       variant="ghost"
-                      size="xs"
-                      className="min-h-10"
+                      size="icon-sm"
+                      className="bg-white"
                       disabled={busy}
-                      onClick={() => void handleColor(tag, null)}
-                      aria-label={`Quitar color de ${tag.name}`}
+                      aria-label={`Color de ${tag.name}`}
+                      aria-expanded={openColorId === tag.id}
+                      onClick={() =>
+                        setOpenColorId((current) => current === tag.id ? null : tag.id)
+                      }
                     >
-                      Sin color
+                      <span
+                        className="size-6 rounded-full border border-border"
+                        style={{ backgroundColor: tag.color ?? "#d4d4d8" }}
+                        aria-hidden="true"
+                      />
                     </Button>
-                  ) : null}
+                    {openColorId === tag.id ? (
+                      <div className="absolute bottom-full left-0 z-50 mb-1 w-64 max-w-[calc(100vw-2rem)] rounded-xl border border-[#efefeb] bg-white p-2 shadow-lg">
+                        <ColorPicker
+                          color={tag.color}
+                          onChange={(next) => {
+                            void handleColor(tag, next);
+                            setOpenColorId(null);
+                          }}
+                        />
+                      </div>
+                    ) : null}
+                  </div>
                 </div>
               </li>
             );
@@ -326,7 +346,7 @@ function ColorPicker({
   onChange: (color: string | null) => void;
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="flex w-full flex-nowrap items-center gap-1 overflow-x-auto">
       <span className="text-xs text-muted-foreground">Color:</span>
       {TAG_COLORS.map((option) => (
         <button
@@ -334,18 +354,24 @@ function ColorPicker({
           type="button"
           onClick={() => onChange(option)}
           aria-label={`Color ${option}`}
+          title={option}
           aria-pressed={color === option}
-          className={`size-11 rounded-full border-2 ${
+          className={`grid size-11 shrink-0 place-items-center rounded-full border-2 ${
             color === option ? "border-foreground" : "border-transparent"
           }`}
-          style={{ backgroundColor: option }}
-        />
+        >
+          <span
+            className="size-6 rounded-full"
+            style={{ backgroundColor: option }}
+            aria-hidden="true"
+          />
+        </button>
       ))}
       <button
         type="button"
         onClick={() => onChange(null)}
         aria-pressed={color === null}
-        className={`min-h-11 rounded-full border px-3 py-1 text-xs ${
+        className={`min-h-11 shrink-0 rounded-full border px-3 py-1 text-xs ${
           color === null ? "border-foreground" : "border-border"
         }`}
       >
