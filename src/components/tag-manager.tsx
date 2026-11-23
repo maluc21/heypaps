@@ -235,7 +235,7 @@ export function TagManager({ storeId, tags }: Props) {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-10 shrink-0 gap-1 px-2 text-sm"
+                    className="h-10 shrink-0 gap-1 px-2 text-sm lg:min-h-10"
                     disabled={busy}
                     onClick={() => {
                       setEditingId(tag.id);

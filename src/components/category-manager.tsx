@@ -162,7 +162,7 @@ export function CategoryManager({ storeId, categories }: Props) {
           {sorted.map((category, index) => (
             <li
               key={category.id}
-              className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-lg border border-[#efefeb] bg-white p-2 lg:flex lg:gap-3"
+              className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-lg border border-[#efefeb] bg-white p-2 lg:flex lg:gap-3 lg:p-1.5"
             >
               <div
                 className={`flex min-w-0 items-center gap-1 ${
