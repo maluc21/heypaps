@@ -12,7 +12,13 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { ArrowDown, ArrowUp, Check, Edit, Trash2, X } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Check, CircleOff, Edit, Trash2, X } from "lucide-react";
 import {
   createTag,
   deleteTag,
@@ -39,7 +45,7 @@ export function TagManager({ storeId, tags }: Props) {
   const [busy, setBusy] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
-  const [openColorId, setOpenColorId] = useState<string | null>(null);
+  const [colorPickerTarget, setColorPickerTarget] = useState<string | null>();
 
   const sorted = [...tags].sort((a, b) => a.position - b.position);
 
@@ -69,6 +75,17 @@ export function TagManager({ storeId, tags }: Props) {
     router.refresh();
   };
 
+  const chooseColor = async (next: string | null) => {
+    const target = colorPickerTarget;
+    setColorPickerTarget(undefined);
+    if (target === null) {
+      setColor(next);
+      return;
+    }
+    const tag = tags.find((item) => item.id === target);
+    if (tag) await handleColor(tag, next);
+  };
+
   const handleRename = async (tag: EditableTag) => {
     const nextName = editingName.trim();
     if (nextName.length < 2) {
@@ -91,24 +108,6 @@ export function TagManager({ storeId, tags }: Props) {
     }
   };
 
-  const handleMove = async (id: string, direction: -1 | 1) => {
-    const index = sorted.findIndex((t) => t.id === id);
-    const target = sorted[index + direction];
-    if (!target) return;
-
-    setBusy(true);
-    const [a, b] = await Promise.all([
-      updateTag(id, { position: target.position }),
-      updateTag(target.id, { position: sorted[index].position }),
-    ]);
-    setBusy(false);
-    if (a.error || b.error) {
-      toast.error(a.error ?? b.error ?? "No se pudo reordenar.");
-      return;
-    }
-    router.refresh();
-  };
-
   const handleDelete = async (tag: EditableTag) => {
     if (!window.confirm(`¿Eliminar la etiqueta "${tag.name}"? Los productos quedan sin ella.`)) {
       return;
@@ -124,8 +123,13 @@ export function TagManager({ storeId, tags }: Props) {
     router.refresh();
   };
 
+  const activeColorTag =
+    colorPickerTarget != null
+      ? tags.find((tag) => tag.id === colorPickerTarget)
+      : undefined;
+
   return (
-    <div className="space-y-4 pb-24">
+    <div className="space-y-3 pb-24">
       <div className="space-y-1">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">Etiquetas</h2>
@@ -136,17 +140,23 @@ export function TagManager({ storeId, tags }: Props) {
         </p>
       </div>
 
-      <div className="space-y-3 rounded-xl border border-[#efefeb] bg-white p-3">
-        <Input
-          id="new-tag"
-          value={name}
-          placeholder="Nombre de la etiqueta"
-          onChange={(e) => setName(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") void handleCreate();
-          }}
-        />
-        <ColorPicker color={color} onChange={setColor} />
+      <div className="space-y-2 rounded-xl border border-[#efefeb] bg-white p-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <Input
+            id="new-tag"
+            value={name}
+            placeholder="Nombre de la etiqueta"
+            onChange={(e) => setName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") void handleCreate();
+            }}
+          />
+          <ColorSelector
+            color={color}
+            label="Elegir color de la nueva etiqueta"
+            onClick={() => setColorPickerTarget(null)}
+          />
+        </div>
         <Button
           size="sm"
           className="h-11 w-full lg:h-9"
@@ -162,221 +172,180 @@ export function TagManager({ storeId, tags }: Props) {
           Todavía no tienes etiquetas.
         </p>
       ) : (
-        <ul className="space-y-2">
-          {sorted.map((tag, index) => {
+        <ul className="space-y-1">
+          {sorted.map((tag) => {
             const isEditing = editingId === tag.id;
 
             return (
               <li
                 key={tag.id}
-                className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-lg border border-[#efefeb] bg-white p-2"
+                className="flex min-w-0 items-center gap-1.5 rounded-lg border border-[#efefeb] bg-white p-1.5"
               >
-                <div
-                  className={`flex min-w-0 items-center gap-2 ${
-                    isEditing ? "col-span-2 row-start-1" : "col-start-1 row-start-1"
-                  }`}
-                >
-                  {isEditing ? (
-                    <>
-                      <Input
-                        autoFocus
-                        value={editingName}
-                        onChange={(event) => setEditingName(event.target.value)}
-                        onKeyDown={(event) => {
-                          if (event.key === "Enter") {
-                            event.preventDefault();
-                            void handleRename(tag);
-                          }
-                          if (event.key === "Escape") setEditingId(null);
-                        }}
-                        aria-label={`Nuevo nombre para ${tag.name}`}
-                        className="min-w-0 flex-1"
-                      />
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="bg-white text-green-700 hover:bg-green-50 hover:text-green-800"
-                        disabled={busy || editingName.trim().length < 2}
-                        onClick={() => void handleRename(tag)}
-                        aria-label={`Guardar nombre de ${tag.name}`}
-                        title="Guardar"
-                      >
-                        <Check className="size-5" aria-hidden="true" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="bg-white"
-                        disabled={busy}
-                        onClick={() => setEditingId(null)}
-                        aria-label={`Cancelar edición de ${tag.name}`}
-                        title="Cancelar"
-                      >
-                        <X className="size-5" aria-hidden="true" />
-                      </Button>
-                    </>
-                  ) : (
-                    <>
-                      <span
-                        className="size-3 shrink-0 rounded-full"
-                        style={{ backgroundColor: tag.color ?? "#d4d4d8" }}
-                        aria-hidden="true"
-                      />
-                      <span className="min-w-0 flex-1 truncate text-base font-semibold">
-                        {tag.name}
-                      </span>
-                    </>
-                  )}
-                </div>
+                <ColorSelector
+                  color={tag.color}
+                  label={`Cambiar color de ${tag.name}`}
+                  onClick={() => setColorPickerTarget(tag.id)}
+                />
 
-                <div
-                  className={`flex items-center gap-2 ${
-                    isEditing
-                      ? "col-start-2 row-start-2 flex-col"
-                      : "col-start-2 row-start-1 row-span-2 flex-col"
-                  }`}
-                >
-                  {!isEditing ? (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="min-h-12 gap-1.5 px-2 text-sm"
-                      disabled={busy}
-                      onClick={() => {
-                        setEditingId(tag.id);
-                        setEditingName(tag.name);
-                      }}
-                      aria-label={`Editar nombre de ${tag.name}`}
-                    >
-                      <Edit className="size-6" aria-hidden="true" />
-                      Editar
-                    </Button>
-                  ) : null}
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    className="bg-white text-foreground hover:bg-muted hover:text-foreground"
-                    disabled={busy}
-                    onClick={() => void handleDelete(tag)}
-                    aria-label={`Eliminar ${tag.name}`}
-                    title={`Eliminar ${tag.name}`}
-                  >
-                    <Trash2 className="size-5" aria-hidden="true" />
-                  </Button>
-                </div>
-
-                <div className="col-start-1 row-start-2 flex min-h-11 min-w-0 flex-nowrap items-center gap-1">
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    disabled={busy || index === 0}
-                    onClick={() => void handleMove(tag.id, -1)}
-                    aria-label={`Subir ${tag.name}`}
-                    title="Subir"
-                  >
-                    <ArrowUp className="size-4" aria-hidden="true" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    disabled={busy || index === sorted.length - 1}
-                    onClick={() => void handleMove(tag.id, 1)}
-                    aria-label={`Bajar ${tag.name}`}
-                    title="Bajar"
-                  >
-                    <ArrowDown className="size-4" aria-hidden="true" />
-                  </Button>
-                  <div
-                    className="relative shrink-0"
-                    onBlur={(event) => {
-                      if (!event.currentTarget.contains(event.relatedTarget)) {
-                        setOpenColorId(null);
-                      }
-                    }}
+                {isEditing ? (
+                  <Input
+                    autoFocus
+                    value={editingName}
+                    onChange={(event) => setEditingName(event.target.value)}
                     onKeyDown={(event) => {
-                      if (event.key === "Escape") setOpenColorId(null);
-                    }}
-                  >
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon-sm"
-                      className="bg-white"
-                      disabled={busy}
-                      aria-label={`Color de ${tag.name}`}
-                      aria-expanded={openColorId === tag.id}
-                      onClick={() =>
-                        setOpenColorId((current) => current === tag.id ? null : tag.id)
+                      if (event.key === "Enter") {
+                        event.preventDefault();
+                        void handleRename(tag);
                       }
+                      if (event.key === "Escape") setEditingId(null);
+                    }}
+                    aria-label={`Nuevo nombre para ${tag.name}`}
+                    className="h-10 min-w-0 flex-1"
+                  />
+                ) : (
+                  <span className="min-w-0 flex-1 truncate text-base font-semibold">
+                    {tag.name}
+                  </span>
+                )}
+
+                {isEditing ? (
+                  <>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="size-10 shrink-0 text-green-700 hover:bg-green-50 hover:text-green-800"
+                      disabled={busy || editingName.trim().length < 2}
+                      onClick={() => void handleRename(tag)}
+                      aria-label={`Guardar nombre de ${tag.name}`}
+                      title="Guardar"
                     >
-                      <span
-                        className="size-6 rounded-full border border-border"
-                        style={{ backgroundColor: tag.color ?? "#d4d4d8" }}
-                        aria-hidden="true"
-                      />
+                      <Check className="size-5" aria-hidden="true" />
                     </Button>
-                    {openColorId === tag.id ? (
-                      <div className="absolute bottom-full left-0 z-50 mb-1 w-64 max-w-[calc(100vw-2rem)] rounded-xl border border-[#efefeb] bg-white p-2 shadow-lg">
-                        <ColorPicker
-                          color={tag.color}
-                          onChange={(next) => {
-                            void handleColor(tag, next);
-                            setOpenColorId(null);
-                          }}
-                        />
-                      </div>
-                    ) : null}
-                  </div>
-                </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="size-10 shrink-0"
+                      disabled={busy}
+                      onClick={() => setEditingId(null)}
+                      aria-label={`Cancelar edición de ${tag.name}`}
+                      title="Cancelar"
+                    >
+                      <X className="size-5" aria-hidden="true" />
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-10 shrink-0 gap-1 px-2 text-sm"
+                    disabled={busy}
+                    onClick={() => {
+                      setEditingId(tag.id);
+                      setEditingName(tag.name);
+                    }}
+                    aria-label={`Editar nombre de ${tag.name}`}
+                  >
+                    <Edit className="size-4" aria-hidden="true" />
+                    Editar
+                  </Button>
+                )}
+
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-10 shrink-0 text-foreground hover:bg-muted hover:text-foreground"
+                  disabled={busy}
+                  onClick={() => void handleDelete(tag)}
+                  aria-label={`Eliminar ${tag.name}`}
+                  title={`Eliminar ${tag.name}`}
+                >
+                  <Trash2 className="size-5" aria-hidden="true" />
+                </Button>
               </li>
             );
           })}
         </ul>
       )}
+
+      <Dialog
+        open={colorPickerTarget !== undefined}
+        onOpenChange={(open) => {
+          if (!open) setColorPickerTarget(undefined);
+        }}
+      >
+        <DialogContent className="aspect-square w-[min(20rem,calc(100vw-2rem))] max-w-none content-start">
+          <div className="space-y-1">
+            <DialogTitle>Seleccionar color</DialogTitle>
+            <DialogDescription>
+              {colorPickerTarget === null
+                ? "Elige el color de la nueva etiqueta."
+                : `Elige el color de ${activeColorTag?.name ?? "la etiqueta"}.`}
+            </DialogDescription>
+          </div>
+          <div className="grid grid-cols-3 justify-items-center gap-3">
+            {TAG_COLORS.map((option) => (
+              <button
+                key={option}
+                type="button"
+                onClick={() => void chooseColor(option)}
+                aria-label={`Color ${option}`}
+                aria-pressed={
+                  colorPickerTarget === null
+                    ? color === option
+                    : activeColorTag?.color === option
+                }
+                className="grid size-14 place-items-center rounded-full border-2 border-transparent transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring aria-pressed:border-foreground"
+              >
+                <span
+                  className="size-9 rounded-full"
+                  style={{ backgroundColor: option }}
+                  aria-hidden="true"
+                />
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => void chooseColor(null)}
+              aria-label="Sin color"
+              aria-pressed={
+                colorPickerTarget === null ? color === null : activeColorTag?.color === null
+              }
+              className="grid size-14 place-items-center rounded-full border-2 border-transparent text-muted-foreground transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring aria-pressed:border-foreground"
+            >
+              <CircleOff className="size-8" aria-hidden="true" />
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
 
-/** Paleta de colores: el que se elige se marca con un borde. */
-function ColorPicker({
+function ColorSelector({
   color,
-  onChange,
+  label,
+  onClick,
 }: {
   color: string | null;
-  onChange: (color: string | null) => void;
+  label: string;
+  onClick: () => void;
 }) {
   return (
-    <div className="flex w-full flex-nowrap items-center gap-1 overflow-x-auto">
-      <span className="text-xs text-muted-foreground">Color:</span>
-      {TAG_COLORS.map((option) => (
-        <button
-          key={option}
-          type="button"
-          onClick={() => onChange(option)}
-          aria-label={`Color ${option}`}
-          title={option}
-          aria-pressed={color === option}
-          className={`grid size-11 shrink-0 place-items-center rounded-full border-2 ${
-            color === option ? "border-foreground" : "border-transparent"
-          }`}
-        >
-          <span
-            className="size-6 rounded-full"
-            style={{ backgroundColor: option }}
-            aria-hidden="true"
-          />
-        </button>
-      ))}
-      <button
-        type="button"
-        onClick={() => onChange(null)}
-        aria-pressed={color === null}
-        className={`min-h-11 shrink-0 rounded-full border px-3 py-1 text-xs ${
-          color === null ? "border-foreground" : "border-border"
-        }`}
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon"
+      className="size-10 shrink-0 rounded-full p-0"
+      aria-label={label}
+      onClick={onClick}
+    >
+      <span
+        className="grid size-7 place-items-center rounded-full border border-border"
+        style={color ? { backgroundColor: color } : undefined}
+        aria-hidden="true"
       >
-        Sin color
-      </button>
-    </div>
+        {color === null ? <CircleOff className="size-4 text-muted-foreground" /> : null}
+      </span>
+    </Button>
   );
 }
