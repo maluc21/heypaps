@@ -129,7 +129,7 @@ export function TagManager({ storeId, tags }: Props) {
       : undefined;
 
   return (
-    <div className="space-y-3 pb-24">
+    <div className="space-y-4 pb-24">
       <div className="space-y-1">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">Etiquetas</h2>
@@ -170,14 +170,14 @@ export function TagManager({ storeId, tags }: Props) {
           Todavía no tienes etiquetas.
         </p>
       ) : (
-        <ul className="space-y-1">
+        <ul className="space-y-1 lg:space-y-2">
           {sorted.map((tag) => {
             const isEditing = editingId === tag.id;
 
             return (
               <li
                 key={tag.id}
-                className="flex min-w-0 items-center gap-1.5 rounded-lg border border-[#efefeb] bg-white p-1.5"
+                className="flex min-w-0 items-center gap-1.5 rounded-lg border border-[#efefeb] bg-white p-1.5 lg:gap-3"
               >
                 <ColorSelector
                   color={tag.color}
@@ -235,7 +235,7 @@ export function TagManager({ storeId, tags }: Props) {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-10 shrink-0 gap-1 px-2 text-sm lg:min-h-10"
+                    className="min-h-12 shrink-0 gap-1.5 px-2 text-sm lg:min-h-10"
                     disabled={busy}
                     onClick={() => {
                       setEditingId(tag.id);
@@ -243,15 +243,15 @@ export function TagManager({ storeId, tags }: Props) {
                     }}
                     aria-label={`Editar nombre de ${tag.name}`}
                   >
-                    <Edit className="size-4" aria-hidden="true" />
+                    <Edit className="size-6" aria-hidden="true" />
                     Editar
                   </Button>
                 )}
 
                 <Button
                   variant="ghost"
-                  size="icon"
-                  className="size-10 shrink-0 text-foreground hover:bg-muted hover:text-foreground"
+                  size="icon-sm"
+                  className="shrink-0 text-foreground hover:bg-muted hover:text-foreground"
                   disabled={busy}
                   onClick={() => void handleDelete(tag)}
                   aria-label={`Eliminar ${tag.name}`}
