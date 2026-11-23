@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { ExternalLink, PackagePlus, Trash2 } from "lucide-react";
+import { Eye, PackagePlus, Trash2 } from "lucide-react";
 
 export type Variant = {
   id: string;
@@ -40,6 +40,7 @@ export type Product = {
 export type FilterOption = {
   id: string;
   name: string;
+  color?: string | null;
 };
 
 type StatusFilter = "all" | "visible" | "hidden" | "paused";
@@ -120,8 +121,8 @@ export function ProductsTable({
     () => new Map(categories.map((category) => [category.id, category.name])),
     [categories],
   );
-  const tagNames = useMemo(
-    () => new Map(tags.map((tag) => [tag.id, tag.name])),
+  const tagsById = useMemo(
+    () => new Map(tags.map((tag) => [tag.id, tag])),
     [tags],
   );
 
@@ -314,68 +315,92 @@ export function ProductsTable({
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.map((p) => (
-                    <tr key={p.id} className="border-b bg-white hover:bg-[#efefeb]">
-                      <td className="p-3">
-                        <input
-                          type="checkbox"
-                          checked={selected.has(p.id)}
-                          onChange={() => toggleSelect(p.id)}
-                          aria-label={`Seleccionar ${p.name}`}
-                          className="rounded border-gray-300"
-                        />
-                      </td>
-                      <td className="p-3">
-                        <Link
-                          href={`/products/${p.slug}`}
-                          className="font-medium text-primary-foreground hover:underline underline-offset-4"
-                        >
-                          {p.name}
-                        </Link>
-                      </td>
-                      <td className="p-3">{categoryNames.get(p.category_id ?? "") ?? "—"}</td>
-                      <td className="p-3">{tagNames.get(p.tag_id ?? "") ?? "—"}</td>
-                      <td className="text-right p-3">
-                        {priceFrom(p) == null ? "—" : formatMoney(priceFrom(p)!, currency)}
-                      </td>
-                      <td className="p-3">
-                        <Badge variant={statusOf(p) === "Disponible" ? "default" : "secondary"}>
-                          {statusOf(p)}
-                        </Badge>
-                      </td>
-                      <td className="p-3 text-center">
-                        <div className="flex items-center justify-center gap-1">
-                          {storeSlug ? (
+                  {filtered.map((p) => {
+                    const tag = tagsById.get(p.tag_id ?? "");
+                    return (
+                      <tr
+                        key={p.id}
+                        className="group border-b bg-white transition-colors hover:bg-[#d6f9dc]"
+                      >
+                        <td className="p-3">
+                          <input
+                            type="checkbox"
+                            checked={selected.has(p.id)}
+                            onChange={() => toggleSelect(p.id)}
+                            aria-label={`Seleccionar ${p.name}`}
+                            className="rounded border-gray-300"
+                          />
+                        </td>
+                        <td className="p-3">
+                          <Link
+                            href={`/products/${p.slug}`}
+                            className="font-semibold text-primary-foreground underline-offset-4 group-hover:underline"
+                          >
+                            {p.name}
+                          </Link>
+                        </td>
+                        <td className="p-3">{categoryNames.get(p.category_id ?? "") ?? "—"}</td>
+                        <td className="p-3">
+                          {tag ? (
+                            <Badge
+                              variant="outline"
+                              className="gap-1.5 border-[#efefeb] bg-[#efefeb] text-[#181818]"
+                            >
+                              <span
+                                className="size-2 shrink-0 rounded-full bg-[#181818]/20"
+                                style={tag.color ? { backgroundColor: tag.color } : undefined}
+                                aria-hidden="true"
+                              />
+                              {tag.name}
+                            </Badge>
+                          ) : (
+                            "—"
+                          )}
+                        </td>
+                        <td className="p-3 text-right">
+                          {priceFrom(p) == null ? "—" : formatMoney(priceFrom(p)!, currency)}
+                        </td>
+                        <td className="p-3">
+                          <Badge variant={statusOf(p) === "Disponible" ? "default" : "secondary"}>
+                            {statusOf(p)}
+                          </Badge>
+                        </td>
+                        <td className="p-3 text-center">
+                          <div className="flex items-center justify-center gap-1">
+                            {storeSlug ? (
+                              <Button
+                                render={
+                                  <Link
+                                    href={`/s/${storeSlug}/${p.slug}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                  />
+                                }
+                                size="icon"
+                                variant="outline"
+                                className="size-9 border-[#181818]/20 bg-white text-[#181818] hover:bg-[#efefeb] hover:text-[#181818]"
+                                aria-label={`Ver ${p.name} en el catálogo público`}
+                                title="Ver producto público"
+                              >
+                                <Eye className="size-4" aria-hidden="true" />
+                              </Button>
+                            ) : null}
                             <Button
-                              render={
-                                <Link
-                                  href={`/s/${storeSlug}/${p.slug}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                />
-                              }
                               size="icon"
                               variant="outline"
-                              aria-label={`Abrir ${p.name} en el catálogo público`}
-                              title="Abrir producto público en una pestaña nueva"
+                              className="size-9 border-[#181818]/20 bg-white text-[#181818] hover:bg-[#efefeb] hover:text-[#181818]"
+                              disabled={deleting}
+                              onClick={() => void handleDelete(p)}
+                              aria-label={`Eliminar ${p.name} del catálogo`}
+                              title={`Eliminar ${p.name} del catálogo`}
                             >
-                              <ExternalLink className="size-4" aria-hidden="true" />
+                              <Trash2 className="size-4" aria-hidden="true" />
                             </Button>
-                          ) : null}
-                          <Button
-                            size="icon"
-                            variant="destructive"
-                            disabled={deleting}
-                            onClick={() => void handleDelete(p)}
-                            aria-label={`Eliminar ${p.name} del catálogo`}
-                            title={`Eliminar ${p.name} del catálogo`}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

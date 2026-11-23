@@ -60,7 +60,7 @@ export default async function ProductsPage() {
       .order("position", { ascending: true }),
     supabase
       .from("tags")
-      .select("id, name")
+      .select("id, name, color")
       .eq("store_id", store.id)
       .order("position", { ascending: true }),
   ]);
