@@ -134,6 +134,7 @@ export function CategoryManager({ storeId, categories }: Props) {
       <div className="flex min-w-0 gap-2">
         <Input
           id="new-category"
+          className="min-w-0 flex-1"
           value={name}
           placeholder="Nueva categoría"
           aria-label="Nombre de la nueva categoría"
@@ -144,7 +145,7 @@ export function CategoryManager({ storeId, categories }: Props) {
         />
         <Button
           size="sm"
-          className="h-11 lg:h-9"
+          className="h-11 shrink-0 px-5 lg:h-11 lg:w-40"
           onClick={handleCreate}
           disabled={busy || name.trim().length < 2}
         >
@@ -161,14 +162,14 @@ export function CategoryManager({ storeId, categories }: Props) {
           {sorted.map((category, index) => (
             <li
               key={category.id}
-              className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-lg border border-[#efefeb] bg-white p-2"
+              className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-lg border border-[#efefeb] bg-white p-2 lg:flex lg:gap-3"
             >
               <div
                 className={`flex min-w-0 items-center gap-1 ${
                   editingId === category.id
                     ? "col-span-2 row-start-1"
                     : "col-start-1 row-start-1"
-                }`}
+                } lg:order-2 lg:flex-1`}
               >
                 {editingId === category.id ? (
                   <>
@@ -223,13 +224,13 @@ export function CategoryManager({ storeId, categories }: Props) {
                   editingId === category.id
                     ? "col-start-2 row-start-2 flex-row"
                     : "col-start-2 row-start-1 row-span-2 flex-col"
-                }`}
+                } lg:contents`}
               >
                 {editingId !== category.id ? (
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="min-h-12 gap-1.5 px-2 text-sm"
+                    className="min-h-12 gap-1.5 px-2 text-sm lg:order-4 lg:min-h-10"
                     disabled={busy}
                     onClick={() => {
                       setEditingId(category.id);
@@ -241,8 +242,9 @@ export function CategoryManager({ storeId, categories }: Props) {
                     Editar
                   </Button>
                 ) : null}
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 lg:contents">
                   <Switch
+                    className="lg:order-3"
                     checked={category.active}
                     onCheckedChange={(checked) => void handleToggle(category.id, checked)}
                     aria-label={`Mostrar ${category.name}`}
@@ -250,7 +252,7 @@ export function CategoryManager({ storeId, categories }: Props) {
                   <Button
                     variant="ghost"
                     size="icon-sm"
-                    className="bg-white text-foreground hover:bg-muted hover:text-foreground"
+                    className="bg-white text-foreground hover:bg-muted hover:text-foreground lg:order-5"
                     disabled={busy}
                     onClick={() => void handleDelete(category.id, category.name)}
                     aria-label={`Eliminar ${category.name}`}
@@ -261,10 +263,11 @@ export function CategoryManager({ storeId, categories }: Props) {
                 </div>
               </div>
 
-              <div className="col-start-1 row-start-2 flex items-center gap-1">
+              <div className="col-start-1 row-start-2 flex items-center gap-1 lg:order-1">
                 <Button
                   variant="ghost"
                   size="icon-xs"
+                  className="lg:size-8"
                   disabled={busy || index === 0}
                   onClick={() => void handleMove(category.id, -1)}
                   aria-label={`Subir ${category.name}`}
@@ -275,6 +278,7 @@ export function CategoryManager({ storeId, categories }: Props) {
                 <Button
                   variant="ghost"
                   size="icon-xs"
+                  className="lg:size-8"
                   disabled={busy || index === sorted.length - 1}
                   onClick={() => void handleMove(category.id, 1)}
                   aria-label={`Bajar ${category.name}`}
